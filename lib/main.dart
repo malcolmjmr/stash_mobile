@@ -1,11 +1,9 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:stashmobile/app/providers/provider_observer.dart';
-import 'package:stashmobile/app/sign_in/email_password_sign_in_model.dart';
-import 'package:stashmobile/app/sign_in/email_password_sign_in_page.dart';
+
 import 'package:stashmobile/app/sign_in/sign_in_page.dart';
 import 'package:stashmobile/app/view.dart';
-import 'package:stashmobile/development/users/user_selection.dart';
 import 'package:stashmobile/routing/app_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

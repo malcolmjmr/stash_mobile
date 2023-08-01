@@ -1,19 +1,19 @@
 class FirestorePath {
   static String users = 'users';
   static String user({required String userId}) => 'users/$userId';
-  static String privateCollections({required String userId}) =>
-      'users/$userId/collections';
-  static String privateCollection(
-          {required String userId, required String collectionId}) =>
-      'users/$userId/collections/$collectionId';
-  static String privateCollectionContents(
-          {required String userId, required String collectionId}) =>
-      'users/$userId/collections/$collectionId/content';
-  static String privateCollectionContent(
+
+  static String userContexts({required String userId}) =>
+      'users/$userId/contexts';
+  static String userContext(
+          {required String userId, required String contextId}) =>
+      'users/$userId/contexts/$contextId';
+  static String userResources(
+          {required String userId}) =>
+      'users/$userId/resources';
+  static String userResource(
           {required String userId,
-          required String collectionId,
-          required String contentId}) =>
-      'users/$userId/collections/$collectionId/content/$contentId';
+          required String resourceId}) =>
+      'users/$userId/resource/$resourceId';
 
   static String userFields({required String userId}) => '$users/$userId/fields';
   static String userField({required String userId, required String fieldId}) =>
@@ -21,14 +21,14 @@ class FirestorePath {
   static String categories = 'categories';
   static String category({required String categoryId}) =>
       '$categories/$categoryId';
-  static String collections = 'collections';
-  static String sharedCollection({required String collectionId}) =>
-      '$collections/$collectionId';
-  static String sharedCollectionContent(
-          {required String collectionId, required String contentId}) =>
-      'collections/$collectionId/content/$contentId';
-  static String sharedCollectionContents({required String collectionId}) =>
-      '$collections/$collectionId/content';
-  static String publicPosts = 'publicContent';
+  static String contexts = 'contexts';
+  static String sharedContext({required String contextId}) =>
+      '$contexts/$contextId';
+  static String sharedContextResource(
+          {required String contextId, required String contentId}) =>
+      'contexts/$contextId/content/$contentId';
+  static String sharedContextResources({required String contextId}) =>
+      '$contexts/$contextId/content';
+  static String publicPosts = 'publicResource';
   static String publicPost({required postId}) => '$publicPosts/$postId';
 }

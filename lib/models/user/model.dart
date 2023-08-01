@@ -4,34 +4,16 @@ import 'package:uuid/uuid.dart';
 class User {
   late String id;
   late int created;
-  int? registration;
-  int? lastUpdateTime;
-
   String? name;
   String? imageUrl;
   String theme = 'dark';
-  double? fontSize;
-  String? currentCollection;
-  List<String> followers = [];
-  List<UserSubscription> following = [];
-  List<UserSubscription> friends = [];
-  List<UserContact> contacts = [];
-  List<String> pinned = [];
-  List<String> playList = [];
-  int? playListPosition;
-  List<CollectionSubscription> sharedCollections = [];
-  List<CollectionSubscription> subscriptions = [];
-  List<ShareNotification> shareNotifications = [];
-
-  Map<String, int> actionUsage = Map();
-
-  ConnectedAppSettings? connectedApps = ConnectedAppSettings();
+  String? currentContext;
 
   User({
     this.name,
     this.imageUrl,
+    required this.id
   }) {
-    id = Uuid().v4().split('-').last;
     created = DateTime.now().millisecondsSinceEpoch;
   }
 
@@ -40,62 +22,18 @@ class User {
     name = json['name'];
     theme = json['theme'] ?? 'dark';
     imageUrl = json['imageUrl'];
-    followers = json['followers'] != null
-        ? json['followers'].cast<String>()
-        : <String>[];
-    following = json['following'] != null
-        ? List<UserSubscription>.from(
-            json['following'].map((u) => UserSubscription.fromJson(u)))
-        : [];
-    friends = json['friends'] != null
-        ? List<UserSubscription>.from(
-            json['friends'].map((u) => UserSubscription(u)))
-        : [];
-    created = json['created'] ?? DateTime.now().millisecondsSinceEpoch;
-    registration = json['registration'];
-    currentCollection = json['currentCollection'];
-    lastUpdateTime = json['lastUpdateTime'];
-    connectedApps = json['connectedApps'] != null
-        ? ConnectedAppSettings.fromJson(json['connectedApps'])
-        : null;
-    pinned = json['pinned'] != null ? json['pinned'].cast<String>() : [];
-    playList = json['playList'] != null ? json['playList'].cast<String>() : [];
-    sharedCollections = json['sharedCollections'] != null
-        ? List<CollectionSubscription>.from(json['sharedCollections']
-            .map((s) => CollectionSubscription.fromJson(s)))
-        : [];
-    shareNotifications = json['shareNotifications'] != null
-        ? List<ShareNotification>.from(json['shareNotifications']
-            .map((s) => ShareNotification.fromJson(s)))
-        : [];
-    subscriptions = json['subscriptions'] != null
-        ? List<CollectionSubscription>.from(json['subscriptions']
-            .map((s) => CollectionSubscription.fromJson(s)))
-        : [];
-    fontSize = json['fontSize'];
-    playListPosition = json['playListPosition'];
+    created = json['created'];
+    currentContext = json['currentContext'];
   }
 
   Map<String, dynamic> toJson() {
     Map<String, dynamic> json = {
+      'id': id,
       'name': name,
-      'imageUrl': imageUrl,
-      'followers': followers,
-      'following': following.map((u) => u.toJson()).toList(),
-      'friends': friends,
-      'created': created,
-      'registration': registration,
-      'currentCollection': currentCollection,
-      'lastUpdateTime': lastUpdateTime,
-      'connectedApps': connectedApps?.toJson(),
-      'pinned': pinned,
-      'playList': playList,
-      'playListPosition': playListPosition,
-      'sharedCollections': sharedCollections.map((s) => s.toJson()).toList(),
-      'shareNotifications': shareNotifications.map((s) => s.toJson()).toList(),
-      'subscriptions': subscriptions.map((s) => s.toJson()).toList(),
       'theme': theme,
-      'fontSize': fontSize,
+      'imageUrl': imageUrl,
+      'created': created,
+      'currentContext': currentContext
     };
     json.removeWhere((key, value) => value == null);
     return json;
