@@ -1,5 +1,7 @@
 
 
+import 'package:uuid/uuid.dart';
+
 enum ResourceType {
   note,
   webPage,
@@ -22,6 +24,11 @@ class Resource {
   int? lastVisited;
   String? bookmarkId;
   String? parentId;
+
+  Resource({ this.url, this.title}) {
+    id = Uuid().v4().split('-').last;
+    created = DateTime.now().millisecondsSinceEpoch;
+  }
 
   Resource.fromDatabase(String objectId, Map<String, dynamic> json) {
     id = objectId;

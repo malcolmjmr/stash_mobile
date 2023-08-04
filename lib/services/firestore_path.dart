@@ -2,11 +2,11 @@ class FirestorePath {
   static String users = 'users';
   static String user({required String userId}) => 'users/$userId';
 
-  static String userContexts({required String userId}) =>
+  static String userWorkspaces({required String userId}) =>
       'users/$userId/contexts';
-  static String userContext(
-          {required String userId, required String contextId}) =>
-      'users/$userId/contexts/$contextId';
+  static String userWorkspace(
+          {required String userId, required String workspaceId}) =>
+      'users/$userId/contexts/$workspaceId';
   static String userResources(
           {required String userId}) =>
       'users/$userId/resources';
@@ -22,12 +22,12 @@ class FirestorePath {
   static String category({required String categoryId}) =>
       '$categories/$categoryId';
   static String contexts = 'contexts';
-  static String sharedContext({required String contextId}) =>
+  static String sharedWorkspace({required String contextId}) =>
       '$contexts/$contextId';
-  static String sharedContextResource(
+  static String sharedWorkspaceResource(
           {required String contextId, required String contentId}) =>
       'contexts/$contextId/content/$contentId';
-  static String sharedContextResources({required String contextId}) =>
+  static String sharedWorkspaceResources({required String contextId}) =>
       '$contexts/$contextId/content';
   static String publicPosts = 'publicResource';
   static String publicPost({required postId}) => '$publicPosts/$postId';

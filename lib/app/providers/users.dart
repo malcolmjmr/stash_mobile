@@ -7,18 +7,18 @@ import 'package:stashmobile/services/firestore_database.dart';
 final userProvider = Provider<UserManager>((ref) {
   final user = ref.watch(sessionProvider).user;
   if (user != null) {
-    return UserManager(me: user, db: ref.watch(databaseProvider));
+    return UserManager(currentUser: user, db: ref.watch(databaseProvider));
   }
   throw UnimplementedError();
 });
 
 class UserManager {
-  UserManager({required this.me, required this.db}) {
-    userStream = db.getCurrentUserAsStream(me.id);
-    loadContacts();
+  UserManager({required this.currentUser, required this.db}) {
+    userStream = db.getCurrentUserAsStream(currentUser.id);
+    // loadContacts();
   }
 
-  User me;
+  User currentUser;
   FirestoreDatabase db;
 
   saveUser(User user) {
@@ -26,15 +26,15 @@ class UserManager {
   }
 
   saveCurrentUser() {
-    saveUser(me);
+    saveUser(currentUser);
   }
 
   late Stream<User> userStream;
 
   List<User> contacts = [];
-  loadContacts() async {
-    contacts = await db.getUsers();
-  }
+  // loadContacts() async {
+  //   contacts = await db.getUsers();
+  // }
 }
 
 final currentUserStreamProvider = StreamProvider<User>((ref) {

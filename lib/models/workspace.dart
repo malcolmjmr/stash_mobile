@@ -1,6 +1,7 @@
 import 'package:stashmobile/models/resource.dart';
+import 'package:uuid/uuid.dart';
 
-class Context {
+class Workspace {
 
   late String id;
   String? title;
@@ -30,11 +31,21 @@ class Context {
   int? activeTabIndex;
   String? color;
 
-  Context.fromDatabase(String objectId, Map<String, dynamic> json) {
+  bool? isIncognito;
+
+  Workspace({this.title, this.color}) {
+    id = Uuid().v4().split('-').last;
+    created = DateTime.now().millisecondsSinceEpoch;
+    updated = created;
+    lastActive = created;
+  }
+
+  Workspace.fromDatabase(String objectId, Map<String, dynamic> json) {
     id = objectId;
     title = json['title'];
     url = json['url'];
-    isOpen = json['isOpen'];
+    color = json['color'];
+    isOpen = json['isOpen'] ?? false;
     created = json['created'];
     updated = json['updated'];
     lastActive = json['lastActive'];
@@ -48,9 +59,10 @@ class Context {
     folderId = json['folderId'];
     resourcesOpened = json['resourcesOpened'];
     hasDefaultTitle = json['hasDefaultTile'];
-    tabs = json['tabs'] != null ? json['tabs'].map((tab) => Resource.fromDatabase(json['id'], json)) : [];
-    activeTabId = json['activeTabId'];
+    tabs = json['tabs'] != null ? List<Resource>.from(json['tabs'].map((tab) => Resource.fromDatabase(tab['id'].toString(), tab))) : [];
+    activeTabId = json['activeTabId'].runtimeType == int ? json['activeTabId'] : null;
     activeTabIndex = json['activeTabIndex'];
+    isIncognito = json['isIncognito'] ?? false;
   }
 
   Map<String, dynamic> toJson() {
@@ -58,6 +70,7 @@ class Context {
       'id': id,
       'url': url,
       'title': title,
+      'color': color,
       'isOpen': isOpen,
       'created': created,
       'updated': updated,
@@ -75,6 +88,7 @@ class Context {
       'tabs': tabs.map((t) => t.toJson()),
       'activeTabId': activeTabId,
       'activeTabIndex': activeTabIndex,
+      'isIncognito': isIncognito,
     };
     json.removeWhere((key, value) => value == null);
     return json;

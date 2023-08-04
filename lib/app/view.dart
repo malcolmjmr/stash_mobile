@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:stashmobile/app/home/home_view.dart';
 
 import 'package:stashmobile/app/web/view.dart';
 
@@ -14,21 +15,8 @@ class AppView extends ConsumerWidget {
         ? Center(child: CircularProgressIndicator())
         : Scaffold(
             //drawer: SidePanelView(),
-            body: Column(
-              children: [
-                Expanded(
-                  child: IndexedStack(
-                    index: model.webViewIsOpen ? 0 : 1,
-                    children: [
-                      WebView(),
-                     // _buildView(model.view),
-                    ],
-                  ),
-                ),
-                //MenuView(),
-                //NotificationAlert()
-              ],
-            ),
+            backgroundColor: Colors.black12,
+            body: HomeView(),
           );
   }
 

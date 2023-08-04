@@ -7,7 +7,8 @@ class User {
   String? name;
   String? imageUrl;
   String theme = 'dark';
-  String? currentContext;
+  String? currentWorkspace;
+  String? currentResource;
 
   User({
     this.name,
@@ -23,7 +24,8 @@ class User {
     theme = json['theme'] ?? 'dark';
     imageUrl = json['imageUrl'];
     created = json['created'];
-    currentContext = json['currentContext'];
+    currentWorkspace = json['currentWorkspace'];
+    currentResource = json['currentResource'];
   }
 
   Map<String, dynamic> toJson() {
@@ -33,7 +35,8 @@ class User {
       'theme': theme,
       'imageUrl': imageUrl,
       'created': created,
-      'currentContext': currentContext
+      'currentWorkspace': currentWorkspace,
+      'currentResource': currentResource,
     };
     json.removeWhere((key, value) => value == null);
     return json;

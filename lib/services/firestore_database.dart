@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:stashmobile/models/user/model.dart';
 
-import '../models/context.dart';
+import '../models/workspace.dart';
 import '../models/resource.dart';
 import 'firestore.dart';
 import 'firestore_path.dart';
@@ -47,39 +47,37 @@ class FirestoreDatabase {
         builder: (id, data) => User.fromDatabase(id, data),
       );
 
-  Stream<List<Context>> getUserContextsStream(User user, String contextId) =>
+  Stream<List<Workspace>> getUserWorkspacesStream(User user) =>
       _service.collectionStream(
-          path: FirestorePath.userResources(userId: user.id),
-          builder: (id, data) => Context.fromDatabase(id, data),
-          queryBuilder: (query) => query.where('context', arrayContains: contextId),
+          path: FirestorePath.userWorkspaces(userId: user.id),
+          builder: (id, data) => Workspace.fromDatabase(id, data),
       );
 
-  Future<List<Context>> getUserContexts(User user, String contextId) =>
+  Future<List<Workspace>> getUserWorkspaces(User user) =>
       _service.collection(
-          path: FirestorePath.userResources(userId: user.id),
-          builder: (id, data) => Context.fromDatabase(id, data),
-          queryBuilder: (query) => query.where('context', arrayContains: contextId),
+          path: FirestorePath.userWorkspaces(userId: user.id),
+          builder: (id, data) => Workspace.fromDatabase(id, data)
       );
 
-  Stream<List<Resource>> getContextResourceStream(User user, String contextId) =>
+  Stream<List<Resource>> getWorkspaceResourceStream(User user, String workspaceId) =>
       _service.collectionStream(
           path: FirestorePath.userResources(userId: user.id),
           builder: (id, data) => Resource.fromDatabase(id, data),
-          queryBuilder: (query) => query.where('context', arrayContains: contextId),
+          queryBuilder: (query) => query.where('context', arrayContains: workspaceId),
       );
 
-  Future<List<Resource>> getContextResources(User user, String contextId) =>
+  Future<List<Resource>> getWorkspaceResources(User user, String workspaceId) =>
       _service.collection(
           path: FirestorePath.userResources(userId: user.id),
           builder: (id, data) => Resource.fromDatabase(id, data),
-          queryBuilder: (query) => query.where('context', arrayContains: contextId),
+          queryBuilder: (query) => query.where('context', arrayContains: workspaceId),
       );
 
-  Future<void> setUserContext(String userId, Context context) =>
+  Future<void> setUserWorkspace(String userId, Workspace workspace) =>
       _service.setData(
-        path: FirestorePath.userContext(
-            userId: userId, contextId: context.id),
-        data: context.toJson(),
+        path: FirestorePath.userWorkspace(
+            userId: userId, workspaceId: workspace.id),
+        data: workspace.toJson(),
       );
 
   Future<void> setResource(

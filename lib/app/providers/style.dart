@@ -7,7 +7,7 @@ class StyleManager {
   UserManager userManager;
   late User user;
   StyleManager(this.userManager) {
-    user = userManager.me;
+    user = userManager.currentUser;
     theme = user.theme == 'light' ? ThemeData.light() : ThemeData.dark();
     textStyle = GoogleFonts.lato(fontSize: 12);
   }

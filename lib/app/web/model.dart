@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart' hide WebView;
-import 'package:stashmobile/app/providers/resource.dart';
+import 'package:stashmobile/app/providers/resources.dart';
 
 
 
@@ -35,6 +35,11 @@ class WebManager extends ChangeNotifier {
 
 
   late InAppWebViewController controller;
+
+  Resource resource = Resource();
+  setResource(Resource newResource) {
+    resource = newResource;
+  }
 
   setController(InAppWebViewController newController) {
     controller = newController;
@@ -176,4 +181,9 @@ class SearchResult {
   String text;
   String link;
   SearchResult(this.text, this.link);
+}
+
+
+class WebViewScrollManager extends ChangeNotifier {
+  
 }

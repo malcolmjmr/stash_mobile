@@ -1,12 +1,17 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:stashmobile/app/sign_in/email_password_sign_in_page.dart';
+import 'package:stashmobile/app/web/view.dart';
+import 'package:stashmobile/app/workspace/WorkspaceView.dart';
 
 
 class AppRoutes {
   static const main = '/';
 
   static const emailPasswordSignIn = '/email-password-sign-in';
+
+  static const workspace = '/workspace';
+  static const webView = '/webview';
 
   static const collectionHome = '/collection-home';
   static const collectionSettings = '/collection-settings';
@@ -37,6 +42,8 @@ class AppRoutes {
 
   static const contentTags = '/content-tags';
   static const contentFields = '/content-fields';
+
+  
 }
 
 class AppRouter {
@@ -51,6 +58,20 @@ class AppRouter {
           settings: settings,
           fullscreenDialog: true,
         );
+
+      case AppRoutes.workspace:
+        return MaterialPageRoute<dynamic>(
+            builder: (_) => WorkspaceView(),
+            settings: settings,
+            fullscreenDialog: true,
+          );
+
+      case AppRoutes.webView: 
+        return MaterialPageRoute<dynamic>(
+            builder: (_) => WebView(),
+            settings: settings,
+            fullscreenDialog: true,
+          );
       default:
         return MaterialPageRoute(
             builder: (context) => Scaffold(

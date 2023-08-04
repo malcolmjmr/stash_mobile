@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:stashmobile/app/providers/resource.dart';
+import 'package:stashmobile/app/providers/resources.dart';
 
 
 import 'package:stashmobile/app/providers/web.dart';
