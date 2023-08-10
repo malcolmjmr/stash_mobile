@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:stashmobile/app/providers/provider_observer.dart';
 
 import 'package:stashmobile/app/sign_in/sign_in_page.dart';
+import 'package:stashmobile/app/splash_screen.dart';
 import 'package:stashmobile/app/view.dart';
 import 'package:stashmobile/routing/app_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -35,6 +36,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       home: SafeArea(
         child: AuthWidget(
+          spalshScreenBuilder: (_) => SplashScreen(),
           nonSignedInBuilder: (_) => SignInPage(),
           signedInBuilder: (_) => AppView(),
         ),

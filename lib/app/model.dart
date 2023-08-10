@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -50,8 +52,12 @@ class AppViewModel extends ChangeNotifier {
   load() {
     if (resourceManager.isLoading) return;
     
+    Timer(Duration(seconds: 3), () {
+      setIsLoading(false);
+    });
     //webViewIsOpen = false;
-    setIsLoading(false);
+
+    
   }
 
   bool isLoading = true;

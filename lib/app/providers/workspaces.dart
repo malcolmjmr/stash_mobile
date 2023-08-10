@@ -43,8 +43,12 @@ class WorkspaceManager extends ChangeNotifier {
     resources = await db.getWorkspaceResources(user, workspaceId);
   }
 
-  getWorkspaces() async {
+  refreshWorkspaces() async  {
     workspaces = await db.getUserWorkspaces(user);
+  }
+
+  Future<List<Workspace>> getWorkspaces() async {
+    if (workspaces.isEmpty) await refreshWorkspaces();
     return workspaces;
   }
 
@@ -60,6 +64,13 @@ class WorkspaceManager extends ChangeNotifier {
     }
 
     await db.setUserWorkspace(user.id, workspace);
+  }
+
+  deleteWorkspace(Workspace workspace) async {
+    db.deleteWorkspace(user.id, workspace.id);
+    workspaces.removeWhere((w) => w.id == workspace.id);
+    //if (workspace.size > 0 )
+    // need to delete save resourced 
   }
 
   setUserCollection(Workspace newCollection) async {

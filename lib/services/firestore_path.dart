@@ -13,7 +13,7 @@ class FirestorePath {
   static String userResource(
           {required String userId,
           required String resourceId}) =>
-      'users/$userId/resource/$resourceId';
+      'users/$userId/resources/$resourceId';
 
   static String userFields({required String userId}) => '$users/$userId/fields';
   static String userField({required String userId, required String fieldId}) =>

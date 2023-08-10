@@ -24,8 +24,12 @@ class Resource {
   int? lastVisited;
   String? bookmarkId;
   String? parentId;
+  bool? isQueued;
+  bool? isFavorite;
+  bool? isSaved;
 
-  Resource({ this.url, this.title}) {
+
+  Resource({ this.url, this.title, this.favIconUrl}) {
     id = Uuid().v4().split('-').last;
     created = DateTime.now().millisecondsSinceEpoch;
   }
@@ -42,6 +46,8 @@ class Resource {
     bookmarkId = json['bookmarkId'];
     parentId = json['parentId'];
     index = json['index'];
+    isQueued = json['isQueued'];
+    isFavorite = json['isFavorite'];
   }
 
   Map<String, dynamic> toJson() {
@@ -56,7 +62,9 @@ class Resource {
       'tags': tags,
       'bookmarkId': bookmarkId,
       'parentId': parentId,
-      'index': index
+      'index': index,
+      'isQueued': isQueued,
+      'isFavorite': isFavorite,
     };
     json.removeWhere((key, value) => value == null);
     return json;

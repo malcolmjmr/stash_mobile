@@ -70,7 +70,7 @@ class FirestoreDatabase {
       _service.collection(
           path: FirestorePath.userResources(userId: user.id),
           builder: (id, data) => Resource.fromDatabase(id, data),
-          queryBuilder: (query) => query.where('context', arrayContains: workspaceId),
+          queryBuilder: (query) => query.where('contexts', arrayContains: workspaceId),
       );
 
   Future<void> setUserWorkspace(String userId, Workspace workspace) =>
@@ -79,9 +79,16 @@ class FirestoreDatabase {
             userId: userId, workspaceId: workspace.id),
         data: workspace.toJson(),
       );
+  
+  Future<void> deleteWorkspace(
+          String userId, String workspaceId) =>
+      _service.deleteData(
+          path: FirestorePath.userWorkspace(
+              userId: userId,
+              workspaceId: workspaceId));
 
   Future<void> setResource(
-          String userId, String collectionId, Resource resource) =>
+          String userId, Resource resource) =>
       _service.setData(
           path: FirestorePath.userResource(
               userId: userId,

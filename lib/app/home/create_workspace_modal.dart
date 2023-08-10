@@ -20,22 +20,25 @@ class _CreateWorkspaceModalState extends State<CreateWorkspaceModal> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 500,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(5.0), 
-          topRight: Radius.circular(5.0)
-        )
+    return Material(
+      type: MaterialType.transparency,
+      child: Container(
+        height: 500,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(5.0), 
+            topRight: Radius.circular(5.0)
+          )
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.max,
+          children: [
+            _buildHeader(),
+            _buildInputField(),
+            _buildColorSelectionField(),
+          ])
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.max,
-        children: [
-          _buildHeader(),
-          _buildInputField(),
-          _buildColorSelectionField(),
-        ])
     );
   }
 

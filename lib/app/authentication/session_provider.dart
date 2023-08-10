@@ -22,7 +22,7 @@ class AppSession extends ChangeNotifier {
   }
 
   
-  SessionState state = SessionState.loggedOut;
+  SessionState state = SessionState.loading;
   setUser(User? newUser) {
     user = newUser;
     state = user != null ? SessionState.loggedIn : SessionState.loggedOut;
@@ -38,4 +38,4 @@ class AppSession extends ChangeNotifier {
   }
 }
 
-enum SessionState { loggedIn, loggedOut }
+enum SessionState { loading, loggedIn, loggedOut }

@@ -1,13 +1,14 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:logger/logger.dart';
 
 
 import 'package:stashmobile/app/providers/workspaces.dart';
 import 'package:stashmobile/app/providers/resources.dart';
 import 'package:stashmobile/app/providers/web.dart';
-import 'package:stashmobile/app/web/model.dart';
-import 'package:stashmobile/app/workspace/WorkspaceViewModel.dart';
+
+import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 import '../../models/workspace.dart';
 import '../../models/resource.dart';
 import '../../models/user/model.dart';
@@ -50,6 +51,8 @@ class AppController {
   }
 
   setCurrentWorkspace(Workspace? workspace) {
+    print('Setting current workspace');
+    print(workspace?.title);
     userManager.currentUser.currentWorkspace = workspace?.id;
     if (workspace != null) reader(workspaceViewProvider).setWorkspace(workspace);
     // userManager.saveCurrentUser();
@@ -57,11 +60,26 @@ class AppController {
   }
 
   setCurrentResource(Resource? resource) {
-    userManager.currentUser.currentWorkspace = resource?.id;
-    if (resource?.url != null) reader(webManagerProvider).setResource(resource!);
-    userManager.saveCurrentUser();
-    currentResource = resource;
+    int? index = currentWorkspace?.tabs.indexWhere((t) => t.url == resource?.url);
+    if (index == null) {
+      currentWorkspace!.tabs.add(resource!);
+      index = currentWorkspace!.tabs.length - 1;
+    } 
+
+    currentWorkspace!.activeTabIndex = index;
+    reader(workspaceViewProvider).setWorkspace(currentWorkspace!);
+
+    // if (resource?.url != null) reader(webManagerProvider).setResource(resource!);
+    // userManager.saveCurrentUser();
+    // currentResource = resource;
   }
+
+  /* 
+    views 
+    - webview
+    - home
+    - workspace
+  */
 
   // KeyboardVisibilityController keyboardVisibility =
   //     KeyboardVisibilityController();

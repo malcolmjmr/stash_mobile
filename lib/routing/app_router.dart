@@ -1,8 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:page_transition/page_transition.dart';
 import 'package:stashmobile/app/sign_in/email_password_sign_in_page.dart';
 import 'package:stashmobile/app/web/view.dart';
-import 'package:stashmobile/app/workspace/WorkspaceView.dart';
+import 'package:stashmobile/app/workspace/workspace_view.dart';
+
+import '../app/search/search_view.dart';
 
 
 class AppRoutes {
@@ -13,12 +16,13 @@ class AppRoutes {
   static const workspace = '/workspace';
   static const webView = '/webview';
 
+  static const search = '/search';
+
   static const collectionHome = '/collection-home';
   static const collectionSettings = '/collection-settings';
   static const collectionCreate = '/collection-create';
   static const collectionSearch = '/collection-search';
 
-  static const search = '/search';
 
   static const userSearch = 'user-search';
 
@@ -59,13 +63,23 @@ class AppRouter {
           fullscreenDialog: true,
         );
 
-      case AppRoutes.workspace:
-        return MaterialPageRoute<dynamic>(
-            builder: (_) => WorkspaceView(),
+      case AppRoutes.search:
+        return PageTransition<dynamic>(
+            type: PageTransitionType.scale,
+            alignment: Alignment.topCenter,
+            curve: Curves.easeInExpo,
+            child: SearchView(),
             settings: settings,
             fullscreenDialog: true,
           );
-
+      case AppRoutes.workspace:
+        return PageTransition<dynamic>(
+            type: PageTransitionType.rightToLeft,
+            curve: Curves.easeInExpo,
+            child: WorkspaceView(),
+            settings: settings,
+            fullscreenDialog: true,
+          );
       case AppRoutes.webView: 
         return MaterialPageRoute<dynamic>(
             builder: (_) => WebView(),

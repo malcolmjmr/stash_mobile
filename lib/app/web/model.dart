@@ -1,189 +1,67 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_inappwebview/flutter_inappwebview.dart' hide WebView;
-import 'package:stashmobile/app/providers/resources.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:stashmobile/app/providers/app.dart';
+import 'package:stashmobile/app/workspace/workspace_view_model.dart';
+import 'package:stashmobile/extensions/color.dart';
+import 'package:stashmobile/models/resource.dart';
+import 'package:stashmobile/models/workspace.dart';
+import 'package:stashmobile/routing/app_router.dart';
+
+import '../../constants/color_map.dart';
+
+final webViewProvider = ChangeNotifierProvider<WebViewModel>((ref) {
+  return WebViewModel(app: ref.watch(appProvider), read: ref.read);
+});
 
 
-
-
-
-import 'package:stashmobile/app/web/event_handlers.dart';
-import 'package:stashmobile/app/web/js.dart';
-
-
-
-import '../../models/resource.dart';
-import 'headless.dart';
-
-
-class WebManager extends ChangeNotifier {
-  // Todo:
-  // - separate view model code from event handler code
-  // - create helpers for managing links
-  // -
-
-  ResourceManager resourceManager;
-  WebManager({required this.resourceManager});
-
-  // WebViewModel
-  // EventHandlers
-
-  ClickedLink? lastLink;
-  bool goToSection = false;
-  bool isReloading = false;
-
-  List<ClickedLink> clickedLinks = [];
-
-
-  late InAppWebViewController controller;
-
-  Resource resource = Resource();
-  setResource(Resource newResource) {
-    resource = newResource;
+class WebViewModel extends ChangeNotifier {
+  AppController app;
+  Reader read;
+  late WorkspaceViewModel workspaceViewModel;
+  WebViewModel({required this.app, required this.read}) {
+    workspaceViewModel = read(workspaceViewProvider);
   }
 
-  setController(InAppWebViewController newController) {
-    controller = newController;
-  }
-
-  Future<String?> getFaviconUrl() async {
-    final favIcons = await controller.getFavicons();
-    return favIcons.isNotEmpty ? favIcons.first.url.toString() : null;
-  }
-
-  bool isNotAWebsite(Resource? content) =>
-      content == null || content.url == null;
-
-  onWebsiteLoadStart(BuildContext context, Uri? uri) async {
-    handleNewLink(context, uri);
-  }
-
-  handleNewLink(BuildContext context, Uri? uri, {String? text}) async {
- 
-  }
-
-  onWebsiteProgressChanged(BuildContext context, int progress) {
-    
-  }
-
-  onWebsiteLoadStop(BuildContext context) async {
-   
-  }
-
-  addEventHandlers(BuildContext context) {
-    controller.addJavaScriptHandler(
-      handlerName: 'onLinkSelected',
-      callback: (args) => WebEventHandlers.onLinkSelected(context, args),
-    );
-    controller.addJavaScriptHandler(
-      handlerName: 'onTextSelection',
-      callback: (args) => WebEventHandlers.onTextSelection(context, args),
-    );
-    controller.addJavaScriptHandler(
-      handlerName: 'onLinkClicked',
-      callback: (args) => WebEventHandlers.onLinkClicked(context, args),
-    );
-    controller.addJavaScriptHandler(
-      handlerName: 'onDocumentInfo',
-      callback: (args) => WebEventHandlers.onDocumentInfo(context, args),
-    );
-    controller.addJavaScriptHandler(
-      handlerName: 'onDocumentResource',
-      callback: (args) => WebEventHandlers.onDocumentContent(context, args),
-    );
-    controller.addJavaScriptHandler(
-      handlerName: 'onAnnotationTarget',
-      callback: (args) => WebEventHandlers.onAnnotationTarget(context, args),
-    );
-    controller.addJavaScriptHandler(
-      handlerName: 'onHighlightClicked',
-      callback: (args) => WebEventHandlers.onHighlightClicked(context, args),
-    );
-    controller.addJavaScriptHandler(
-      handlerName: 'onHighlightDoubleClicked',
-      callback: (args) =>
-          WebEventHandlers.onHighlightDoubleClicked(context, args),
-    );
-    controller.addJavaScriptHandler(
-      handlerName: 'onDocumentBodyClicked',
-      callback: (args) => WebEventHandlers.onDocumentBodyClicked(context, args),
-    );
-    controller.addJavaScriptHandler(
-      handlerName: 'onScrollEnd',
-      callback: (args) => WebEventHandlers.onScrollEnd(context, args),
+  onPageChanged(int index) async { 
+    Workspace workspace = workspaceViewModel.workspace;
+    workspace.activeTabIndex = index;
+    await app.webManager.controller?.loadUrl(
+      urlRequest: URLRequest(url: Uri.parse(workspace.tabs[index].url!))
     );
   }
 
-  addJsListeners() {
-    controller.evaluateJavascript(
-        source: JS.touchEndListener +
-            JS.scrollListener +
-            JS.focusListener +
-            JS.clickListener +
-            JS.scrollListener);
+  bool canGoBack = false;
+  goBack() {
+    app.webManager.controller?.goBack();
   }
 
-  addAnnotationFunctions() {
-    controller.evaluateJavascript(
-        source: JS.annotationFunctions + JS.hypothesisHelpers);
+  bool canGoForward = false;
+  goForward() {
+    app.webManager.controller?.goForward();
   }
 
-  addJsDocument(BuildContext context, Resource content) {
-   
+  createNewTab () {
+    final newTab = Resource(url: 'https://www.google.com');
+    app.setCurrentResource(newTab);
   }
 
-  String selectedText = '';
-
-  getSelectionTarget() async {
-    await controller.evaluateJavascript(source: JS.getAnnotationTarget);
+  goHome(BuildContext context) {
+    Navigator.popUntil(context,(route) => route.isFirst);
   }
 
-  Resource? selectedAnnotation;
-
-  updateAnnotation(Resource content) async {
-   
+  viewWorkspace(BuildContext context) {
+    Navigator.pushNamed(context, AppRoutes.workspace);
   }
 
-  addSavedLink(Resource content) async {
-    
-  }
+  bool showNavBar = true;
 
-  updateLink(Resource content) async {
-    
-  }
+  Color get workspaceColor => HexColor.fromHex(colorMap[workspaceViewModel.workspace.color ?? 'grey']!);
 
-  clearSelectedText() async {
-    selectedText = '';
-    await controller.evaluateJavascript(source: JS.clearSelectedText);
-  }
+  String get resourceTitle => app.webManager.resource.title ?? app.webManager.resource.url ?? '';
 
-  navigateToSection(int sectionIndex) {
-    controller.evaluateJavascript(source: JS.scrollToSection(sectionIndex));
-  }
+  String get workspaceTitle => workspaceViewModel.workspace.title ?? '';
 
-  HeadlessWebView headless = HeadlessWebView();
 
-  List<String> getGoogleSearchSuggestions() {
-    return [];
-  }
-
-  List<SearchResult> getGoogleSearchResults() {
-    return [];
-  }
 }
 
-class ClickedLink {
-  String url;
-  String? id;
-  ClickedLink({required this.url, this.id});
-}
-
-class SearchResult {
-  String text;
-  String link;
-  SearchResult(this.text, this.link);
-}
-
-
-class WebViewScrollManager extends ChangeNotifier {
-  
-}
