@@ -34,6 +34,8 @@ class Workspace {
   bool? isIncognito;
   bool? isFavorite;
 
+  List<String> contexts = [];
+
   Workspace({this.title, this.color}) {
     id = Uuid().v4().split('-').last;
     created = DateTime.now().millisecondsSinceEpoch;
@@ -65,6 +67,7 @@ class Workspace {
     activeTabIndex = json['activeTabIndex'];
     isIncognito = json['isIncognito'] ?? false;
     isFavorite = json['isFavorite'] ?? false;
+    contexts = json['contexts'] ?? [];
   }
 
   Map<String, dynamic> toJson() {
@@ -92,6 +95,7 @@ class Workspace {
       'activeTabIndex': activeTabIndex,
       'isIncognito': isIncognito,
       'isFavorite': isFavorite,
+      'contexts': contexts,
     };
     json.removeWhere((key, value) => value == null);
     return json;

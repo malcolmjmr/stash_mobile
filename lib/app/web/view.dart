@@ -5,6 +5,7 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart' hide WebView;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stashmobile/app/providers/web.dart';
 import 'package:stashmobile/app/web/model.dart';
+import 'package:stashmobile/app/web/tab.dart';
 import 'package:stashmobile/app/workspace/workspace_view.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 import 'package:stashmobile/extensions/color.dart';
@@ -15,49 +16,23 @@ class WebView extends ConsumerWidget {
   Widget build(BuildContext context, ScopedReader watch) {
     final webManager = watch(webManagerProvider);
     final model = watch(webViewProvider);
-    
-    
+    final tabIndex = watch(tabIndexProvider);
     return SafeArea(
       child: Scaffold(
         body: Column(
           children: [
-            WebViewHeader(),
+            const WebViewHeader(),
             Container(
               height: MediaQuery.of(context).size.height - 130,
-              child: InAppWebView(
-                initialUrlRequest: URLRequest(url: Uri.parse(webManager.resource.url ?? 'https://google.com')),
-                pullToRefreshController: PullToRefreshController(
-                  options: PullToRefreshOptions(),
-                ),
-                gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>[
-                  new Factory<OneSequenceGestureRecognizer>(
-                    () => new EagerGestureRecognizer(),
-                  ),
-                ].toSet(),
-                onWebViewCreated: (controller) => webManager.setController(controller),
-                onLoadStart: (controller, url) =>
-                    webManager.onWebsiteLoadStart(context, url),
-                onProgressChanged: (controller, progress) =>
-                    webManager.onWebsiteProgressChanged(context, progress),
-                onLoadStop: (controller, url) => webManager.onWebsiteLoadStop(context),
-                onConsoleMessage: (controller, msg) {
-                  print('JS console:\n$msg');
-                },
-                initialOptions: InAppWebViewGroupOptions(
-                  crossPlatform: InAppWebViewOptions(
-                    disableHorizontalScroll: true,
-                    incognito: true,
-                  ),
-                  ios: IOSInAppWebViewOptions(
-                    allowsBackForwardNavigationGestures: false,
-                    disableLongPressContextMenuOnLinks: false,
-                    allowsLinkPreview: false,
-                    disallowOverScroll: false,
-                  ),
-                ),
-              ),
+              child: IndexedStack(
+                index: tabIndex.state,
+                children: model
+                  .tabs.asMap().entries
+                  .map((e) => TabView(index: e.key, url: e.value.url!))
+                  .toList(),
+              )
             ),
-            WebViewNavBar(),
+            const WebViewNavBar(),
           ],
         ),
       ),
@@ -74,6 +49,7 @@ class WebViewNavBar extends ConsumerWidget {
   Widget build(BuildContext context, ScopedReader watch) {
     final webManager = watch(webManagerProvider);
     final model = watch(webViewProvider);
+    final tabIndex = watch(tabIndexProvider).state;
     final WorkspaceViewModel workspaceViewModel = watch(workspaceViewProvider);
     return Container(
        decoration: BoxDecoration(
@@ -94,6 +70,7 @@ class WebViewNavBar extends ConsumerWidget {
           //Icon(Icons.arrow_drop_up),
           Expanded(
             child: PageView(
+              
               scrollDirection: Axis.vertical,
               children: model.workspaceViewModel.tabs.map((tab) {
                 return Padding(
@@ -108,6 +85,7 @@ class WebViewNavBar extends ConsumerWidget {
                 );
               }).toList(),
               onPageChanged: model.onPageChanged,
+              controller: PageController(initialPage: tabIndex),
             ),
           ),
           //Icon(Icons.arrow_drop_down),

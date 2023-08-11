@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stashmobile/app/authentication/firebase_providers.dart';
 import 'package:stashmobile/app/authentication/session_provider.dart';
+import 'package:stashmobile/models/resource.dart';
 
 
 import 'package:stashmobile/models/user/model.dart';
@@ -59,6 +60,10 @@ class ResourceManager extends ChangeNotifier {
 
 
     setLoading(false);
+  }
+
+  saveResource(Resource resource) {
+    db.setResource(user.id, resource);
   }
 
 

@@ -1,8 +1,10 @@
 
 import 'package:flutter/material.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:stashmobile/app/providers/app.dart';
+import 'package:stashmobile/app/web/model.dart';
 import 'package:stashmobile/models/workspace.dart';
 import 'package:stashmobile/routing/app_router.dart';
 
@@ -12,7 +14,7 @@ import '../../models/user/model.dart';
 
 final workspaceViewProvider = ChangeNotifierProvider<WorkspaceViewModel>((ref) {
   return WorkspaceViewModel(
-      reader: ref.read);
+      read: ref.read);
 });
 
 
@@ -27,11 +29,11 @@ class Views {
 class WorkspaceViewModel extends ChangeNotifier {
   late AppController app;
 
-  Reader reader;
+  Reader read;
   late User user;
 
-  WorkspaceViewModel({required this.reader}) {
-    app = reader(appProvider);
+  WorkspaceViewModel({required this.read}) {
+    app = read(appProvider);
     user = app.userManager.currentUser;
   }
 
@@ -44,6 +46,7 @@ class WorkspaceViewModel extends ChangeNotifier {
     isLoading = value;
     notifyListeners();
   }
+
   setWorkspace(Workspace newWorkspace) async {
     setLoading(true);
     workspace = newWorkspace;
@@ -59,12 +62,29 @@ class WorkspaceViewModel extends ChangeNotifier {
     List<String> ids = [];
     List<Resource> resourcesToRemove = [];
     List<Resource> resourcesToUpdate = [];
-    for (Resource resource in allResources)  {
+    print(user.id);
+    subWorkspaces = [];
+    for (final resource in allResources)  {
       if (resource.url == null) {
         if (ids.contains(resource.id)) {
-          resourcesToRemove.add(resource);
+          //resourcesToRemove.add(resource);
         } else {
+          
+          
+          if (resource.bookmarkId == workspace.folderId) {
+            resourcesToRemove.add(resource);
+            continue;
+          }
           ids.add(resource.id!);
+          print(resource.id);
+          Workspace newWorkspace = Workspace(title: resource.title);
+          newWorkspace.id = resource.id!;
+          newWorkspace.contexts = [workspace.id];
+          if (resource.parentId != null && resource.parentId != workspace.folderId) {
+            newWorkspace.contexts.add(resource.parentId!);
+          }
+          app.workspaceManager.workspaces.add(newWorkspace);
+          subWorkspaces.add(newWorkspace);
         }
       } else {
         if (urls.contains(resource.url)) {
@@ -110,24 +130,36 @@ class WorkspaceViewModel extends ChangeNotifier {
 
     queue = [];
     folders = [];
-    resourcesWithoutFolder = [];
+    resources = [];
 
     for (final resource in allResources) {
       if (resource.url == null) {
-        folders.add(resource);
+        //folders.add(resource);
       } else if (resource.isQueued == true) {
         queue.add(resource);
-      } else {
-        resourcesWithoutFolder.add(resource);
+      } else if (resource.parentId == null) {
+        resources.add(resource);
       }
     }
+
+    for (final w in subWorkspaces) {
+      final mainContext = w.contexts.lastOrNull;
+      if (mainContext == workspace.id) {
+        folders.add(w);
+      }
+    }
+    print(subWorkspaces.map((w) => w.contexts));
+
+
   }
 
   Workspace workspace  = Workspace();
+  List<Workspace> subWorkspaces = [];
   List<Resource> allResources = [];
-  List<Resource> folders = [];
+  //List<Resource> folders = [];
+  List<Workspace> folders = [];
   List<Resource> queue = [];
-  List<Resource> resourcesWithoutFolder = [];
+  List<Resource> resources = [];
 
   List<Resource> tabs = [];
 
@@ -181,10 +213,23 @@ class WorkspaceViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  openResource(BuildContext context, Resource resource) {
-    app.webManager.setResource(resource);
+  openTab(BuildContext context, Resource resource) {
+    workspace.activeTabIndex = workspace.tabs.length - 1;
+    // save workspace
+    print('opening tab');
+    read(webViewProvider).openWebView(context);
+    notifyListeners();
+  }
 
-    Navigator.pushNamed(context, AppRoutes.webView);
+  openResource(BuildContext context, Resource resource) {
+    resource.isSaved = true;
+    tabs.add(resource);
+    workspace.tabs = tabs;
+    workspace.activeTabIndex = workspace.tabs.length - 1;
+    // save workspace
+    print('opening resource');
+    read(webViewProvider).openWebView(context);
+    notifyListeners();
   }
 
   removeTab(Resource resource) {
@@ -196,22 +241,61 @@ class WorkspaceViewModel extends ChangeNotifier {
 
   stashTab(Resource resource) {
     workspace.tabs = workspace.tabs.where((r) => r.id != resource.id).toList();
-    app.workspaceManager.saveWorkspace(workspace);
-    
-
+    resource.isQueued = true;
+    saveTab(resource);
+    notifyListeners();
   }
 
   saveTab(Resource resource) {
+    if (resource.contexts.isEmpty) {
+      resource.contexts.add(workspace.id);
+    }
     app.workspaceManager.db.setResource(user.id, resource);
-    
+    notifyListeners();
   }
 
-  createNewFolder(BuildContext context, String name) {
+  createNewFolder(BuildContext context, String title) {
+    Workspace newFolder = Workspace(title: title);
+    newFolder.contexts.add(workspace.id);
+    app.workspaceManager.db.setUserWorkspace(user.id, newFolder);
+    workspace = newFolder;
+    processResources();
+    notifyListeners();
 
   }
 
   createNewTab(BuildContext context) {
+    Resource newTab = Resource(url: 'https://www.google.com');
+    if(workspace.activeTabIndex != null && workspace.tabs.isNotEmpty) {
+      final newIndex = workspace.activeTabIndex! + 1;
+      workspace.tabs.insert(newIndex, newTab);
+    } else {
+      workspace.tabs.add(newTab);
+      workspace.activeTabIndex = workspace.tabs.length - 1;
+    }
+    notifyListeners();
+    read(webViewProvider).openWebView(context);
+    //print(read(webViewProvider).controllers.values.map((InAppWebViewController c) async => await c.getUrl()));
+  }
 
+  updateTab(int tabIndex, Resource resource) {
+    workspace.tabs[tabIndex] = resource;
+    tabs = workspace.tabs;
+    print(tabs);
+    notifyListeners();
+    // save workspace
+  }
+
+  deleteResource(Resource resource) {
+    resources.removeWhere((r) => r.id == resource.id);
+    //app.resourceManager.db.deleteResource(user.id, resource.id!);
+    notifyListeners();
+  }
+
+  clearTabs() {
+    workspace.tabs = [];
+    tabs = workspace.tabs;
+    notifyListeners();
   }
 
 }

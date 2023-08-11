@@ -19,10 +19,12 @@ import 'package:stashmobile/app/common_widgets/new_folder_dialog.dart';
 import 'package:stashmobile/app/common_widgets/search_field.dart';
 import 'package:stashmobile/app/common_widgets/section_header.dart';
 import 'package:stashmobile/app/common_widgets/section_list_item.dart';
+import 'package:stashmobile/app/common_widgets/share_item_modal.dart';
 import 'package:stashmobile/app/web/view.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 import 'package:stashmobile/constants/color_map.dart';
 import 'package:stashmobile/extensions/color.dart';
+import 'package:stashmobile/models/workspace.dart';
 
 import '../../models/resource.dart';
 
@@ -67,12 +69,57 @@ class WorkspaceView extends ConsumerWidget {
                     child: _buildExpandedHeader(context, model),
                   ),
 
+                  if (model.folders.isNotEmpty)
+                   SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 15),
+                      child: SectionHeader(
+                        title: 'Folders',
+                        isCollapsed: model.showFolders,
+                        onToggleCollapse: () => model.toggleShowFolders(),
+                      ),
+                    ),
+                  ),
+                  if (model.showFolders) 
+                  SliverList.builder(
+                    itemCount: model.folders.length,
+                    itemBuilder: ((context, index) {
+                      final folder = model.folders[index];
+                      return Padding(
+                        padding: EdgeInsets.only(
+                          left: 15.0, 
+                          right: 15, 
+                        ),
+                        child: FolderListItem(
+                          isFirstListItem: index == 0,
+                          isLastListItem: index == model.folders.length - 1,
+                          workspace: folder,
+                          model: model,
+                          onTap: () => null
+                        ),
+                      );
+                    })
+                  ),
+
+                  if (model.showFolders) 
+                  SliverToBoxAdapter(
+                    child: SizedBox(height: 20),
+                  ),
+
                   if (model.tabs.isNotEmpty)
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 15),
                       child: SectionHeader(
                         title: 'Tabs',
+                        actions: [
+                          GestureDetector(
+                            onTap: () => model.clearTabs(),
+                            child: Icon(Icons.clear_all,),
+                          ),
+                
+
+                        ],
                         isCollapsed: model.showTabs,
                         onToggleCollapse: () => model.toggleShowTabs(),
                       ),
@@ -94,7 +141,7 @@ class WorkspaceView extends ConsumerWidget {
 
                           resource: resource,
                           model: model,
-                          onTap: () => model.openResource(context, resource)
+                          onTap: () => model.openTab(context, resource)
                         ),
                       );
                     })
@@ -105,7 +152,7 @@ class WorkspaceView extends ConsumerWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 15.0),
                       child: SectionHeader(
                         title: 'Queue',
-                        isCollapsed: model.showTabs,
+                        isCollapsed: model.showQueue,
                         onToggleCollapse: () => model.toggleShowQueue(),
                       ),
                     ),
@@ -125,35 +172,36 @@ class WorkspaceView extends ConsumerWidget {
                           isLastListItem: index == model.queue.length - 1,
                           resource: resource,
                           model: model,
-                          onTap: () => model.openResource(context, resource)
+                          onTap: () => model.openTab(context, resource)
                         ),
                       );
                     })
                   ),
-                  if (model.folders.isNotEmpty)
+                  
+
+                  
                    SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                      padding: const EdgeInsets.only(left: 15.0, right: 15, top: 20, bottom: 5),
                       child: SectionHeader(
-                        title: 'Folders',
-                        isCollapsed: model.showTabs,
-                        onToggleCollapse: () => model.toggleShowFolders(),
+                        title: 'History',
                       ),
                     ),
                   ),
-                  if (model.showFolders)
+
+                  if (model.resources.isNotEmpty)
                   SliverList.builder(
-                    itemCount: model.folders.length,
+                    itemCount: model.resources.length,
                     itemBuilder: ((context, index) {
-                      final resource = model.folders[index];
+                      final resource = model.resources[index];
                       return Padding(
                         padding: EdgeInsets.only(
                           left: 15.0, 
                           right: 15, 
                         ),
-                        child: FolderListItem(
+                        child: ResourceListItem(
                           isFirstListItem: index == 0,
-                          isLastListItem: index == model.folders.length - 1,
+                          isLastListItem: index == model.resources.length - 1,
                           resource: resource,
                           model: model,
                           onTap: () => model.openResource(context, resource)
@@ -164,6 +212,7 @@ class WorkspaceView extends ConsumerWidget {
                   SliverToBoxAdapter(
                     child: SizedBox(height: 50),
                   )
+              
                 ],
               ),
               Positioned(
@@ -280,7 +329,7 @@ class WorkspaceView extends ConsumerWidget {
               key: Key(resource.id ?? resource.toString()),
               resource: resource,
               model: model,
-              onTap: () => model.openResource(context, resource)
+              onTap: () => model.openTab(context, resource)
             );
           }),
         ),
@@ -543,75 +592,87 @@ class ResourceListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return SectionListItemContainer(
+      isFirstListItem: isFirstListItem,
+      isLastListItem: isLastListItem,
       onTap: onTap,
-      child: SectionListItemContainer(
-        isFirstListItem: isFirstListItem,
-        isLastListItem: isLastListItem,
-        child: Slidable(
-          key: Key(resource.toString()),
-          startActionPane: ActionPane(
-            children: [
-             
-            ],
-            motion: const ScrollMotion(),
-            // A pane can dismiss the Slidable
-            openThreshold: 0.5,
-          ),
-          endActionPane: ActionPane(
-            children: [
-               SlidableAction(
-                icon: Icons.star,
-                backgroundColor: Colors.green,
-                onPressed: (context) => model.saveTab(resource),
+      child: Slidable(
+        key: Key(resource.toString()),
+        startActionPane: ActionPane(
+          children: [
+            SlidableAction(
+              icon: Icons.copy,
+              backgroundColor: Colors.green,
+              onPressed: (context) => null,
+            )
+          ],
+          motion: const ScrollMotion(),
+          // A pane can dismiss the Slidable
+          openThreshold: 0.5,
+        ),
+        endActionPane: ActionPane(
+          children: [
+             SlidableAction(
+              icon: Icons.ios_share_outlined,
+              backgroundColor: Colors.blue,
+              onPressed: (context) => showCupertinoModalBottomSheet(
+                context: context, 
+                builder: (context) {
+                  return ShareModal();
+                }
               ),
-              SlidableAction(
-                icon: Icons.move_to_inbox,
-                backgroundColor: Colors.yellow,
-                onPressed: (context) => model.stashTab(resource),
-              ),
-              SlidableAction(
-                icon: Icons.delete,
-                backgroundColor: Colors.redAccent,
-                onPressed: (context) => model.removeTab(resource),
-              )
-            ],
-            motion: const StretchMotion(),
-            // A pane can dismiss the Slidable.
-            dismissible: DismissiblePane(onDismissed: () => model.removeTab(resource)),
-            openThreshold: 0.25,
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(right: 5.0),
-                  child: Container(
-                    height: 35,
-                    width: 35,
-                    child: resource.favIconUrl != null 
-                      ? Image.network(resource.favIconUrl ?? '',
-        
-                        //loadingBuilder: (context, child, loadingProgress) => Icon(Icons.language, size: 30,),
-                        errorBuilder: (context, child, loadingProgress) => Icon(Icons.public, size: 35,),
-                      )
-                      : Icon(Icons.language, size: 35,)
-                    ),
-                ),
-                Expanded(
-                  child: Text(resource.title ?? '', 
-                    maxLines: 1,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w300,
-                      letterSpacing: 0.5,
-                      fontSize: 14,  
-                      overflow: TextOverflow.ellipsis),
-                    ),
-                  ),
-              ],
             ),
+            SlidableAction(
+              icon: Icons.folder_outlined,
+              backgroundColor: Colors.purple,
+              onPressed: (context) => showCupertinoModalBottomSheet(
+                context: context, 
+                builder: (context) {
+                  return MoveToFolderModal(resource: resource,);
+                }
+              ),
+            ),
+            SlidableAction(
+              icon: Icons.delete,
+              backgroundColor: Colors.red,
+              onPressed: (context) => model.deleteResource(resource),
+            )
+          ],
+          motion: const StretchMotion(),
+          // A pane can dismiss the Slidable.
+          dismissible: DismissiblePane(onDismissed: () => model.removeTab(resource)),
+          openThreshold: 0.25,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(right: 5.0),
+                child: Container(
+                  height: 35,
+                  width: 35,
+                  child: resource.favIconUrl != null 
+                    ? Image.network(resource.favIconUrl ?? '',
+      
+                      //loadingBuilder: (context, child, loadingProgress) => Icon(Icons.language, size: 30,),
+                      errorBuilder: (context, child, loadingProgress) => Icon(Icons.public, size: 35,),
+                    )
+                    : Icon(Icons.language, size: 35,)
+                  ),
+              ),
+              Expanded(
+                child: Text(resource.title ?? '', 
+                  maxLines: 1,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w300,
+                    letterSpacing: 0.5,
+                    fontSize: 14,  
+                    overflow: TextOverflow.ellipsis),
+                  ),
+                ),
+            ],
           ),
         ),
       ),
@@ -623,14 +684,14 @@ class ResourceListItem extends StatelessWidget {
 class FolderListItem extends StatelessWidget {
   const FolderListItem({Key? key, 
     required this.model, 
-    required this.resource, 
+    required this.workspace, 
     required this.onTap,
     this.isFirstListItem = false,
     this.isLastListItem = false,
   }) : super(key: key);
 
   final WorkspaceViewModel model;
-  final Resource resource;
+  final Workspace workspace;
   final VoidCallback onTap;
   final bool isLastListItem;
   final bool isFirstListItem;
@@ -643,7 +704,7 @@ class FolderListItem extends StatelessWidget {
         isFirstListItem: isFirstListItem,
         isLastListItem: isLastListItem,
         child: Slidable(
-          key: Key(resource.toString()),
+          key: Key(workspace.toString()),
           startActionPane: ActionPane(
             children: [
              
@@ -654,25 +715,11 @@ class FolderListItem extends StatelessWidget {
           ),
           endActionPane: ActionPane(
             children: [
-               SlidableAction(
-                icon: Icons.star,
-                backgroundColor: Colors.green,
-                onPressed: (context) => model.saveTab(resource),
-              ),
-              SlidableAction(
-                icon: Icons.move_to_inbox,
-                backgroundColor: Colors.yellow,
-                onPressed: (context) => model.stashTab(resource),
-              ),
-              SlidableAction(
-                icon: Icons.delete,
-                backgroundColor: Colors.redAccent,
-                onPressed: (context) => model.removeTab(resource),
-              )
+              
             ],
             motion: const StretchMotion(),
             // A pane can dismiss the Slidable.
-            dismissible: DismissiblePane(onDismissed: () => model.removeTab(resource)),
+            //dismissible: DismissiblePane(onDismissed: () => model.removeTab(resource)),
             openThreshold: 0.25,
           ),
           child: Padding(
@@ -683,13 +730,13 @@ class FolderListItem extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(right: 5.0),
                   child: Container(
-                    height: 35,
-                    width: 35,
+                    height: 40,
+                    width: 40,
                     child: Icon(Icons.folder)
                   )
                 ),
                 Expanded(
-                  child: Text(resource.title ?? '', 
+                  child: Text(workspace.title ?? '', 
                     maxLines: 1,
                     style: TextStyle(
                       fontWeight: FontWeight.w300,
