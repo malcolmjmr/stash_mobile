@@ -2,19 +2,19 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:stashmobile/app/web/model.dart';
 import 'package:stashmobile/app/web/tab.dart';
 import 'package:stashmobile/app/workspace/workspace_view.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
+import 'package:stashmobile/constants/color_map.dart';
 import 'package:stashmobile/extensions/color.dart';
 
 
-class WorkspaceWebView extends StatelessWidget {
-  final WorkspaceViewModel model;
-  WorkspaceWebView({ required this.model});
+class WorkspaceWebView extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
-
+  Widget build(BuildContext context, ScopedReader watch) {
+  
+    final model = watch(workspaceViewProvider);
+    final tabIndex = watch(tabIndexProvider);
     return SafeArea(
       child: Scaffold(
         body: Column(
@@ -23,11 +23,14 @@ class WorkspaceWebView extends StatelessWidget {
             Container(
               height: MediaQuery.of(context).size.height - 130,
               child: IndexedStack(
-                index: model.workspace.activeTabIndex,
-                children: model.tabs
+                index: tabIndex.state,
+                children: model.
+                  workspace.tabs.asMap().entries
+                  .map((e) => TabView(index: e.key, url: e.value.url!))
+                  .toList(),
               )
             ),
-            WebViewNavBar(model: model,),
+            const WebViewNavBar(),
           ],
         ),
       ),
@@ -37,14 +40,15 @@ class WorkspaceWebView extends StatelessWidget {
 
 final showHeadingProvider = StateProvider<bool>((ref) => true);
 
-class WebViewNavBar extends StatelessWidget {
-
-  final WorkspaceViewModel model;
-  const WebViewNavBar({Key? key, required this.model}) : super(key: key);
+class WebViewNavBar extends ConsumerWidget {
+  const WebViewNavBar({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, ScopedReader watch) {
 
+
+    final tabIndex = watch(tabIndexProvider).state;
+    final WorkspaceViewModel workspaceViewModel = watch(workspaceViewProvider);
     return Container(
        decoration: BoxDecoration(
         color: Colors.black
@@ -64,21 +68,22 @@ class WebViewNavBar extends StatelessWidget {
           //Icon(Icons.arrow_drop_up),
           Expanded(
             child: PageView(
+              
               scrollDirection: Axis.vertical,
-              children: model.workspace.tabs.map((tab) {
+              children: workspaceViewModel.workspace.tabs.map((tab) {
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 10.0),
                   child: TabListItem(
                     isFirstListItem: true,
                     isLastListItem: true,
-                    model: model, 
+                    model: workspaceViewModel, 
                     resource: tab, 
                     onTap: () => null
                   ),
                 );
               }).toList(),
-              onPageChanged: model.onPageChanged,
-              controller: PageController(initialPage: model.workspace.activeTabIndex!),
+              onPageChanged: workspaceViewModel.onPageChanged,
+              controller: PageController(initialPage: tabIndex),
             ),
           ),
           //Icon(Icons.arrow_drop_down),
@@ -94,6 +99,9 @@ class WebViewNavBar extends StatelessWidget {
     );
   }
 
+  
+
+  
 }
 
 class NavIconButton extends StatelessWidget {
@@ -129,7 +137,8 @@ class WebViewHeader extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, ScopedReader watch) {
-    final model = watch(webViewProvider);
+    final model = watch(workspaceViewProvider);
+    final workspaceColor = HexColor.fromHex(colorMap[model.workspace.color ?? 'grey']!);
     return Container(
       height: 40, 
       width: double.infinity, 
@@ -149,20 +158,20 @@ class WebViewHeader extends ConsumerWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           GestureDetector(
-            onTap: () => Navigator.pop(context),
+            onTap: () => model.goBackToWorkspace(),
             child: Row(
               children: [
                 Icon(Icons.arrow_back_ios,
-                  color: model.workspaceColor,
+                  color: workspaceColor
                 ),
                 Material(
                   type: MaterialType.transparency,
                   child: Hero(
-                    tag: model.workspaceTitle,
-                    child: Text(model.workspaceTitle,
+                    tag: model.workspace.title ?? '',
+                    child: Text(model.workspace.title ?? '',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: model.workspaceColor,
+                        color: workspaceColor,
                         fontSize: 20
                       ),
                     ),
@@ -172,7 +181,7 @@ class WebViewHeader extends ConsumerWidget {
             ),
           ),
           Icon(Icons.more_horiz, 
-            color: model.workspaceColor
+            color: workspaceColor
           )
         ],
       ),

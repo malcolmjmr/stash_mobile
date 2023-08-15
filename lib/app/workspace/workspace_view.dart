@@ -21,31 +21,33 @@ import 'package:stashmobile/app/common_widgets/section_header.dart';
 import 'package:stashmobile/app/common_widgets/section_list_item.dart';
 import 'package:stashmobile/app/common_widgets/share_item_modal.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
+import 'package:stashmobile/app/workspace/workspace_web_view.dart';
 import 'package:stashmobile/extensions/color.dart';
 import 'package:stashmobile/models/workspace.dart';
 
 import '../../models/resource.dart';
 
-class WorkspaceView extends StatelessWidget {
+class WorkspaceView extends ConsumerWidget {
 
-  final String? workspaceId;
-  WorkspaceView({this.workspaceId});
+
+  WorkspaceView();
   
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, ScopedReader watch) {
 
-
-    final model = WorkspaceViewModel(context, workspaceId);
+    final model = watch(workspaceViewProvider);
     return SafeArea(
       child: Scaffold(
         backgroundColor: Colors.black,
-        body: Container(
+        body: model.isLoading
+          ? Center(child: CircularProgressIndicator())
+          : Container(
           child: IndexedStack(
-            index: 0,
+            index: model.showTabs ? 1 : 0,
             children: [
               _buildWorkspaceView(context, model),
-              
+              WorkspaceWebView(),
             ],
           )
         )
@@ -136,7 +138,7 @@ class WorkspaceView extends StatelessWidget {
           child: SizedBox(height: 20),
         ),
 
-        if (model.tabs.isNotEmpty)
+        if (model.workspace.tabs.isNotEmpty)
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 15),
@@ -155,9 +157,9 @@ class WorkspaceView extends StatelessWidget {
             ),
           ),
         ),
-        if (model.showTabs && model.tabs.length > 0)
+        if (model.showTabs && model.workspace.tabs.length > 0)
         SliverList.builder(
-          itemCount: model.tabs.length,
+          itemCount: model.workspace.tabs.length,
           itemBuilder: ((context, index) {
             final resource = model.workspace.tabs[index];
             return Padding(
@@ -167,7 +169,7 @@ class WorkspaceView extends StatelessWidget {
               ),
               child: TabListItem(
                 isFirstListItem: index == 0,
-                isLastListItem: index == model.tabs.length - 1,
+                isLastListItem: index == model.workspace.tabs.length - 1,
                 resource: resource,
                 model: model,
                 onTap: () => model.openTab(context, resource)

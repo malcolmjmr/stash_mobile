@@ -1,9 +1,11 @@
 
 import 'package:flutter/material.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:stashmobile/app/providers/data.dart';
 import 'package:stashmobile/app/providers/user.dart';
+import 'package:stashmobile/app/providers/workspace.dart';
 
 import 'package:stashmobile/app/web/tab.dart';
 import 'package:stashmobile/models/workspace.dart';
@@ -12,6 +14,14 @@ import '../../constants/color_map.dart';
 import '../../models/resource.dart';
 import '../../models/user/model.dart';
 
+
+final workspaceViewProvider = ChangeNotifierProvider<WorkspaceViewModel>((ref) {
+  return WorkspaceViewModel(
+      read: ref.read, workspaceId: ref.watch(workspaceProvider).state);
+});
+
+
+final tabIndexProvider = StateProvider<int>((ref) => 0);
 
 class Views {
   static String tabs = 'tabs';
@@ -36,22 +46,22 @@ class WorkspaceViewModel extends ChangeNotifier {
   List<Resource> queue = [];
   List<Resource> resources = [];
 
-  List<TabView> tabs = [];
+  //List<TabView> tabs = [];
 
   String view = Views.tabs;
 
-  BuildContext context;
-
-  WorkspaceViewModel(this.context, this.workspaceId) {
-    data = context.read(dataProvider);
-    user = context.read(userProvider).state!; 
+  Reader read; 
+  WorkspaceViewModel({required this.read, required this.workspaceId}) {
+    data = read(dataProvider);
+    user = read(userProvider).state!; 
     loadWorkspace(workspaceId);
   }
 
   loadWorkspace(String? workspaceId) async {
     setLoading(true);
     workspace = workspaceId != null ? await data.getWorkspace(workspaceId) : Workspace.miscellaneous(); 
-    allResources =  data.getWorkspaceResources(workspaceId);
+    print(workspace);
+    allResources =  await data.getWorkspaceResources(workspaceId);
     await fixData();
     processResources();
 
@@ -171,6 +181,13 @@ class WorkspaceViewModel extends ChangeNotifier {
 
   }
 
+
+  bool showWebview = false;
+  goBackToWorkspace() {
+    showWebview = false; 
+    notifyListeners();
+  }
+
  
 
   goBackToHome(BuildContext context) {
@@ -224,8 +241,7 @@ class WorkspaceViewModel extends ChangeNotifier {
   openTab(BuildContext context, Resource resource) {
     workspace.activeTabIndex = workspace.tabs.length - 1;
     // save workspace
-    print('opening tab');
-    //read(webViewProvider).openWebView(context);
+    showWebview = true;
     notifyListeners();
   }
 
@@ -240,21 +256,45 @@ class WorkspaceViewModel extends ChangeNotifier {
       resource.isSaved = true;
       workspace.tabs.add(resource);
       data.saveWorkspace(workspace);
-      tabs.add(TabView(url: resource.url!));
+      //tabs.add(TabView(url: resource.url!));
       workspace.activeTabIndex = workspace.tabs.length - 1;
     }
     
     notifyListeners();
   }
 
-  updateTabResource({String? title, }) {
+  updateTabResource(int index, {String? title, String? url, String? favIconUrl}) {
+
+      /*
+        
+        final now = DateTime.now().microsecondsSinceEpoch;
+        if (resource.url != url) {
+          resource = Resource(url: url);
+        } 
+        
+        resource.title = title;
+        resource.favIconUrl = favIconUrl;
+        
+        if (resource.isSaved == true) {
+          if (resource.lastVisited == null || (resource.lastVisited! -  now) > (1000 * 60 * 60)) {
+            resource.lastVisited = now;
+            app.resourceManager.saveResource(resource);
+          }
+        }
+
+        
+
+        workspaceViewModel.updateTab(index, resource);
+
+      */
 
   }
 
   onPageChanged(int index) {
 
     workspace.activeTabIndex = index;
-    notifyListeners();
+    read(tabIndexProvider).state = index;
+    //notifyListeners();
     // if (index == 0) {
     //   // create tab
     // } else if (index < workspace.tabs.length) {
@@ -268,16 +308,16 @@ class WorkspaceViewModel extends ChangeNotifier {
   removeTab(Resource resource) async {
     final index = workspace.tabs.indexWhere((r) => r.id != resource.id);
     workspace.tabs.removeAt(index);
-    tabs.removeAt(index);
+    //tabs.removeAt(index);
     await data.saveWorkspace(workspace);
     notifyListeners();
-    tabs[0].
+  
   }
 
   stashTab(Resource resource) {
     final index = workspace.tabs.indexWhere((r) => r.id != resource.id);
     workspace.tabs.removeAt(index);
-    tabs.removeAt(index);
+    //tabs.removeAt(index);
     resource.isQueued = true;
     saveTab(resource);
   }
@@ -330,8 +370,14 @@ class WorkspaceViewModel extends ChangeNotifier {
 
   clearTabs() {
     workspace.tabs = [];
-    tabs = [];
+    //tabs = [];
     notifyListeners();
+  }
+
+
+  Map<int,InAppWebViewController> controllers = {};
+  setController(controller, index) {
+    controllers[index] = controller;
   }
 
 }

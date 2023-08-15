@@ -21,13 +21,14 @@ class HomeView extends ConsumerWidget {
     final model = watch(homeViewProvider);
   
     return Scaffold(
+      //backgroundColor: Colors.black,
       body: model.isLoading 
         ? Center(child: CircularProgressIndicator()) 
         : Stack(
           fit: StackFit.expand,
           children: [
             Padding(
-              padding: const EdgeInsets.only(top: 15.0, left: 20.0, right: 20.0),
+              padding: const EdgeInsets.only(left: 20.0, right: 20.0),
               child: CustomScrollView(
                 shrinkWrap: true,
                 slivers: [
