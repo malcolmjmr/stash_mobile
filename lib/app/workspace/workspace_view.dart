@@ -11,7 +11,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:stashmobile/app/common_widgets/move_to_folder_modal.dart';
@@ -20,9 +20,7 @@ import 'package:stashmobile/app/common_widgets/search_field.dart';
 import 'package:stashmobile/app/common_widgets/section_header.dart';
 import 'package:stashmobile/app/common_widgets/section_list_item.dart';
 import 'package:stashmobile/app/common_widgets/share_item_modal.dart';
-import 'package:stashmobile/app/web/view.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
-import 'package:stashmobile/app/workspace/workspace_web_view.dart';
 import 'package:stashmobile/extensions/color.dart';
 import 'package:stashmobile/models/workspace.dart';
 
