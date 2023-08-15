@@ -21,6 +21,7 @@ class HomeView extends ConsumerWidget {
     final model = watch(homeViewProvider);
   
     return Scaffold(
+      //backgroundColor: Colors.black,
       body: model.isLoading 
         ? Center(child: CircularProgressIndicator()) 
         : Stack(

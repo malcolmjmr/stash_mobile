@@ -58,7 +58,7 @@ class _TabViewState extends State<TabView> {
           incognito: true,
         ),
         ios: IOSInAppWebViewOptions(
-          allowsBackForwardNavigationGestures: true,
+          allowsBackForwardNavigationGestures: false,
           disableLongPressContextMenuOnLinks: false,
           allowsLinkPreview: false,
           disallowOverScroll: false,

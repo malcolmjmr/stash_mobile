@@ -2,7 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:stashmobile/app/sign_in/email_password_sign_in_page.dart';
-import 'package:stashmobile/app/web/view.dart';
+import 'package:stashmobile/app/workspace/workspace_web_view.dart';
 import 'package:stashmobile/app/workspace/workspace_view.dart';
 
 import '../app/search/search_view.dart';
@@ -53,6 +53,7 @@ class AppRoutes {
 class AppRouter {
   static Route<dynamic> onGenerateRoute(
       RouteSettings settings, FirebaseAuth firebaseAuth) {
+    final args = settings.arguments;
     final args = settings.arguments;
     switch (settings.name) {
       case AppRoutes.emailPasswordSignIn:
