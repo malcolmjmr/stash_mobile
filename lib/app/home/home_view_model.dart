@@ -82,9 +82,7 @@ class HomeViewModel with ChangeNotifier {
   }
 
   openWorkspace(BuildContext buildContext, Workspace workspace) {
-    // add setting 
-    read(workspaceProvider).state = workspace.id;
-    Navigator.pushNamed(buildContext, AppRoutes.workspace);
+    Navigator.pushNamed(buildContext, AppRoutes.workspace, arguments: workspace.id);
   }
 
   toggleWorkspacePinned(Workspace workspace) async {

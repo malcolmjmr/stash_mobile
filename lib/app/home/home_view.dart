@@ -27,7 +27,7 @@ class HomeView extends ConsumerWidget {
           fit: StackFit.expand,
           children: [
             Padding(
-              padding: const EdgeInsets.only(top: 15.0, left: 20.0, right: 20.0),
+              padding: const EdgeInsets.only(left: 20.0, right: 20.0),
               child: CustomScrollView(
                 shrinkWrap: true,
                 slivers: [

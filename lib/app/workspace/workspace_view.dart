@@ -20,38 +20,197 @@ import 'package:stashmobile/app/common_widgets/search_field.dart';
 import 'package:stashmobile/app/common_widgets/section_header.dart';
 import 'package:stashmobile/app/common_widgets/section_list_item.dart';
 import 'package:stashmobile/app/common_widgets/share_item_modal.dart';
+import 'package:stashmobile/app/web/view.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 import 'package:stashmobile/extensions/color.dart';
 import 'package:stashmobile/models/workspace.dart';
 
 import '../../models/resource.dart';
 
-class WorkspaceView extends StatelessWidget {
+class WorkspaceView extends StatefulWidget {
 
   final String? workspaceId;
   WorkspaceView({this.workspaceId});
-  
+
+  @override
+  State<WorkspaceView> createState() => _WorkspaceViewState();
+}
+
+class _WorkspaceViewState extends State<WorkspaceView> {
+
+  late WorkspaceViewModel model; 
+
+  bool showWebView = false;
+  bool isLoaded = false;
+  bool showTabs = true;
+  bool showFolders = true;
+  int tabIndex = 0;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    model = WorkspaceViewModel(
+      context: context, 
+      workspaceId: widget.workspaceId,
+      onLoaded: () => {
+        setState(() {
+          isLoaded = true;
+        })
+      }
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-
-
-    final model = WorkspaceViewModel(context, workspaceId);
     return SafeArea(
-      child: Scaffold(
-        backgroundColor: Colors.black,
-        body: Container(
-          child: IndexedStack(
-            index: 0,
-            children: [
-              _buildWorkspaceView(context, model),
-              
-            ],
+      child: isLoaded 
+        ? Scaffold(
+            backgroundColor: Colors.black,
+            body: Container(
+              child: IndexedStack(
+                index: showWebView ? 1 : 0,
+                children: [
+                  _buildWorkspaceView(context, model),
+                  _buildWebview(),
+                ],
+              )
+            )
           )
-        )
+        : Center(child: CircularProgressIndicator(),)
+    );
+  }
+
+  Widget _buildWebview() {
+    return Scaffold(
+      body: Column(
+        children: [
+          _buildWebViewHeader(),
+          Container(
+            height: MediaQuery.of(context).size.height - 130,
+            child: IndexedStack(
+              index: tabIndex,
+              children: model.tabs
+            )
+          ),
+          _buildWebViewNavBar(),
+        ],
       ),
     );
   }
+
+  Widget _buildWebViewNavBar() {
+
+    model.tabPageController = PageController(initialPage: model.workspace.activeTabIndex!);
+    return Container(
+       decoration: BoxDecoration(
+        color: Colors.black
+        // border: model.app.currentWorkspace != null 
+        // ? Border(
+        //     top: BorderSide(
+        //       color: model.workspaceColor,
+        //       width: 3.0
+        //     )
+        //   ) 
+        // : null
+      ),
+      height: 70,
+      width: MediaQuery.of(context).size.width,
+      child: Column(
+        children: [
+          //Icon(Icons.arrow_drop_up),
+          Expanded(
+            child: PageView(
+              scrollDirection: Axis.vertical,
+              children: model.workspace.tabs.map((tab) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 10.0),
+                  child: TabListItem(
+                    isFirstListItem: true,
+                    isLastListItem: true,
+                    model: model, 
+                    resource: tab, 
+                    onTap: () => null
+                  ),
+                );
+              }).toList(),
+              onPageChanged: (index) {
+                model.onPageChanged(index);
+                setState(() {
+                  tabIndex = model.workspace.activeTabIndex!;
+                });
+              },
+              controller: model.tabPageController,
+            ),
+          ),
+          //Icon(Icons.arrow_drop_down),
+        ],
+      )
+      
+      // Column(
+      //   children: [
+      //     _buildUrlField(context, model, webManager),
+      //     _buildNavigationButtons(context, model)
+      //   ],
+      // ),
+    );
+  }
+
+  Widget _buildWebViewHeader() {
+    final workspaceColor = HexColor.fromHex(model.workspaceHexColor);
+    return Container(
+      height: 40, 
+      width: double.infinity, 
+      padding: EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: Colors.black
+        // border: model.app.currentWorkspace != null 
+        // ? Border(
+        //     bottom: BorderSide(
+        //       color: model.workspaceColor,
+        //       width: 3.0
+        //     )
+        //   ) 
+        // : null
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                showWebView = false;
+              });
+            },
+            child: Row(
+              children: [
+                Icon(Icons.arrow_back_ios,
+                  color: workspaceColor,
+                ),
+                Material(
+                  type: MaterialType.transparency,
+                  child: Hero(
+                    tag: model.workspace.title ?? '',
+                    child: Text(model.workspace.title ?? '',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: workspaceColor,
+                        fontSize: 20
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Icon(Icons.more_horiz, 
+            color: workspaceColor
+          )
+        ],
+      ),
+    );
+  }
+
 
   Widget _buildWorkspaceView(BuildContext context, WorkspaceViewModel model) {
     return Stack(
@@ -170,7 +329,13 @@ class WorkspaceView extends StatelessWidget {
                 isLastListItem: index == model.tabs.length - 1,
                 resource: resource,
                 model: model,
-                onTap: () => model.openTab(context, resource)
+                onTap: () {
+                  model.openTab(resource);
+                  setState(() {
+                    tabIndex = model.workspace.activeTabIndex!;
+                    showWebView = true;
+                  });
+                }
               ),
             );
           })
@@ -201,7 +366,12 @@ class WorkspaceView extends StatelessWidget {
                 isLastListItem: index == model.queue.length - 1,
                 resource: resource,
                 model: model,
-                onTap: () => model.openTab(context, resource)
+                onTap: () {
+                  setState(() {
+                     model.openTab(resource);
+                     tabIndex = model.workspace.activeTabIndex!;
+                  });
+                }
               ),
             );
           })
@@ -248,7 +418,6 @@ class WorkspaceView extends StatelessWidget {
 
   }
 
-
   Widget _buildExpandedHeader(BuildContext context, WorkspaceViewModel model) {
     return Padding(
       padding: const EdgeInsets.only(top: 10, left: 15, right: 15),
@@ -282,6 +451,7 @@ class WorkspaceView extends StatelessWidget {
       ),
     );
   }
+
   Widget _buildHeader(BuildContext context, WorkspaceViewModel model) {
     return Container(
       decoration: BoxDecoration(
@@ -348,7 +518,7 @@ class WorkspaceView extends StatelessWidget {
               key: Key(resource.id ?? resource.toString()),
               resource: resource,
               model: model,
-              onTap: () => model.openTab(context, resource)
+              onTap: () => model.openTab(resource)
             );
           }),
         ),

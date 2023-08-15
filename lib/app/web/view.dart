@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:stashmobile/app/web/model.dart';
+
 import 'package:stashmobile/app/web/tab.dart';
 import 'package:stashmobile/app/workspace/workspace_view.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
@@ -11,7 +11,8 @@ import 'package:stashmobile/extensions/color.dart';
 
 class WorkspaceWebView extends StatelessWidget {
   final WorkspaceViewModel model;
-  WorkspaceWebView({ required this.model});
+  final Function() onExitWebView;
+  WorkspaceWebView({ required this.model, required this.onExitWebView});
   @override
   Widget build(BuildContext context) {
 
@@ -19,7 +20,7 @@ class WorkspaceWebView extends StatelessWidget {
       child: Scaffold(
         body: Column(
           children: [
-            const WebViewHeader(),
+            WebViewHeader(model: model, onExitWebView: onExitWebView),
             Container(
               height: MediaQuery.of(context).size.height - 130,
               child: IndexedStack(
@@ -125,11 +126,14 @@ class NavIconButton extends StatelessWidget {
 
 
 class WebViewHeader extends ConsumerWidget {
-  const WebViewHeader({Key? key}) : super(key: key);
+  const WebViewHeader({Key? key, required this.model, required this.onExitWebView}) : super(key: key);
+
+  final Function() onExitWebView;
+  final WorkspaceViewModel model;
 
   @override
   Widget build(BuildContext context, ScopedReader watch) {
-    final model = watch(webViewProvider);
+    final workspaceColor = HexColor.fromHex(model.workspaceHexColor);
     return Container(
       height: 40, 
       width: double.infinity, 
@@ -149,20 +153,20 @@ class WebViewHeader extends ConsumerWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           GestureDetector(
-            onTap: () => Navigator.pop(context),
+            onTap: onExitWebView,
             child: Row(
               children: [
                 Icon(Icons.arrow_back_ios,
-                  color: model.workspaceColor,
+                  color: workspaceColor,
                 ),
                 Material(
                   type: MaterialType.transparency,
                   child: Hero(
-                    tag: model.workspaceTitle,
-                    child: Text(model.workspaceTitle,
+                    tag: model.workspace.title ?? '',
+                    child: Text(model.workspace.title ?? '',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: model.workspaceColor,
+                        color: workspaceColor,
                         fontSize: 20
                       ),
                     ),
@@ -172,7 +176,7 @@ class WebViewHeader extends ConsumerWidget {
             ),
           ),
           Icon(Icons.more_horiz, 
-            color: model.workspaceColor
+            color: workspaceColor
           )
         ],
       ),

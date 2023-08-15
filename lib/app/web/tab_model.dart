@@ -8,7 +8,9 @@ import 'package:stashmobile/models/resource.dart';
 
 class TabViewModel {
  
-  
+  late InAppWebViewController controller;
+
+  late Resource resource = Resource();
 
   TabViewModel() {
 
@@ -40,11 +42,11 @@ class TabViewModel {
 
   updateTabData(BuildContext context, InAppWebViewController controller) async {
     
-    context.read(workspaceViewProvider).updateTabResource( 
-      url: (await controller.getUrl()).toString(),
-      favIconUrl: await getFaviconUrl(controller),
-      title: await controller.getTitle(),
-    );
+    // context.read(workspaceViewProvider).updateTabResource( 
+    //   url: (await controller.getUrl()).toString(),
+    //   favIconUrl: await getFaviconUrl(controller),
+    //   title: await controller.getTitle(),
+    // );
   }
 
   // addEventHandlers(BuildContext context, controller) {

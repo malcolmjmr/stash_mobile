@@ -8,5 +8,5 @@ class ActiveTabNotifier extends StateNotifier<Resource> {
  
   }
 
-  update
+  
 }

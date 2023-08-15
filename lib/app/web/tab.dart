@@ -3,14 +3,21 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:stashmobile/app/web/model.dart';
+
 import 'package:stashmobile/app/web/tab_model.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
+import 'package:stashmobile/models/resource.dart';
 
 class TabView extends StatefulWidget {
-  const TabView({Key? key, required this.url}) : super(key: key);
+  TabView({Key? key, 
+    required this.resource,
+    required this.onTabUpdated, 
+  }) : super(key: key);
 
-  final String url;
+  final Resource resource;
+  final TabViewModel model = TabViewModel();
+  final Function(TabViewModel model, InAppWebViewController controller, Uri? uri) onTabUpdated;
+
   
 
   @override
@@ -19,14 +26,17 @@ class TabView extends StatefulWidget {
 
 class _TabViewState extends State<TabView> {
 
-  late InAppWebViewController controller;
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    widget.model.resource = widget.resource;
+  }
 
   Widget build(BuildContext context) {
-    final model = TabViewModel();
-    final initialUrl = widget.url;
-
+ 
     return InAppWebView(
-      initialUrlRequest: URLRequest(url: Uri.parse(initialUrl)),
+      initialUrlRequest: URLRequest(url: Uri.parse(widget.model.resource.url!)),
       pullToRefreshController: PullToRefreshController(
         options: PullToRefreshOptions(),
       ),
@@ -35,12 +45,10 @@ class _TabViewState extends State<TabView> {
           () => new EagerGestureRecognizer(),
         ),
       ].toSet(),
-      onWebViewCreated: (controller) => widget.controller = controller,
-      onLoadStart: (controller, url) =>
-          model.onWebsiteLoadStart(context, controller, url),
-      onProgressChanged: (controller, progress) =>
-         model.onWebsiteProgressChanged(context, controller, progress),
-      onLoadStop: (controller, url) => model.onWebsiteLoadStop(context, controller),
+      onWebViewCreated: (controller) => widget.model.controller = controller,
+      onLoadStart: (controller, uri) => widget.onTabUpdated(widget.model, controller, uri),
+      onProgressChanged: (controller, progress) => null,
+      onLoadStop: (controller, uri) => widget.onTabUpdated(widget.model, controller, uri),
       onConsoleMessage: (controller, msg) {
         //print('JS console:\n$msg');
       },

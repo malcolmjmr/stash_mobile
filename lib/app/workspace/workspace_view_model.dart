@@ -1,11 +1,13 @@
 
 import 'package:flutter/material.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:stashmobile/app/providers/data.dart';
 import 'package:stashmobile/app/providers/user.dart';
 
 import 'package:stashmobile/app/web/tab.dart';
+import 'package:stashmobile/app/web/tab_model.dart';
 import 'package:stashmobile/models/workspace.dart';
 
 import '../../constants/color_map.dart';
@@ -39,30 +41,38 @@ class WorkspaceViewModel extends ChangeNotifier {
   List<TabView> tabs = [];
 
   String view = Views.tabs;
+  late PageController tabPageController;
 
   BuildContext context;
 
-  WorkspaceViewModel(this.context, this.workspaceId) {
+  WorkspaceViewModel({required this.context, required this.workspaceId, onLoaded}) {
     data = context.read(dataProvider);
     user = context.read(userProvider).state!; 
-    loadWorkspace(workspaceId);
+    loadWorkspace(workspaceId, onLoaded);
+    
   }
 
-  loadWorkspace(String? workspaceId) async {
-    setLoading(true);
+  loadWorkspace(String? workspaceId, Function() onLoaded) async {
+    //setLoading(true);
     workspace = workspaceId != null ? await data.getWorkspace(workspaceId) : Workspace.miscellaneous(); 
-    allResources =  data.getWorkspaceResources(workspaceId);
+    allResources =  await data.getWorkspaceResources(workspaceId);
     await fixData();
     processResources();
 
     loadTabs();
 
-    setLoading(false);
+    //setLoading(false);
+
+    onLoaded();
   }
 
 
   loadTabs() {
+    tabs = workspace.tabs.map((tab) {
+      return TabView(resource: tab, onTabUpdated: onTabUpdated);
+    }).toList();
 
+    //tabPageController.jumpToPage(workspace.activeTabIndex ?? 0);
   }
 
   String get workspaceHexColor => colorMap[workspace.color ?? 'grey']!;
@@ -141,10 +151,12 @@ class WorkspaceViewModel extends ChangeNotifier {
     print('processing resources');
     print(allResources.length);
     workspace.tabs = workspace.tabs.map((t) {
-      final savedResource = allResources.firstWhereOrNull((r) => r.url == t.url);
-      t.isSaved = savedResource != null;
-      return t;
+      Resource? savedResource = allResources.firstWhereOrNull((r) => r.url == t.url);
+      if (savedResource != null) savedResource.isSaved = true;
+      return savedResource != null ? savedResource : t;
     }).toList();
+
+
 
     queue = [];
     folders = [];
@@ -166,16 +178,13 @@ class WorkspaceViewModel extends ChangeNotifier {
         folders.add(w);
       }
     }
-    print(subWorkspaces.map((w) => w.contexts));
-
 
   }
 
  
 
   goBackToHome(BuildContext context) {
-    // app.setCurrentWorkspace(null);
-    // app.setCurrentResource(null);
+ 
     Navigator.pop(context);
   }
 
@@ -221,12 +230,16 @@ class WorkspaceViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  openTab(BuildContext context, Resource resource) {
-    workspace.activeTabIndex = workspace.tabs.length - 1;
-    // save workspace
-    print('opening tab');
-    //read(webViewProvider).openWebView(context);
-    notifyListeners();
+  openTab(Resource resource) {
+    final index = workspace.tabs.indexWhere((tab) => tab.id == resource.id);
+    if (index > -1) {
+      workspace.activeTabIndex = index;
+    } else {
+      workspace.tabs.add(resource);
+      tabs.add(TabView(resource: resource, onTabUpdated: onTabUpdated));
+      workspace.activeTabIndex = workspace.tabs.length;
+    }
+    tabPageController.jumpToPage(workspace.activeTabIndex!);
   }
 
   openResource(BuildContext context, Resource resource) {
@@ -240,11 +253,46 @@ class WorkspaceViewModel extends ChangeNotifier {
       resource.isSaved = true;
       workspace.tabs.add(resource);
       data.saveWorkspace(workspace);
-      tabs.add(TabView(url: resource.url!));
+      tabs.add(
+        TabView(
+          resource: resource,
+          onTabUpdated: onTabUpdated,
+        )
+      );
       workspace.activeTabIndex = workspace.tabs.length - 1;
     }
     
     notifyListeners();
+  }
+
+  onTabUpdated(TabViewModel model, InAppWebViewController controller, Uri? uri) async {
+    // find resource
+
+    final int resourceIndex = workspace.tabs.indexWhere((tab) => tab.id == model.resource.id);
+    Resource resource;
+    if (resourceIndex == -1) {
+      print('could not find tab');
+      return;
+    }
+
+    resource = workspace.tabs[resourceIndex];
+
+    // if (uri.toString() != resource.url) {
+    //   // update tab resouce (look for existing resource or create new resourc)
+    // } else {
+    //   // update resource if favicon != null || title != null 
+    //   if (resource.favIconUrl == null) {
+    //     final favIconUrl = await model.getFaviconUrl(controller);
+    //     if (favIconUrl != null) {
+    //       resource.favIconUrl favIconUrl;
+    //     }
+    //   }
+
+    //   if (resource.title == null) {
+
+    //   }
+    // }
+    
   }
 
   updateTabResource({String? title, }) {
@@ -254,7 +302,7 @@ class WorkspaceViewModel extends ChangeNotifier {
   onPageChanged(int index) {
 
     workspace.activeTabIndex = index;
-    notifyListeners();
+    //notifyListeners();
     // if (index == 0) {
     //   // create tab
     // } else if (index < workspace.tabs.length) {
@@ -271,7 +319,6 @@ class WorkspaceViewModel extends ChangeNotifier {
     tabs.removeAt(index);
     await data.saveWorkspace(workspace);
     notifyListeners();
-    tabs[0].
   }
 
   stashTab(Resource resource) {
