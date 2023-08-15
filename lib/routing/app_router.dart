@@ -53,7 +53,7 @@ class AppRoutes {
 class AppRouter {
   static Route<dynamic> onGenerateRoute(
       RouteSettings settings, FirebaseAuth firebaseAuth) {
-    final args = settings.arguments;
+    final args = settings.arguments as List;
     switch (settings.name) {
       case AppRoutes.emailPasswordSignIn:
         return MaterialPageRoute<dynamic>(
@@ -73,16 +73,11 @@ class AppRouter {
             fullscreenDialog: true,
           );
       case AppRoutes.workspace:
+        final workspaceId = args[0];
         return PageTransition<dynamic>(
             type: PageTransitionType.rightToLeft,
             curve: Curves.easeInExpo,
-            child: WorkspaceView(),
-            settings: settings,
-            fullscreenDialog: true,
-          );
-      case AppRoutes.webView: 
-        return MaterialPageRoute<dynamic>(
-            builder: (_) => WebView(),
+            child: WorkspaceView(workspaceId: workspaceId,),
             settings: settings,
             fullscreenDialog: true,
           );

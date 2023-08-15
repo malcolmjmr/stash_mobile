@@ -43,6 +43,10 @@ class Workspace {
     lastActive = created;
   }
 
+  Workspace.miscellaneous() {
+    id = 'MISC';
+  }
+
   Workspace.fromDatabase(String objectId, Map<String, dynamic> json) {
     id = objectId;
     title = json['title'];
@@ -67,7 +71,7 @@ class Workspace {
     activeTabIndex = json['activeTabIndex'];
     isIncognito = json['isIncognito'] ?? false;
     isFavorite = json['isFavorite'] ?? false;
-    contexts = json['contexts'] ?? [];
+    contexts = json['contexts'] != null ? List<String>.from(json['contexts']) : [];
   }
 
   Map<String, dynamic> toJson() {

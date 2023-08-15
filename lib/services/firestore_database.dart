@@ -35,11 +35,12 @@ class FirestoreDatabase {
   Future<void> saveUser(User user) => _service.setData(
         path: FirestorePath.user(userId: user.id),
         data: user.toJson(),
+        merge: true,
       );
 
   Future<void> updateUser(User user) => _service.updateData(
         path: FirestorePath.user(userId: user.id),
-        data: user.toJson(),
+        data: user.toJson(), 
       );
 
   Stream<User> getCurrentUserAsStream(String userId) => _service.documentStream(
@@ -70,7 +71,14 @@ class FirestoreDatabase {
       _service.collection(
           path: FirestorePath.userResources(userId: user.id),
           builder: (id, data) => Resource.fromDatabase(id, data),
-          queryBuilder: (query) => query.where('contexts', arrayContains: workspaceId),
+          queryBuilder: (query) => query.where('context', arrayContains: workspaceId),
+      );
+
+  Future<List<Resource>> getMiscResources(User user) =>
+      _service.collection(
+          path: FirestorePath.userResources(userId: user.id),
+          builder: (id, data) => Resource.fromDatabase(id, data),
+          queryBuilder: (query) => query.where('context', isNull: true),
       );
 
   Future<void> setUserWorkspace(String userId, Workspace workspace) =>
@@ -78,6 +86,7 @@ class FirestoreDatabase {
         path: FirestorePath.userWorkspace(
             userId: userId, workspaceId: workspace.id),
         data: workspace.toJson(),
+        merge: true,
       );
   
   Future<void> deleteWorkspace(
@@ -93,7 +102,9 @@ class FirestoreDatabase {
           path: FirestorePath.userResource(
               userId: userId,
               resourceId: resource.id!),
-          data: resource.toJson());
+          data: resource.toJson(),
+          merge: true,
+      );
 
   Future<void> deleteResource(
           String userId, String resourceId) =>

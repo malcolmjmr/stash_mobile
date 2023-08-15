@@ -61,7 +61,7 @@ class _CreateWorkspaceModalState extends State<CreateWorkspaceModal> {
               ),
             ),
             Text(workspace.title != null && workspace.title!.isNotEmpty ? workspace.title! : 'New Space',
-              style: TextStyle(fontSize: 20, color: Colors.white),
+              style: TextStyle(fontSize: 20, color: HexColor.fromHex(colorMap[workspace.color ?? 'grey']!)),
             ),
             GestureDetector(
               onTap: () => widget.model.createNewWorkspace(context, workspace),

@@ -11,6 +11,7 @@ import 'package:stashmobile/app/home/workspace_listitem.dart';
 import 'package:flutter/material.dart';
 import 'package:stashmobile/extensions/color.dart';
 import 'package:stashmobile/routing/app_router.dart';
+import '../common_widgets/create_new_tab_modal.dart';
 import '../common_widgets/section_header.dart';
 import 'home_view_model.dart';
 
@@ -19,77 +20,79 @@ class HomeView extends ConsumerWidget {
   Widget build(BuildContext context, ScopedReader watch) {
     final model = watch(homeViewProvider);
   
-    return model.isLoading 
-      ? Center(child: CircularProgressIndicator()) 
-      : Stack(
-        fit: StackFit.expand,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 15.0, left: 20.0, right: 20.0),
-            child: CustomScrollView(
-              shrinkWrap: true,
-              slivers: [
-                SliverToBoxAdapter(child: Header(model: model)),
-                SliverToBoxAdapter(child: _buildTopSection(context, model)),
-                if (model.favorites.length > 0)
-                SliverToBoxAdapter(
-                  child: SectionHeader(
-                    title: 'Pinned',
-                    isCollapsed: model.showFavoriteSpaces,
-                    onToggleCollapse: () => model.toggleShowFavorites(),
-                  )
-                ),
-                if (model.showFavoriteSpaces && model.favorites.length > 0)
-                SliverList.builder(
-                  itemCount: model.favorites.length,
-                  itemBuilder: (context, index) {
-                    final workspace = model.favorites[index];
-                    return WorkspaceListItem(
-                      key: Key(workspace.id),
-                      isFirstListItem: index == 0,
-                      isLastListItem: index == model.favorites.length - 1,
-                      workspace: workspace,
-                      togglePin: (context) => model.toggleWorkspacePinned(workspace),
-                      onTap: () => model.openWorkspace(context, workspace),
-                      onDelete: () => model.deleteWorkspace(context, workspace),
-                    );
-                  }
-                ),
-                SliverToBoxAdapter(
-                  child: SectionHeader(
-                    title: 'All Spaces',
-                    isCollapsed: model.showAllSpaces,
-                    onToggleCollapse: () => model.setShowAllSpaces(!model.showAllSpaces),
-                  )
-                ),
-                if (model.showAllSpaces)
-                SliverList.builder(
-                  itemCount: model.workspaces.length,
-                  itemBuilder: (context, index) {
-                    final workspace = model.workspaces[index];
-                    return WorkspaceListItem(
-                      key: Key(workspace.id),
-                      isFirstListItem: index == 0,
-                      isLastListItem: index == model.workspaces.length - 1,
-                      workspace: workspace,
-                      onTap: () => model.openWorkspace(context, workspace),
-                      onDelete: () => model.deleteWorkspace(context, workspace),
-                    );
-                  }
-                ),
-                SliverToBoxAdapter(child: SizedBox(height: 100),)
-              ]
+    return Scaffold(
+      body: model.isLoading 
+        ? Center(child: CircularProgressIndicator()) 
+        : Stack(
+          fit: StackFit.expand,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 15.0, left: 20.0, right: 20.0),
+              child: CustomScrollView(
+                shrinkWrap: true,
+                slivers: [
+                  SliverToBoxAdapter(child: Header(model: model)),
+                  SliverToBoxAdapter(child: _buildTopSection(context, model)),
+                  if (model.favorites.length > 0)
+                  SliverToBoxAdapter(
+                    child: SectionHeader(
+                      title: 'Pinned',
+                      isCollapsed: model.showFavoriteSpaces,
+                      onToggleCollapse: () => model.toggleShowFavorites(),
+                    )
+                  ),
+                  if (model.showFavoriteSpaces && model.favorites.length > 0)
+                  SliverList.builder(
+                    itemCount: model.favorites.length,
+                    itemBuilder: (context, index) {
+                      final workspace = model.favorites[index];
+                      return WorkspaceListItem(
+                        key: Key(workspace.id),
+                        isFirstListItem: index == 0,
+                        isLastListItem: index == model.favorites.length - 1,
+                        workspace: workspace,
+                        togglePin: (context) => model.toggleWorkspacePinned(workspace),
+                        onTap: () => model.openWorkspace(context, workspace),
+                        onDelete: () => model.deleteWorkspace(context, workspace),
+                      );
+                    }
+                  ),
+                  SliverToBoxAdapter(
+                    child: SectionHeader(
+                      title: 'All Spaces',
+                      isCollapsed: model.showAllSpaces,
+                      onToggleCollapse: () => model.setShowAllSpaces(!model.showAllSpaces),
+                    )
+                  ),
+                  if (model.showAllSpaces)
+                  SliverList.builder(
+                    itemCount: model.workspaces.length,
+                    itemBuilder: (context, index) {
+                      final workspace = model.workspaces[index];
+                      return WorkspaceListItem(
+                        key: Key(workspace.id),
+                        isFirstListItem: index == 0,
+                        isLastListItem: index == model.workspaces.length - 1,
+                        workspace: workspace,
+                        onTap: () => model.openWorkspace(context, workspace),
+                        onDelete: () => model.deleteWorkspace(context, workspace),
+                      );
+                    }
+                  ),
+                  SliverToBoxAdapter(child: SizedBox(height: 100),)
+                ]
+              ),
             ),
-          ),
-          Positioned(
-            bottom: 0, 
-            left: 0, 
-            height: 40, 
-            width: MediaQuery.of(context).size.width, 
-            child: Footer(model: model)
-          ),
-        ],
-      );
+            Positioned(
+              bottom: 0, 
+              left: 0, 
+              height: 40, 
+              width: MediaQuery.of(context).size.width, 
+              child: Footer(model: model)
+            ),
+          ],
+        ),
+    );
   }
 
   Widget _buildTopSection(BuildContext context, HomeViewModel model) {
@@ -100,8 +103,8 @@ class HomeView extends ConsumerWidget {
           isLastListItem: false,
           onTap: model.openLooseTabs(context),
           child: ListItem(
-            title: 'Ungrouped Tabs',
-            icon: Icon(Icons.filter_none, 
+            title: 'Miscellaneous',
+            icon: Icon(Icons.category, 
               color: Colors.amber,
               size: 28,
             ),
@@ -201,7 +204,13 @@ class Footer extends StatelessWidget {
                 context: context, 
                 builder: (context) => CreateWorkspaceModal(model: model))
             }),
-            CreateTabButton(onTap:() =>  model.createNewTab(context)),
+            CreateTabButton(
+              onLongPress: () => showCupertinoModalBottomSheet(
+                context: context, 
+                builder: (context) => CreateNewTabModal()
+              ),
+              onTap:() =>  model.createNewTab(context)
+            ),
           ],
         ),
       ),
@@ -227,14 +236,16 @@ class CreateFolderButton extends StatelessWidget {
 }
 
 class CreateTabButton extends StatelessWidget {
-  const CreateTabButton({Key? key, required this.onTap}) : super(key: key);
+  const CreateTabButton({Key? key, required this.onTap, required this.onLongPress}) : super(key: key);
   
   final VoidCallback onTap;
+  final VoidCallback onLongPress;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
+      onLongPress: onLongPress,
       child: Padding(
         padding: EdgeInsets.all(5), 
         child: Icon(Icons.add_box_outlined, size: 28.0, weight: 100.0, color: Colors.amber,),

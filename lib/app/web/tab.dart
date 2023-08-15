@@ -3,22 +3,28 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:stashmobile/app/providers/web.dart';
 import 'package:stashmobile/app/web/model.dart';
 import 'package:stashmobile/app/web/tab_model.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 
-class TabView extends StatelessWidget {
-  const TabView({Key? key, required this.index, required this.url}) : super(key: key);
+class TabView extends StatefulWidget {
+  const TabView({Key? key, required this.url}) : super(key: key);
 
-  final int index;
   final String url;
+  
+
+  @override
+  State<TabView> createState() => _TabViewState();
+}
+
+class _TabViewState extends State<TabView> {
+
+  late InAppWebViewController controller;
 
   Widget build(BuildContext context) {
-    final model = TabViewModel(index: index);
-    final initialUrl = context.read(workspaceViewProvider).tabs[index].url!;
-    print('building tab  ${index}');
-    print(initialUrl);
+    final model = TabViewModel();
+    final initialUrl = widget.url;
+
     return InAppWebView(
       initialUrlRequest: URLRequest(url: Uri.parse(initialUrl)),
       pullToRefreshController: PullToRefreshController(
@@ -29,7 +35,7 @@ class TabView extends StatelessWidget {
           () => new EagerGestureRecognizer(),
         ),
       ].toSet(),
-      onWebViewCreated: (controller) => context.read(webViewProvider).setController(controller, index),
+      onWebViewCreated: (controller) => widget.controller = controller,
       onLoadStart: (controller, url) =>
           model.onWebsiteLoadStart(context, controller, url),
       onProgressChanged: (controller, progress) =>
@@ -44,7 +50,7 @@ class TabView extends StatelessWidget {
           incognito: true,
         ),
         ios: IOSInAppWebViewOptions(
-          allowsBackForwardNavigationGestures: false,
+          allowsBackForwardNavigationGestures: true,
           disableLongPressContextMenuOnLinks: false,
           allowsLinkPreview: false,
           disallowOverScroll: false,

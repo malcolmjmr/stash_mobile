@@ -4,22 +4,25 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:stashmobile/app/providers/app.dart';
+import 'package:stashmobile/app/providers/data.dart';
+import 'package:stashmobile/app/providers/workspace.dart';
 import 'package:stashmobile/routing/app_router.dart';
 
 import '../../models/workspace.dart';
 
 
 final homeViewProvider = ChangeNotifierProvider<HomeViewModel>(
-  (ref) => HomeViewModel(app: ref.watch(appProvider))
+  (ref) => HomeViewModel(ref.read)
 );
 
 
 class HomeViewModel with ChangeNotifier {
 
-  AppController app;
+  Reader read;
+  late DataManager data;
 
-  HomeViewModel({required this.app}) {
+  HomeViewModel(this.read) {
+    data = read(dataProvider);
     load();
   }
 
@@ -30,7 +33,7 @@ class HomeViewModel with ChangeNotifier {
   }
 
   refreshWorkspaces() async {
-    workspaces = (await app.workspaceManager.getWorkspaces())
+    workspaces = (await data.getWorkspaces())
       .where((Workspace c) => c.isIncognito != true).toList();
     workspaces.sort((a, b) => (b.updated ?? 0).compareTo(a.updated ?? 0));
     favorites = workspaces.where((w) => w.isFavorite == true).toList();
@@ -68,33 +71,32 @@ class HomeViewModel with ChangeNotifier {
     //Workspace workspace = Workspace(title: newWorkspaceTitle, color: newWorkspaceColor);
     if (workspace.title == null || workspace.title!.isEmpty) return; // need to show error screen
 
-    app.workspaceManager.saveWorkspace(workspace);
-    app.setCurrentWorkspace(workspace);
+    data.saveWorkspace(workspace);
+    read(workspaceProvider).state = workspace.id;
     Navigator.pushNamed(buildContext, AppRoutes.workspace);
   }
 
   createNewTab(BuildContext buildContext) {
-    // 
-    app.setCurrentResource(null);
+    
     Navigator.pushNamed(buildContext, AppRoutes.webView);
   }
 
   openWorkspace(BuildContext buildContext, Workspace workspace) {
-    
-    app.setCurrentWorkspace(workspace);
+    // add setting 
+    read(workspaceProvider).state = workspace.id;
     Navigator.pushNamed(buildContext, AppRoutes.workspace);
   }
 
   toggleWorkspacePinned(Workspace workspace) async {
     workspace.isFavorite = !(workspace.isFavorite == true);
-    await app.workspaceManager.saveWorkspace(workspace);
+    await data.saveWorkspace(workspace);
     await refreshWorkspaces();
     notifyListeners();
   }
 
   deleteWorkspace(BuildContext context, Workspace workspace) {
-    app.workspaceManager.deleteWorkspace(workspace);
-    workspaces = app.workspaceManager.workspaces.where((Workspace c) => c.isIncognito != true).toList();
+    data.deleteWorkspace(workspace);
+    workspaces = data.workspaces.where((Workspace c) => c.isIncognito != true).toList();
     workspaces.sort((a, b) => (b.updated ?? 0).compareTo(a.updated ?? 0));;
     Navigator.pop(context);
     notifyListeners();

@@ -3,13 +3,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:stashmobile/app/web/model.dart';
+
 import 'package:stashmobile/models/resource.dart';
 
 class TabViewModel {
-  int index;
+ 
+  
 
-  TabViewModel({required this.index}) {
+  TabViewModel() {
 
   }
 
@@ -38,7 +39,8 @@ class TabViewModel {
   }
 
   updateTabData(BuildContext context, InAppWebViewController controller) async {
-    context.read(webViewProvider).updateTabResource(index, 
+    
+    context.read(workspaceViewProvider).updateTabResource( 
       url: (await controller.getUrl()).toString(),
       favIconUrl: await getFaviconUrl(controller),
       title: await controller.getTitle(),
