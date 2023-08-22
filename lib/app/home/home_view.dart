@@ -21,7 +21,7 @@ class HomeView extends ConsumerWidget {
     final model = watch(homeViewProvider);
   
     return Scaffold(
-      //backgroundColor: Colors.black,
+      backgroundColor: Colors.black,
       body: model.isLoading 
         ? Center(child: CircularProgressIndicator()) 
         : Stack(
@@ -75,6 +75,7 @@ class HomeView extends ConsumerWidget {
                         isFirstListItem: index == 0,
                         isLastListItem: index == model.workspaces.length - 1,
                         workspace: workspace,
+                        togglePin: (context) => model.toggleWorkspacePinned(workspace),
                         onTap: () => model.openWorkspace(context, workspace),
                         onDelete: () => model.deleteWorkspace(context, workspace),
                       );
@@ -97,33 +98,36 @@ class HomeView extends ConsumerWidget {
   }
 
   Widget _buildTopSection(BuildContext context, HomeViewModel model) {
-    return Column(
-      children: [
-        SectionListItemContainer(
-          isFirstListItem: true, 
-          isLastListItem: false,
-          onTap: model.openLooseTabs(context),
-          child: ListItem(
-            title: 'Miscellaneous',
-            icon: Icon(Icons.category, 
-              color: Colors.amber,
-              size: 28,
-            ),
-          )
-        ),
-        SectionListItemContainer(
-          isFirstListItem: false, 
-          isLastListItem: true,
-          onTap: () => model.openPublicWorkspaces(context),
-          child: ListItem(
-            title: 'Public',
-            icon: Icon(Icons.public, 
-              color: Colors.amber,
-              size: 28,
-            ),
-          )
-        ),
-      ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Column(
+        children: [
+          SectionListItemContainer(
+            isFirstListItem: true, 
+            isLastListItem: false,
+            onTap: model.openLooseTabs(context),
+            child: ListItem(
+              title: 'Miscellaneous',
+              icon: Icon(Icons.category, 
+                color: Colors.amber,
+                size: 28,
+              ),
+            )
+          ),
+          SectionListItemContainer(
+            isFirstListItem: false, 
+            isLastListItem: true,
+            onTap: () => model.openPublicWorkspaces(context),
+            child: ListItem(
+              title: 'Public',
+              icon: Icon(Icons.public, 
+                color: Colors.amber,
+                size: 28,
+              ),
+            )
+          ),
+        ],
+      ),
     );
   }
 }
@@ -147,12 +151,15 @@ class Header extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Hero(
-                  tag: 'Stash',
-                  child: Text('Stash', 
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 50,
+                Material(
+                  type: MaterialType.transparency,
+                  child: Hero(
+                    tag: 'Stash',
+                    child: Text('Stash', 
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 50,
+                      ),
                     ),
                   ),
                 ),
@@ -165,9 +172,15 @@ class Header extends StatelessWidget {
               ],
             ),
           ),
-          GestureDetector(
-            onTap: () => Navigator.pushNamed(context, AppRoutes.search),
-            child: SearchField()
+          Padding(
+            padding: const EdgeInsets.only(bottom: 20),
+            child: GestureDetector(
+              onTap: () => Navigator.pushNamed(context, AppRoutes.search),
+              child: SearchField(
+                onTap: () => Navigator.pushNamed(context, AppRoutes.search), 
+                showPlaceholder: true,
+              )
+            ),
           ),
         ],
       ),
@@ -203,7 +216,9 @@ class Footer extends StatelessWidget {
             CreateFolderButton(onTap: () => {
               showCupertinoModalBottomSheet(
                 context: context, 
-                builder: (context) => CreateWorkspaceModal(model: model))
+                builder: (context) => CreateWorkspaceModal(
+                  onDone: (workspace) => model.createNewWorkspace(context, workspace))
+                )
             }),
             CreateTabButton(
               onLongPress: () => showCupertinoModalBottomSheet(

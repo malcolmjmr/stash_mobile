@@ -1,8 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:stashmobile/app/common_widgets/list_item.dart';
 import 'package:stashmobile/app/common_widgets/section_list_item.dart';
 import 'package:stashmobile/app/home/delete_space_dialog.dart';
+import 'package:stashmobile/app/move_to_folder/move_to_folder_modal.dart';
 import 'package:stashmobile/constants/color_map.dart';
 import 'package:stashmobile/models/workspace.dart';
 import 'package:stashmobile/extensions/color.dart';
@@ -39,7 +41,7 @@ class WorkspaceListItem extends StatelessWidget {
       isLastListItem: isLastListItem,
       child: Slidable(
         startActionPane: ActionPane(
-          
+    
           motion: const StretchMotion(),
           dragDismissible: false,
           extentRatio: .25,
@@ -64,7 +66,13 @@ class WorkspaceListItem extends StatelessWidget {
             ),
             SlidableAction(
               backgroundColor: Colors.purple,
-              onPressed: (context) => null,
+              onPressed: (context) => showCupertinoModalBottomSheet(
+                context: context, 
+                builder: (context) => MoveToFolderModal(
+                  folder: workspace, 
+                  onFolderSelected: (folder) => null,
+                )
+              ),
               icon: Icons.folder_outlined,
             ),
             SlidableAction(
@@ -73,7 +81,7 @@ class WorkspaceListItem extends StatelessWidget {
               onPressed: (context) => showCupertinoDialog(
                 context: context, 
                 builder: (context) => CupertinoAlertDialog(
-                  title: Text('Delete "' + workspace.title! + '"'),
+                  title: Text('Delete "' + (workspace.title ?? 'Untitled') + '"'),
                   content: Text('Are you sure you want to delete this space?'),
                   actions: [
                     CupertinoDialogAction(

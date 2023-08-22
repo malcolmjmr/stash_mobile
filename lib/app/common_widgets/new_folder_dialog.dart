@@ -59,7 +59,7 @@ class NewFolderDialog extends StatelessWidget {
           ),
         ),
         CupertinoDialogAction(
-          onPressed: onSave?.call(controller.text),
+          onPressed: () => onSave?.call(controller.text),
           child: Text('Save', 
             style: TextStyle(
               color: Colors.amber

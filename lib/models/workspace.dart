@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:stashmobile/models/resource.dart';
 import 'package:uuid/uuid.dart';
 
@@ -14,6 +16,7 @@ class Workspace {
   int? opened;
   int? openCount;
   int? closed;
+  int? deleted;
   
   int? timeOpen;
   int? timeInUse;
@@ -45,6 +48,7 @@ class Workspace {
 
   Workspace.miscellaneous() {
     id = 'MISC';
+    title = 'Miscellaneous';
   }
 
   Workspace.fromDatabase(String objectId, Map<String, dynamic> json) {
@@ -57,6 +61,7 @@ class Workspace {
     updated = json['updated'];
     lastActive = json['lastActive'];
     opened = json['opened'];
+    deleted = json['deleted'];
     openCount = json['openCount'];
     closed = json['closed'];
     timeOpen = json['timeOpen'];
@@ -85,6 +90,7 @@ class Workspace {
       'updated': updated,
       'lastActive': lastActive,
       'opened': opened,
+      'deleted': deleted,
       'openCount': openCount,
       'closed': closed,
       'timeOpen': timeOpen,
@@ -103,5 +109,13 @@ class Workspace {
     };
     json.removeWhere((key, value) => value == null);
     return json;
+  }
+
+  @override
+  String toString() {
+    // TODO: implement toString
+    JsonEncoder encoder = new JsonEncoder.withIndent('  ');
+    return encoder.convert(toJson().toString());
+
   }
 }

@@ -14,22 +14,34 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
-import 'package:stashmobile/app/common_widgets/move_to_folder_modal.dart';
+import 'package:page_transition/page_transition.dart';
+import 'package:stashmobile/app/move_to_folder/move_to_folder_modal.dart';
 import 'package:stashmobile/app/common_widgets/new_folder_dialog.dart';
 import 'package:stashmobile/app/common_widgets/search_field.dart';
 import 'package:stashmobile/app/common_widgets/section_header.dart';
 import 'package:stashmobile/app/common_widgets/section_list_item.dart';
 import 'package:stashmobile/app/common_widgets/share_item_modal.dart';
+import 'package:stashmobile/app/home/create_workspace_modal.dart';
+import 'package:stashmobile/app/web/tab_edit_modal.dart';
+import 'package:stashmobile/app/web/tab_label.dart';
+import 'package:stashmobile/app/web/tab_preview.dart';
+import 'package:stashmobile/app/workspace/folder_list_item.dart';
+import 'package:stashmobile/app/workspace/resource_list_item.dart';
+import 'package:stashmobile/app/workspace/tab_list_item.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
+import 'package:stashmobile/app/workspace/workspace_view_params.dart';
+import 'package:stashmobile/constants/color_map.dart';
 import 'package:stashmobile/extensions/color.dart';
 import 'package:stashmobile/models/workspace.dart';
+import 'package:stashmobile/routing/app_router.dart';
 
 import '../../models/resource.dart';
 
 class WorkspaceView extends StatefulWidget {
 
-  final String? workspaceId;
-  WorkspaceView({this.workspaceId});
+  final WorkspaceViewParams? params;
+  final bool  showWebView;
+  WorkspaceView({this.params, this.showWebView = false});
 
   @override
   State<WorkspaceView> createState() => _WorkspaceViewState();
@@ -39,11 +51,11 @@ class _WorkspaceViewState extends State<WorkspaceView> {
 
   late WorkspaceViewModel model; 
 
-  bool showWebView = false;
+
   bool isLoaded = false;
   bool showTabs = true;
   bool showFolders = true;
-  int tabIndex = 0;
+
 
   @override
   void initState() {
@@ -51,14 +63,16 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     super.initState();
     model = WorkspaceViewModel(
       context: context, 
-      workspaceId: widget.workspaceId,
-      onLoaded: () => {
+      params: widget.params,
+      setState: setState,
+      onLoaded: (workspace) {
         setState(() {
           isLoaded = true;
-        })
+        });
       }
     );
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -68,9 +82,9 @@ class _WorkspaceViewState extends State<WorkspaceView> {
             backgroundColor: Colors.black,
             body: Container(
               child: IndexedStack(
-                index: showWebView ? 1 : 0,
+                index: model.showWebView ? 1 : 0,
                 children: [
-                  _buildWorkspaceView(context, model),
+                  _buildWorkspaceView(),
                   _buildWebview(),
                 ],
               )
@@ -88,7 +102,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
           Container(
             height: MediaQuery.of(context).size.height - 130,
             child: IndexedStack(
-              index: tabIndex,
+              index: model.workspace.activeTabIndex,
               children: model.tabs
             )
           ),
@@ -121,23 +135,46 @@ class _WorkspaceViewState extends State<WorkspaceView> {
           Expanded(
             child: PageView(
               scrollDirection: Axis.vertical,
-              children: model.workspace.tabs.map((tab) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 10.0),
-                  child: TabListItem(
-                    isFirstListItem: true,
-                    isLastListItem: true,
-                    model: model, 
-                    resource: tab, 
-                    onTap: () => null
+              children: [
+                ...model.tabs.map((tab) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 10.0),
+                    child: OpenTabLabel(
+                      isFirstListItem: true,
+                      isLastListItem: true,
+                      model: model, 
+                      resource: tab.model.resource, 
+                      onTap: () {
+                        Navigator.push(context, 
+                          PageTransition<dynamic>(
+                            type: PageTransitionType.bottomToTop,
+                            curve: Curves.easeInExpo,
+                            child: TabEditModal(
+                              tab: tab.model.resource,
+                              workspaceModel: model,
+                            ),
+                            fullscreenDialog: true,
+                          )
+                        );
+                        
+                        
+                      }
+                    ),
+                  );
+                }).toList(),
+                Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 10.0),
+                    child: OpenTabLabel(
+                      isFirstListItem: true,
+                      isLastListItem: true,
+                      model: model, 
+                      resource: Resource(url: 'https://google.com', title: 'New Tab'), 
+                      onTap: () => null
+                    ),
                   ),
-                );
-              }).toList(),
+              ],
               onPageChanged: (index) {
                 model.onPageChanged(index);
-                setState(() {
-                  tabIndex = model.workspace.activeTabIndex!;
-                });
               },
               controller: model.tabPageController,
             ),
@@ -178,7 +215,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
           GestureDetector(
             onTap: () {
               setState(() {
-                showWebView = false;
+                model.showWebView = false;
               });
             },
             child: Row(
@@ -190,7 +227,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                   type: MaterialType.transparency,
                   child: Hero(
                     tag: model.workspace.title ?? '',
-                    child: Text(model.workspace.title ?? '',
+                    child: Text(model.workspace.title ?? 'Tabs (${model.tabs.length})',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: workspaceColor,
@@ -211,22 +248,22 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   }
 
 
-  Widget _buildWorkspaceView(BuildContext context, WorkspaceViewModel model) {
+  Widget _buildWorkspaceView() {
     return Stack(
       children: [
-        _buildScrollView(context, model),
+        _buildScrollView(),
         Positioned(
           height: 50,
           width: MediaQuery.of(context).size.width,
           bottom: 0,
           left: 0,
-          child: _buildFooter(context, model)
+          child: _buildFooter()
         )
       ],
     );
   }
 
-  Widget _buildScrollView(BuildContext context, WorkspaceViewModel model) {
+  Widget _buildScrollView() {
     return CustomScrollView(
       //controller: ,
       slivers: [
@@ -253,14 +290,23 @@ class _WorkspaceViewState extends State<WorkspaceView> {
         //   primary: true,
           
         // ),
+        SliverAppBar(
+          title: _buildHeader(),
+          automaticallyImplyLeading: false,
+          pinned: true,
+          leadingWidth: 0,
+          leading: null,
+          backgroundColor: Colors.black,
+        ),
+        if (model.workspace.title != null)
         SliverToBoxAdapter(
-          child: _buildExpandedHeader(context, model),
+          child: _buildExpandedHeader(),
         ),
 
         if (model.folders.isNotEmpty)
           SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 15),
+            padding: const EdgeInsets.only(left: 15.0, right: 15, top: 10),
             child: SectionHeader(
               title: 'Folders',
               isCollapsed: model.showFolders,
@@ -282,8 +328,12 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                 isFirstListItem: index == 0,
                 isLastListItem: index == model.folders.length - 1,
                 workspace: folder,
-                model: model,
-                onTap: () => null
+                onTap: () => Navigator.pushNamed(context, AppRoutes.workspace, 
+                  arguments: WorkspaceViewParams(
+                    workspaceId: folder.id,
+                    parentId: model.workspace.id, 
+                  )
+                ),
               ),
             );
           })
@@ -294,13 +344,14 @@ class _WorkspaceViewState extends State<WorkspaceView> {
           child: SizedBox(height: 20),
         ),
 
-        if (model.workspace.tabs.isNotEmpty)
+        if (model.tabs.isNotEmpty && model.workspace.title != null)
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 15),
             child: SectionHeader(
               title: 'Tabs',
               actions: [
+                if (model.showTabs && model.tabs.isNotEmpty)
                 GestureDetector(
                   onTap: () => model.clearTabs(),
                   child: Icon(Icons.clear_all,),
@@ -313,32 +364,48 @@ class _WorkspaceViewState extends State<WorkspaceView> {
             ),
           ),
         ),
-        if (model.showTabs && model.workspace.tabs.length > 0)
+        if (model.workspace.title != null && model.showTabs && model.tabs.length > 0)
         SliverList.builder(
-          itemCount: model.workspace.tabs.length,
+          itemCount: model.tabs.length,
           itemBuilder: ((context, index) {
-            final resource = model.workspace.tabs[index];
+            final tab = model.tabs[index];
             return Padding(
               padding: EdgeInsets.only(
                 left: 15.0, 
                 right: 15, 
               ),
               child: TabListItem(
+                key: Key(tab.model.resource.id!),
                 isFirstListItem: index == 0,
-                isLastListItem: index == model.workspace.tabs.length - 1,
-                resource: resource,
+                isLastListItem: index == model.tabs.length - 1,
+                resource: tab.model.resource,
                 model: model,
                 onTap: () {
-                  model.openTab(resource);
-                  setState(() {
-                    tabIndex = model.workspace.activeTabIndex!;
-                    showWebView = true;
-                  });
+                  model.openTab(tab.model.resource);
                 }
               ),
             );
           })
         ),
+
+        if (model.workspace.title == null) 
+        SliverToBoxAdapter(
+          
+          child: Center(
+            child: Wrap(
+              runAlignment: WrapAlignment.spaceEvenly,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: model.tabs.map((tab) => 
+                TabPreview(
+                  tab: tab.model.resource, 
+                  onTap: () => model.openTab(tab.model.resource),
+                )
+              ).toList(),
+            ),
+          ),
+        ),
+
+
         if (model.queue.length > 0)
           SliverToBoxAdapter(
           child: Padding(
@@ -360,29 +427,33 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                 left: 15.0, 
                 right: 15, 
               ),
-              child: TabListItem(
+              child: ResourceListItem(
                 isFirstListItem: index == 0,
                 isLastListItem: index == model.queue.length - 1,
                 resource: resource,
                 model: model,
                 onTap: () {
-                  setState(() {
-                     model.openTab(resource);
-                     tabIndex = model.workspace.activeTabIndex!;
-                  });
+                  model.openTab(resource);
                 }
               ),
             );
           })
         ),
-        
 
-        
+        if (model.showQueue && model.queue.isNotEmpty)
           SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.only(left: 15.0, right: 15, top: 20, bottom: 5),
+            padding: const EdgeInsets.symmetric(vertical: 5),
+          ),
+        ),
+        
+
+        if (model.resources.isNotEmpty)
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.only(left: 15.0, right: 15, bottom: 5),
             child: SectionHeader(
-              title: 'History',
+              title: 'Saved',
             ),
           ),
         ),
@@ -417,14 +488,13 @@ class _WorkspaceViewState extends State<WorkspaceView> {
 
   }
 
-  Widget _buildExpandedHeader(BuildContext context, WorkspaceViewModel model) {
+  Widget _buildExpandedHeader() {
     return Padding(
       padding: const EdgeInsets.only(top: 10, left: 15, right: 15),
       child: Container(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildHeader(context, model),
             Padding(
               padding: const EdgeInsets.only(bottom: 20.0, left: 5, right: 5),
               child: Container(
@@ -451,33 +521,50 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, WorkspaceViewModel model) {
+  Widget _buildHeader() {
     return Container(
       decoration: BoxDecoration(
         //border: Border(bottom: BorderSide(color: HexColor.fromHex(model.workspaceHexColor))),
         
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal:.0),
+        padding: const EdgeInsets.symmetric(horizontal:0.0),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _buildBackButton(context, model),
+            _buildBackButton(),
             //_buildTitle(context, model),
-            _buildMoreButton(context, model),
+            _buildMoreButton(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildBackButton(BuildContext context, WorkspaceViewModel model) {
+  Widget _buildBackButton() {
+    final text = model.parentWorkspace != null ? model.parentWorkspace!.title! : 'Stash';
+    final color = model.parentWorkspace != null ? HexColor.fromHex(colorMap[model.parentWorkspace?.color ?? 'grey']!) : null;
     return GestureDetector(
       onTap: () => Navigator.pop(context),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.arrow_back_ios, weight: 100, color: Colors.white,),
-          Text('Home')
+          Icon(Icons.arrow_back_ios, 
+            weight: 100, 
+            color: color
+          ),
+          Material(
+            type: MaterialType.transparency,
+            child: Hero(
+              tag: text,
+              child: Text(text, 
+                style: TextStyle(
+                  fontSize: 18,
+                  color: color
+                ),
+              )
+            ),
+          )
         ],
       ),
     );
@@ -496,7 +583,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     );
   }
 
-  Widget _buildMoreButton(BuildContext context, WorkspaceViewModel model) {
+  Widget _buildMoreButton() {
     return GestureDetector(
       onTap: () => null,
       child: Padding(
@@ -506,26 +593,27 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     );
   }
 
-  Widget _buildResourceContainer(BuildContext context, WorkspaceViewModel model) {
-    return Expanded(
-      child: Container(
-        child: ListView.builder(
-          itemCount: model.visibleResources.length,
-          itemBuilder: ((context, index) {
-            final resource = model.visibleResources[index];
-            return TabListItem(
-              key: Key(resource.id ?? resource.toString()),
-              resource: resource,
-              model: model,
-              onTap: () => model.openTab(resource)
-            );
-          }),
-        ),
-      ),
-    );
-  }
+  // Widget _buildResourceContainer(BuildContext context, WorkspaceViewModel model) {
+  //   return Expanded(
+  //     child: Container(
+        
+  //       child: ListView.builder(
+  //         itemCount: model.visibleResources.length,
+  //         itemBuilder: ((context, index) {
+  //           final resource = model.visibleResources[index];
+  //           return TabListItem(
+  //             key: Key(resource.id ?? resource.toString()),
+  //             resource: resource,
+  //             model: model,
+  //             onTap: () => model.openTab(resource)
+  //           );
+  //         }),
+  //       ),
+  //     ),
+  //   );
+  // }
 
-  Widget _buildFooter(BuildContext context, WorkspaceViewModel model) {
+  Widget _buildFooter() {
 
     final color = HexColor.fromHex(model.workspaceHexColor);
     return Container(
@@ -547,9 +635,14 @@ class _WorkspaceViewState extends State<WorkspaceView> {
             onTap: () => showCupertinoModalPopup(
               context: context, 
               builder: (context) {
-                return NewFolderDialog(
-                  onSave: (name) => model.createNewFolder(context, name),
-                );
+                return model.workspace.title != null 
+                  ? NewFolderDialog(
+                    onSave: (title) => model.createNewFolder(context, title),
+                    ) 
+                  : CreateWorkspaceModal(onDone: (workspace) { 
+                      model.saveSpace(workspace.title!);
+                      Navigator.pop(context);
+                    });
               }
             ),
             icon: Icons.create_new_folder_outlined, 
@@ -558,7 +651,9 @@ class _WorkspaceViewState extends State<WorkspaceView> {
           ),
           _buildResourceCounts(context, model),
           FooterIcon(
-            onTap: () => model.createNewTab(context),
+            onTap: () {
+               model.createNewTab(context);
+            },
             icon: Icons.add_box_outlined, 
             color: color, 
             size: 30
@@ -569,7 +664,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   }
 
   Widget _buildResourceCounts(BuildContext context, WorkspaceViewModel model) {
-    final tabCount = model.workspace.tabs.length;
+    final tabCount = model.tabs.length;
     return Row(
       children: [
         Text('${tabCount} Tab${tabCount > 1 ? 's' : ''}')
@@ -629,319 +724,5 @@ class FooterIcon extends StatelessWidget {
   }
 }
 
-class TabListItem extends StatelessWidget {
-  const TabListItem({Key? key, 
-    required this.model, 
-    required this.resource, 
-    required this.onTap,
-    this.isFirstListItem = false,
-    this.isLastListItem = false,
-    this.isLastActiveTab = false,
-  }) : super(key: key);
 
-  final WorkspaceViewModel model;
-  final Resource resource;
-  final VoidCallback onTap;
-  final bool isLastListItem;
-  final bool isFirstListItem;
-  final bool isLastActiveTab;
-
-  @override
-  Widget build(BuildContext context) {
-    return SectionListItemContainer(
-      isFirstListItem: isFirstListItem,
-      isLastListItem: isLastListItem,
-      onTap: onTap,
-      child: GestureDetector(
-        onLongPress: () {
-          HapticFeedback.mediumImpact();
-          showCupertinoModalBottomSheet(
-            context: context, 
-            builder: (context) => Material(
-              type: MaterialType.transparency,
-              child: Container(
-                height: MediaQuery.of(context).size.height * .66,
-                width: MediaQuery.of(context).size.width * .66,
-                child: InAppWebView(
-                  initialUrlRequest: URLRequest(url: Uri.parse(resource.url!)),
-                ),
-              ),
-            )
-          );
-        },
-        child: Slidable(
-          key: Key(resource.toString()),
-          startActionPane: ActionPane(
-            children: [
-              SlidableAction(
-                icon: Icons.move_to_inbox_outlined,
-                foregroundColor: Colors.white,
-                backgroundColor: Colors.orange,
-                onPressed: (context) => model.stashTab(resource),
-              ),
-              SlidableAction(
-                icon: Icons.bookmark_add_outlined,
-                backgroundColor: Colors.green,
-                onPressed: (context) => model.saveTab(resource),
-              ),
-            ],
-            motion: const ScrollMotion(),
-            dismissible: DismissiblePane(onDismissed: () => model.stashTab(resource)),
-            openThreshold: 0.5,
-          ),
-          endActionPane: ActionPane(
-            children: [
-              SlidableAction(
-                icon: Icons.ios_share,
-                backgroundColor: Colors.blue,
-                onPressed: (context) => showCupertinoModalBottomSheet(
-                  context: context, 
-                  builder: (context) {
-                    return Container();//ShareModal()
-                  }
-                )
-              ),
-              SlidableAction(
-                icon: Icons.folder_outlined,
-                backgroundColor: Colors.purple,
-                onPressed: (context) => showCupertinoModalBottomSheet(
-                  context: context, 
-                  builder: (context) {
-                    return MoveToFolderModal(resource: resource);
-                  }
-                )
-              ),
-              SlidableAction(
-                icon: Icons.close,
-                backgroundColor: Colors.redAccent,
-                onPressed: (context) => model.removeTab(resource),
-              )
-            ],
-            motion: const StretchMotion(),
-            // A pane can dismiss the Slidable.
-            dismissible: DismissiblePane(onDismissed: () => model.removeTab(resource)),
-            openThreshold: 0.25,
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(right: 5.0),
-                  child: Container(
-                    height: 35,
-                    width: 35,
-                    child: resource.favIconUrl != null 
-                      ? Image.network(resource.favIconUrl ?? '',
-                        //loadingBuilder: (context, child, loadingProgress) => Icon(Icons.language, size: 30,),
-                        errorBuilder: (context, child, loadingProgress) => Icon(Icons.public, size: 35,),
-                      )
-                      : Icon(Icons.language, size: 35,)
-                    ),
-                ),
-                Expanded(
-                  child: Text(resource.title ?? '', 
-                    maxLines: 1,
-                    style: TextStyle(
-                      color: isLastActiveTab ? Colors.amber : Colors.white,
-                      fontWeight: FontWeight.w400,
-                      letterSpacing: 0.5,
-                      fontSize: 16,  
-                      overflow: TextOverflow.ellipsis),
-                    ),
-                  ),
-                if (resource.isSaved == true) 
-                Icon(Icons.bookmark_outline),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-
-class ResourceListItem extends StatelessWidget {
-  const ResourceListItem({Key? key, 
-    required this.model, 
-    required this.resource, 
-    required this.onTap,
-    this.isFirstListItem = false,
-    this.isLastListItem = false,
-  }) : super(key: key);
-
-  final WorkspaceViewModel model;
-  final Resource resource;
-  final VoidCallback onTap;
-  final bool isLastListItem;
-  final bool isFirstListItem;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onLongPress: () => print(resource.id),
-      child: SectionListItemContainer(
-        isFirstListItem: isFirstListItem,
-        isLastListItem: isLastListItem,
-        onTap: onTap,
-        child: Slidable(
-          key: Key(resource.toString()),
-          startActionPane: ActionPane(
-            children: [
-              SlidableAction(
-                icon: Icons.copy,
-                backgroundColor: Colors.green,
-                onPressed: (context) => null,
-              )
-            ],
-            motion: const ScrollMotion(),
-            // A pane can dismiss the Slidable
-            openThreshold: 0.5,
-          ),
-          endActionPane: ActionPane(
-            children: [
-               SlidableAction(
-                icon: Icons.ios_share_outlined,
-                backgroundColor: Colors.blue,
-                onPressed: (context) => showCupertinoModalBottomSheet(
-                  context: context, 
-                  builder: (context) {
-                    return ShareModal();
-                  }
-                ),
-              ),
-              SlidableAction(
-                icon: Icons.folder_outlined,
-                backgroundColor: Colors.purple,
-                onPressed: (context) => showCupertinoModalBottomSheet(
-                  context: context, 
-                  builder: (context) {
-                    return MoveToFolderModal(resource: resource,);
-                  }
-                ),
-              ),
-              SlidableAction(
-                icon: Icons.delete,
-                backgroundColor: Colors.red,
-                onPressed: (context) => model.deleteResource(resource),
-              )
-            ],
-            motion: const StretchMotion(),
-            // A pane can dismiss the Slidable.
-            dismissible: DismissiblePane(onDismissed: () => model.removeTab(resource)),
-            openThreshold: 0.25,
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(right: 5.0),
-                  child: Container(
-                    height: 35,
-                    width: 35,
-                    child: resource.favIconUrl != null 
-                      ? Image.network(resource.favIconUrl ?? '',
-        
-                        //loadingBuilder: (context, child, loadingProgress) => Icon(Icons.language, size: 30,),
-                        errorBuilder: (context, child, loadingProgress) => Icon(Icons.public, size: 35,),
-                      )
-                      : Icon(Icons.language, size: 35,)
-                    ),
-                ),
-                Expanded(
-                  child: Text(resource.title ?? '', 
-                    maxLines: 1,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w300,
-                      letterSpacing: 0.5,
-                      fontSize: 14,  
-                      overflow: TextOverflow.ellipsis),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-
-class FolderListItem extends StatelessWidget {
-  const FolderListItem({Key? key, 
-    required this.model, 
-    required this.workspace, 
-    required this.onTap,
-    this.isFirstListItem = false,
-    this.isLastListItem = false,
-  }) : super(key: key);
-
-  final WorkspaceViewModel model;
-  final Workspace workspace;
-  final VoidCallback onTap;
-  final bool isLastListItem;
-  final bool isFirstListItem;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: SectionListItemContainer(
-        isFirstListItem: isFirstListItem,
-        isLastListItem: isLastListItem,
-        child: Slidable(
-          key: Key(workspace.toString()),
-          startActionPane: ActionPane(
-            children: [
-             
-            ],
-            motion: const ScrollMotion(),
-            // A pane can dismiss the Slidable
-            openThreshold: 0.5,
-          ),
-          endActionPane: ActionPane(
-            children: [
-              
-            ],
-            motion: const StretchMotion(),
-            // A pane can dismiss the Slidable.
-            //dismissible: DismissiblePane(onDismissed: () => model.removeTab(resource)),
-            openThreshold: 0.25,
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(right: 5.0),
-                  child: Container(
-                    height: 40,
-                    width: 40,
-                    child: Icon(Icons.folder)
-                  )
-                ),
-                Expanded(
-                  child: Text(workspace.title ?? '', 
-                    maxLines: 1,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w300,
-                      letterSpacing: 0.5,
-                      fontSize: 14,  
-                      overflow: TextOverflow.ellipsis),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
 

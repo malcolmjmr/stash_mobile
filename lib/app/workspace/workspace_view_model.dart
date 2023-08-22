@@ -1,4 +1,6 @@
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,7 +10,9 @@ import 'package:stashmobile/app/providers/user.dart';
 
 import 'package:stashmobile/app/web/tab.dart';
 import 'package:stashmobile/app/web/tab_model.dart';
+import 'package:stashmobile/app/workspace/workspace_view_params.dart';
 import 'package:stashmobile/models/workspace.dart';
+import 'package:stashmobile/routing/app_router.dart';
 
 import '../../constants/color_map.dart';
 import '../../models/resource.dart';
@@ -28,9 +32,8 @@ class WorkspaceViewModel extends ChangeNotifier {
 
   late User user;
 
-  String? workspaceId;
-
   late Workspace workspace;
+  Workspace? parentWorkspace;
   List<Workspace> subWorkspaces = [];
   List<Resource> allResources = [];
   //List<Resource> folders = [];
@@ -40,22 +43,44 @@ class WorkspaceViewModel extends ChangeNotifier {
 
   List<TabView> tabs = [];
 
+  
+
   String view = Views.tabs;
   late PageController tabPageController;
 
   BuildContext context;
 
-  WorkspaceViewModel({required this.context, required this.workspaceId, onLoaded}) {
+  Function(Function()) setState;
+  bool showWebView = false;
+
+  WorkspaceViewParams? params;
+
+  WorkspaceViewModel({
+    required this.context, 
+    this.params,
+    required Function(Workspace) onLoaded, 
+    required this.setState,
+  }) {
     data = context.read(dataProvider);
     user = context.read(userProvider).state!; 
-    loadWorkspace(workspaceId, onLoaded);
-    
+    loadWorkspace(onLoaded);
+  
   }
 
-  loadWorkspace(String? workspaceId, Function() onLoaded) async {
-    //setLoading(true);
-    workspace = workspaceId != null ? await data.getWorkspace(workspaceId) : Workspace.miscellaneous(); 
-    allResources =  await data.getWorkspaceResources(workspaceId);
+  loadWorkspace(Function(Workspace) onLoaded) async {
+    workspace = params?.workspaceId != null ? await data.getWorkspace(params!.workspaceId!) : Workspace(); 
+    if (params?.parentId != null) parentWorkspace = await data.getWorkspace(params!.parentId!);
+    if (workspace.title == null ) {
+      workspace.tabs = [Resource(url: 'https://www.google.com/', title: 'New Tab')];
+      showWebView = true;
+    }
+
+    if (workspace.activeTabIndex == null) {
+      workspace.activeTabIndex = 0;
+    }
+
+    
+    allResources =  await data.getWorkspaceResources(workspace.id);
     await fixData();
     processResources();
 
@@ -63,13 +88,25 @@ class WorkspaceViewModel extends ChangeNotifier {
 
     //setLoading(false);
 
-    onLoaded();
+
+    onLoaded(workspace);
   }
 
 
   loadTabs() {
+
+    bool lazyLoad = true;
+    if (workspace.title  == null && workspace.tabs.length == 1) {
+      lazyLoad = false;
+    }
     tabs = workspace.tabs.map((tab) {
-      return TabView(resource: tab, onTabUpdated: onTabUpdated);
+      return TabView(
+        model: TabViewModel(
+          workspaceModel: this,
+          initialResource: tab,
+        ), 
+        lazyLoad: lazyLoad,
+      );
     }).toList();
 
     //tabPageController.jumpToPage(workspace.activeTabIndex ?? 0);
@@ -80,17 +117,12 @@ class WorkspaceViewModel extends ChangeNotifier {
   
   bool isLoading = true;
 
-  setLoading(bool value) {
-    isLoading = value;
-    notifyListeners();
-  }
 
   fixData() async {
     List<String> urls = [];
     List<String> ids = [];
     List<Resource> resourcesToRemove = [];
     List<Resource> resourcesToUpdate = [];
-    print(user.id);
     subWorkspaces = [];
     for (final resource in allResources)  {
       if (resource.url == null) {
@@ -104,7 +136,6 @@ class WorkspaceViewModel extends ChangeNotifier {
             continue;
           }
           ids.add(resource.id!);
-          print(resource.id);
           Workspace newWorkspace = Workspace(title: resource.title);
           newWorkspace.id = resource.id!;
           newWorkspace.contexts = [workspace.id];
@@ -130,8 +161,8 @@ class WorkspaceViewModel extends ChangeNotifier {
     }
 
     if (resourcesToRemove.isNotEmpty) {
-      print('resource to remove');
-      print(resourcesToRemove.length);
+      
+      
       for (final resource in resourcesToRemove) {
         //await app.workspaceManager.db.deleteResource(user.id, resource.id!);
       }
@@ -139,17 +170,13 @@ class WorkspaceViewModel extends ChangeNotifier {
     }
 
     if (resourcesToUpdate.isNotEmpty) {
-      print('resource to update');
-      print(resourcesToUpdate.length);
       for (final resource in resourcesToUpdate) {
         await data.saveResource(resource);
       }
     }
   }
 
-  processResources() {
-    print('processing resources');
-    print(allResources.length);
+  processResources() async  {
     workspace.tabs = workspace.tabs.map((t) {
       Resource? savedResource = allResources.firstWhereOrNull((r) => r.url == t.url);
       if (savedResource != null) savedResource.isSaved = true;
@@ -159,15 +186,29 @@ class WorkspaceViewModel extends ChangeNotifier {
 
 
     queue = [];
-    folders = [];
+    folders = (await data.getWorkspaces())
+      .where((w) => w.contexts.contains(workspace.id))
+      .toList();
+
     resources = [];
+
+    // folders = workspace
+    //   .contexts
+    //   .map((workspaceId) => data.getWorkspace(workspaceId))
+    //   .toList();
+    
+    
 
     for (final resource in allResources) {
       if (resource.url == null) {
         //folders.add(resource);
+        if (resource.title == workspace.title) continue;
+        Workspace folder = Workspace(title: resource.title);
+        folder.contexts.add(workspace.id);
+        folders.add(folder);
       } else if (resource.isQueued == true) {
         queue.add(resource);
-      } else if (resource.parentId == null) {
+      } else {
         resources.add(resource);
       }
     }
@@ -191,108 +232,161 @@ class WorkspaceViewModel extends ChangeNotifier {
   List<Resource> visibleResources = [];
 
   String searchText = '';
-  // updateVisibleResources() {
-  //   if (searchText.length > 0) {
-  //     final text = searchText.toLowerCase();
-  //     visibleResources = [...resources, ...workspace.tabs].where((r) {
-  //       return ((r.title ?? '') + (r.url ?? '')).contains(text);
-  //     }).toList();
-  //   } else {
-  //     if (view == Views.tabs) {
-  //       visibleResources = workspace.tabs;
-  //     } else if (view == Views.recent) {
-  //       visibleResources = resources.where((r) => r.url != null).toList();
-  //       visibleResources.sort((a, b) => (b.updated ?? 0).compareTo(a.updated ?? 0));
-  //     } else if (view == Views.folders) {
-  //       visibleResources = resources.where((r) => r.url == null && r.parentId != workspace.folderId).toList();
-  //     }
-  //   }
-    
-  //   notifyListeners();
-  // }
-
 
   bool showTabs = true;
   toggleShowTabs() {
-    showTabs = !showTabs;
-    notifyListeners();
+    setState(() {
+      showTabs = !showTabs;
+    });
+    
   }
 
   bool showFolders = true;
   toggleShowFolders() {
-    showFolders = !showFolders;
-    notifyListeners();
+    setState(() {
+      showFolders = !showFolders;
+    });
+    
   }
 
   bool showQueue = true;
   toggleShowQueue() {
-    showQueue = !showQueue;
-    notifyListeners();
+    setState(() {
+      showQueue = !showQueue;
+    });
   }
 
   openTab(Resource resource) {
-    final index = workspace.tabs.indexWhere((tab) => tab.id == resource.id);
+
+    final index = tabs.indexWhere((tab) => tab.model.resource.id == resource.id);
     if (index > -1) {
       workspace.activeTabIndex = index;
+      final tabModel = tabs[index].model;
+      if (!tabModel.loaded) {
+        tabModel.controller.loadUrl(urlRequest: URLRequest(url: Uri.parse(tabModel.resource.url!)));
+      }
     } else {
-      workspace.tabs.add(resource);
-      tabs.add(TabView(resource: resource, onTabUpdated: onTabUpdated));
+      if (resource.isQueued == true) {
+        resource.isQueued = false;
+        resource.isSaved = false;
+        queue.removeWhere((r) => resource.id == r.id);
+        data.deleteResource(resource);
+      }
+      tabs.add(TabView(
+        model: TabViewModel(
+          workspaceModel: this,
+          initialResource: resource,
+        ),
+        lazyLoad: false));
       workspace.activeTabIndex = workspace.tabs.length;
     }
+    
+    if (workspace.title != null) updateWorkspaceTabs();
+    setState(() {
+      workspace.activeTabIndex;
+      showWebView = true;
+      resources;
+    });
+
     tabPageController.jumpToPage(workspace.activeTabIndex!);
   }
 
   openResource(BuildContext context, Resource resource) {
 
     // check that resource isn't already in tabs
+    setState(() {
+      final index = workspace.tabs.indexWhere((r) => r.id == resource.id);
+      if (index > -1) {
+        workspace.activeTabIndex = index;
+      } else {
+        resource.isSaved = true;
+        workspace.tabs.add(resource);
+        if (workspace.title != null) data.saveWorkspace(workspace);
+        tabs.add(
+          TabView(
+            model: TabViewModel(
+              workspaceModel: this,
+              initialResource: resource,
+            ),
+          )
+        );
+        workspace.activeTabIndex = workspace.tabs.length - 1;
+      }
 
-    final index = workspace.tabs.indexWhere((r) => r.id == resource.id);
-    if (index > -1) {
-      workspace.activeTabIndex = index;
-    } else {
-      resource.isSaved = true;
-      workspace.tabs.add(resource);
-      data.saveWorkspace(workspace);
-      tabs.add(
-        TabView(
-          resource: resource,
-          onTabUpdated: onTabUpdated,
-        )
-      );
-      workspace.activeTabIndex = workspace.tabs.length - 1;
-    }
-    
-    notifyListeners();
+      showWebView = true;
+
+    });
+ 
   }
 
   onTabUpdated(TabViewModel model, InAppWebViewController controller, Uri? uri) async {
     // find resource
-
-    final int resourceIndex = workspace.tabs.indexWhere((tab) => tab.id == model.resource.id);
+    
+    print('tab updated');
+    if (!model.loaded) model.loaded = true;
+    final int resourceIndex = tabs.indexWhere((tab) => tab.model.resource.id == model.resource.id);
     Resource resource;
     if (resourceIndex == -1) {
       print('could not find tab');
       return;
     }
-
     resource = workspace.tabs[resourceIndex];
 
-    // if (uri.toString() != resource.url) {
-    //   // update tab resouce (look for existing resource or create new resourc)
-    // } else {
-    //   // update resource if favicon != null || title != null 
-    //   if (resource.favIconUrl == null) {
-    //     final favIconUrl = await model.getFaviconUrl(controller);
-    //     if (favIconUrl != null) {
-    //       resource.favIconUrl favIconUrl;
-    //     }
-    //   }
 
-    //   if (resource.title == null) {
+    if (uri.toString() != resource.url) {
+      // update tab resouce (look for existing resource or create new resourc)
+      resource = Resource(
+        url: uri.toString(),
+        favIconUrl: await model.getFaviconUrl(controller),
+        title: await controller.getTitle(),
+      );
+      final tabIndex = workspace.tabs.indexWhere((r) => r.id == model.resource.id);
+      workspace.tabs[tabIndex] = resource;
+      model.resource = resource;
+    } else {
+      // update resource if favicon != null || title != null 
+      //if (resource.favIconUrl == null) {
+        final favIconUrl = await model.getFaviconUrl(controller);
+        if (favIconUrl != null) {
+          resource.favIconUrl = favIconUrl;
+        }
+      //}
 
-    //   }
-    // }
+      //if (resource.title == null) {
+        final title = await controller.getTitle();
+        if (title != null) {
+          resource.title = title;
+        }
+      //}
+
+      //if (resource.image == null) {
+      if (workspace.title == null) {
+        final image = await controller.takeScreenshot();
+        if (image != null) {
+          resource.image = image;
+        }
+      }
+      //}
+    }
+
+    setState(() {
+      workspace;
+      model.resource;
+      tabs;
+      resource;
+    });
     
+  }
+
+  addTabFromNewWindow(Resource parent, int windowId) {
+
+  }
+
+  updateTabFromUrlField(Resource resource, String url) async {
+    
+    TabView tab = tabs.firstWhere((t) => t.model.resource.id == resource.id);
+    await tab.model.controller.loadUrl(urlRequest: URLRequest(url: Uri.parse(url)));
+
   }
 
   updateTabResource({String? title, }) {
@@ -302,83 +396,150 @@ class WorkspaceViewModel extends ChangeNotifier {
   onPageChanged(int index) {
 
     workspace.activeTabIndex = index;
-    //notifyListeners();
-    // if (index == 0) {
-    //   // create tab
-    // } else if (index < workspace.tabs.length) {
-      
-    // } else {
-    //   // creat tab
-    // }
+    bool newTabCreated = false;
+    if (tabs.length == index) {
+      tabs.add(TabView(
+        model: TabViewModel(workspaceModel: this),
+        lazyLoad: false)
+      );
+      newTabCreated = true;
+    }
+
     
+    final tabModel = tabs[index].model;
+    if (!tabModel.loaded) {
+      Timer(Duration(milliseconds: newTabCreated ? 300 : 0), () {
+        tabModel.controller.loadUrl(urlRequest: URLRequest(url: Uri.parse(tabModel.resource.url!)));
+      });
+    }
+  
+
+    setState(() {
+      workspace.activeTabIndex = index;
+      tabs;
+    });
+
   }
 
   removeTab(Resource resource) async {
-    final index = workspace.tabs.indexWhere((r) => r.id != resource.id);
-    workspace.tabs.removeAt(index);
-    tabs.removeAt(index);
-    await data.saveWorkspace(workspace);
-    notifyListeners();
+    setState(() {
+      final index = tabs.indexWhere((t) => t.model.resource.id == resource.id);
+      final currentIndex = workspace.activeTabIndex!;
+      workspace.activeTabIndex = currentIndex > 0 ? currentIndex - 1 : currentIndex;
+      tabPageController.jumpToPage(workspace.activeTabIndex!);
+      tabs.removeAt(index);
+      if (workspace.title != null) updateWorkspaceTabs();
+    });
+
   }
 
   stashTab(Resource resource) {
-    final index = workspace.tabs.indexWhere((r) => r.id != resource.id);
-    workspace.tabs.removeAt(index);
-    tabs.removeAt(index);
-    resource.isQueued = true;
-    saveTab(resource);
+    setState(() {
+      final index = tabs.indexWhere((tab) => tab.model.resource.id == resource.id);
+      tabs.removeAt(index);
+      final currentIndex = workspace.activeTabIndex!;
+      workspace.activeTabIndex = currentIndex > 0 ? currentIndex - 1 : currentIndex;
+      tabPageController.jumpToPage(workspace.activeTabIndex!);
+      updateWorkspaceTabs();
+      resource.isQueued = true;
+      queue.add(resource);
+      if (resource.contexts.isEmpty) {
+        resource.contexts.add(workspace.id);
+      }
+      data.saveResource(resource);
+      
+    });
+    
+  }
+
+  updateWorkspaceTabs({bool save = true}) {
+    workspace.tabs = tabs.map((t) => t.model.resource).toList();
+    if (save) {
+      workspace.updated = DateTime.now().millisecondsSinceEpoch;
+      data.saveWorkspace(workspace);
+    }
   }
 
   saveTab(Resource resource) {
     if (resource.contexts.isEmpty) {
       resource.contexts.add(workspace.id);
     }
+    resources.add(resource);
     data.saveResource(resource);
-    notifyListeners();
+    
+
+    setState(() {
+      resource.isSaved = true;
+    });
+
+  }
+
+  saveSpace(String title) {
+    setState(() {
+      workspace.title = title.trim();
+      data.saveWorkspace(workspace);
+    });
   }
 
   createNewFolder(BuildContext context, String title) {
     Workspace newFolder = Workspace(title: title);
     newFolder.contexts.add(workspace.id);
     data.saveWorkspace(newFolder);
-    workspace = newFolder;
+    //workspace = newFolder;
     processResources();
-    notifyListeners();
-
+    Navigator.pushNamed(context, AppRoutes.workspace, 
+      arguments: WorkspaceViewParams(
+        workspaceId: newFolder.id, 
+        parentId: workspace.id
+      )
+    );
   }
 
   createNewTab(BuildContext context) {
-    Resource newTab = Resource(url: 'https://www.google.com');
-    if(workspace.activeTabIndex != null && workspace.tabs.isNotEmpty) {
-      final newIndex = workspace.activeTabIndex! + 1;
-      workspace.tabs.insert(newIndex, newTab);
-    } else {
-      workspace.tabs.add(newTab);
-      workspace.activeTabIndex = workspace.tabs.length - 1;
-    }
-
-    notifyListeners();
-    //print(read(webViewProvider).controllers.values.map((InAppWebViewController c) async => await c.getUrl()));
+    
+    // if(workspace.activeTabIndex != null && workspace.tabs.isNotEmpty) {
+    //   print('inserting tab');
+    //   workspace.activeTabIndex = workspace.activeTabIndex! + 1;
+    //   final newIndex = workspace.activeTabIndex!;
+    //   //workspace.tabs.insert(newIndex, newTab);
+    //   tabs.insert(newIndex, 
+    //     TabView(
+    //       model: TabViewModel(workspaceModel: this),
+    //       lazyLoad: false,
+    //     )
+    //   );
+    // } else {
+      //workspace.tabs.add(newTab);
+      
+      tabs.add(
+        TabView(
+          model: TabViewModel(workspaceModel: this),
+          lazyLoad: false,
+        )
+      );
+      workspace.activeTabIndex = tabs.length - 1;
+    //}
+    setState(() {
+      tabs;
+      workspace.activeTabIndex;
+      showWebView = true;
+    });
+   
   }
 
-  // updateTab(int tabIndex, Resource resource) {
-  //   workspace.tabs[tabIndex] = resource;
-  //   tabs = workspace.tabs;
-  //   print(tabs);
-  //   notifyListeners();
-  //   // save workspace
-  // }
-
   deleteResource(Resource resource) {
-    resources.removeWhere((r) => r.id == resource.id);
-    //app.resourceManager.db.deleteResource(user.id, resource.id!);
-    notifyListeners();
+    setState(() {
+      resources.removeWhere((r) => r.id == resource.id);
+      resource.deleted = DateTime.now().millisecondsSinceEpoch;
+      data.deleteResource(resource);
+    });
   }
 
   clearTabs() {
-    workspace.tabs = [];
-    tabs = [];
-    notifyListeners();
+    setState(() {
+      workspace.tabs = [];
+      tabs = [];  
+    });
   }
 
 }

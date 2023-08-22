@@ -1,5 +1,6 @@
 
 
+import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 
 enum ResourceType {
@@ -22,11 +23,14 @@ class Resource {
   int? created;
   int? updated;
   int? lastVisited;
+  int? deleted;
   String? bookmarkId;
   String? parentId;
   bool? isQueued;
   bool? isFavorite;
   bool? isSaved;
+  Uint8List? image;
+
 
 
   Resource({ this.url, this.title, this.favIconUrl}) {
@@ -48,6 +52,8 @@ class Resource {
     index = json['index'];
     isQueued = json['isQueued'];
     isFavorite = json['isFavorite'];
+    deleted = json['deleted'];
+    updated = json['updated'];
   }
 
   Map<String, dynamic> toJson() {
@@ -65,9 +71,17 @@ class Resource {
       'index': index,
       'isQueued': isQueued,
       'isFavorite': isFavorite,
+      'deleted': deleted,
+      'updated': updated,
     };
     json.removeWhere((key, value) => value == null);
     return json;
+  }
+
+  @override
+  String toString() {
+    // TODO: implement toString
+    return toJson().toString();
   }
 
 }

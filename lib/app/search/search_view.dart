@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:stashmobile/app/common_widgets/search_field.dart';
 import 'package:stashmobile/app/search/search_view_model.dart';
 import 'package:stashmobile/extensions/color.dart';
 
@@ -36,42 +37,7 @@ class SearchView extends ConsumerWidget {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal:8.0,),
-              child: Hero(
-                tag: 'search',
-                child: Material(
-                  type: MaterialType.transparency,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      color: HexColor.fromHex('222222'),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 5.0),
-                          child: Icon(Icons.search),
-                        ),
-                        Expanded(
-                          child: TextField(
-                            controller: model.controller,
-                            decoration: InputDecoration(
-                              border: InputBorder.none,
-                              hintStyle: TextStyle(
-                                color: Colors.white.withOpacity(0.8)
-                              )
-                            ),
-                            style: TextStyle(
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              )
-              
+              child: SearchField(),
             ),
           ),
           GestureDetector(

@@ -47,11 +47,14 @@ class DataManager {
       }
     } else {
       if (loadedWorkspaces.contains(workspaceId)) {
+        print('getting workspace resource from memory');
         workspaceResources = resources.where((r) => r.contexts.contains(workspaceId)).toList();
       } else {
+        print('getting workspace resource from server');
         workspaceResources = await db.getWorkspaceResources(user, workspaceId);
         resources.addAll(workspaceResources);
         loadedWorkspaces.add(workspaceId);
+
       }
     }
     
@@ -61,7 +64,12 @@ class DataManager {
 
 
   _getWorkspacesFromCloud() async  {
-    workspaces = await db.getUserWorkspaces(user);
+    workspaces = (await db.getUserWorkspaces(user)).where((w) => w.isIncognito != true).toList();
+    Workspace miscWorkspace = Workspace.miscellaneous();
+    final foundMiscWorkspace = workspaces.firstWhereOrNull((workspace) => miscWorkspace.id == workspace.id);
+    if (foundMiscWorkspace == null) {
+      workspaces.add(miscWorkspace);
+    }
   }
 
   Future<List<Workspace>> getWorkspaces() async {
@@ -82,7 +90,9 @@ class DataManager {
   }
 
   deleteResource(Resource resource) async {
-    await db.deleteResource(user.id, resource.id!);
+    resource.deleted = DateTime.now().millisecondsSinceEpoch;
+    await db.setResource(user.id, resource);
+    //await db.deleteResource(user.id, resource.id!);
     resources.removeWhere((r) => r.id == resource.id);
   }
 
@@ -96,11 +106,14 @@ class DataManager {
       workspaceToUpdate = workspace;
     }
 
+    workspace.updated = DateTime.now().millisecondsSinceEpoch;
+
     await db.setUserWorkspace(user.id, workspace);
   }
 
   deleteWorkspace(Workspace workspace) async {
-    await db.deleteWorkspace(user.id, workspace.id);
+    workspace.deleted = DateTime.now().millisecondsSinceEpoch;
+    await db.setUserWorkspace(user.id, workspace);
     workspaces.removeWhere((w) => w.id == workspace.id);
   }
 

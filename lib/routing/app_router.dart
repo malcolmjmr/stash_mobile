@@ -2,8 +2,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:stashmobile/app/sign_in/email_password_sign_in_page.dart';
+import 'package:stashmobile/app/web/tab_edit_modal.dart';
 
 import 'package:stashmobile/app/workspace/workspace_view.dart';
+import 'package:stashmobile/app/workspace/workspace_view_params.dart';
 
 import '../app/search/search_view.dart';
 
@@ -47,6 +49,9 @@ class AppRoutes {
   static const contentTags = '/content-tags';
   static const contentFields = '/content-fields';
 
+
+  static const editTab = '/edit-tab';
+
   
 }
 
@@ -62,7 +67,6 @@ class AppRouter {
           settings: settings,
           fullscreenDialog: true,
         );
-
       case AppRoutes.search:
         return PageTransition<dynamic>(
             type: PageTransitionType.scale,
@@ -76,7 +80,9 @@ class AppRouter {
         return PageTransition<dynamic>(
             type: PageTransitionType.rightToLeft,
             curve: Curves.easeInExpo,
-            child: WorkspaceView(workspaceId: args as String),
+            child: WorkspaceView(
+              params: args as WorkspaceViewParams, 
+            ),
             settings: settings,
             fullscreenDialog: true,
           );

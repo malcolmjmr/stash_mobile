@@ -5,9 +5,10 @@ import 'package:stashmobile/extensions/color.dart';
 import 'package:stashmobile/models/workspace.dart';
 
 class CreateWorkspaceModal extends StatefulWidget {
-  const CreateWorkspaceModal({Key? key, required this.model}) : super(key: key);
 
-  final HomeViewModel model;
+  final Function(Workspace workspace) onDone;
+  const CreateWorkspaceModal({Key? key, required this.onDone}) : super(key: key);
+
 
   @override
   State<CreateWorkspaceModal> createState() => _CreateWorkspaceModalState();
@@ -26,6 +27,7 @@ class _CreateWorkspaceModalState extends State<CreateWorkspaceModal> {
         height: 500,
         width: double.infinity,
         decoration: BoxDecoration(
+          color: HexColor.fromHex('222222'),
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(5.0), 
             topRight: Radius.circular(5.0)
@@ -61,10 +63,13 @@ class _CreateWorkspaceModalState extends State<CreateWorkspaceModal> {
               ),
             ),
             Text(workspace.title != null && workspace.title!.isNotEmpty ? workspace.title! : 'New Space',
-              style: TextStyle(fontSize: 20, color: HexColor.fromHex(colorMap[workspace.color ?? 'grey']!)),
+              style: TextStyle(
+                fontSize: 20, 
+                color: HexColor.fromHex(colorMap[workspace.color ?? 'grey']!)
+              ),
             ),
             GestureDetector(
-              onTap: () => widget.model.createNewWorkspace(context, workspace),
+              onTap: () => widget.onDone(workspace),
               child: Text('Done',
                 style: TextStyle(
                   color: Colors.amber, 

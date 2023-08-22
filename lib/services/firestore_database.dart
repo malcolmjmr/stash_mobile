@@ -64,21 +64,21 @@ class FirestoreDatabase {
       _service.collectionStream(
           path: FirestorePath.userResources(userId: user.id),
           builder: (id, data) => Resource.fromDatabase(id, data),
-          queryBuilder: (query) => query.where('context', arrayContains: workspaceId),
+          queryBuilder: (query) => query.where('contexts', arrayContains: workspaceId),
       );
 
   Future<List<Resource>> getWorkspaceResources(User user, String workspaceId) =>
       _service.collection(
           path: FirestorePath.userResources(userId: user.id),
           builder: (id, data) => Resource.fromDatabase(id, data),
-          queryBuilder: (query) => query.where('context', arrayContains: workspaceId),
+          queryBuilder: (query) => query.where('contexts', arrayContains: workspaceId),
       );
 
   Future<List<Resource>> getMiscResources(User user) =>
       _service.collection(
           path: FirestorePath.userResources(userId: user.id),
           builder: (id, data) => Resource.fromDatabase(id, data),
-          queryBuilder: (query) => query.where('context', isNull: true),
+          queryBuilder: (query) => query.where('contexts', isNull: true),
       );
 
   Future<void> setUserWorkspace(String userId, Workspace workspace) =>

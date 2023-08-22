@@ -10,22 +10,36 @@ class TabViewModel {
  
   late InAppWebViewController controller;
 
-  late Resource resource = Resource();
+  late Resource resource;
+  WorkspaceViewModel workspaceModel;
 
-  TabViewModel() {
-
+  TabViewModel({required this.workspaceModel, Resource? initialResource}) {
+    if (initialResource != null) {
+      resource = initialResource;
+    } else {
+      resource = Resource(title: 'New Tab', url: 'https://www.google.com/');
+    }
   }
+
+  bool loaded = false;
 
   Future<String?> getFaviconUrl(InAppWebViewController controller) async {
     final favIcons = await controller.getFavicons();
     return favIcons.isNotEmpty ? favIcons.first.url.toString() : null;
   }
 
+  setController(InAppWebViewController newController) {
+    print('web view created');
+    print(resource.title);
+    controller = newController;
+  }
+
   bool isNotAWebsite(Resource? content) =>
       content == null || content.url == null;
  
   onWebsiteLoadStart(BuildContext context, InAppWebViewController controller, Uri? uri) async {
-    updateTabData(context, controller);
+    workspaceModel.onTabUpdated(this, controller, uri);
+    //updateTabData(context, controller);
   }
 
   handleNewLink(BuildContext context, Uri? uri, {String? text}) async {
@@ -36,17 +50,16 @@ class TabViewModel {
     
   }
 
-  onWebsiteLoadStop(BuildContext context, InAppWebViewController controller) async {
-    updateTabData(context, controller);
+  onWebsiteLoadStop(BuildContext context, InAppWebViewController controller, Uri? uri) async {
+    workspaceModel.onTabUpdated(this, controller, uri);
   }
 
-  updateTabData(BuildContext context, InAppWebViewController controller) async {
-    
-    // context.read(workspaceViewProvider).updateTabResource( 
-    //   url: (await controller.getUrl()).toString(),
-    //   favIconUrl: await getFaviconUrl(controller),
-    //   title: await controller.getTitle(),
-    // );
+  onCloseWindow(BuildContext context, InAppWebViewController controller) {
+
+  }
+
+  onCreateWindow(BuildContext context, InAppWebViewController controller, CreateWindowAction createWindowAction) {
+    workspaceModel.addTabFromNewWindow(resource, createWindowAction.windowId);
   }
 
   // addEventHandlers(BuildContext context, controller) {
