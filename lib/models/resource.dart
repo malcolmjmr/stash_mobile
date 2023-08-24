@@ -30,7 +30,7 @@ class Resource {
   bool? isFavorite;
   bool? isSaved;
   Uint8List? image;
-
+  bool? isSearch;
 
 
   Resource({ this.url, this.title, this.favIconUrl}) {

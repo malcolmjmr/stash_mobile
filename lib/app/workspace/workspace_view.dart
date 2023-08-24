@@ -11,17 +11,15 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:ionicons/ionicons.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:page_transition/page_transition.dart';
-import 'package:stashmobile/app/move_to_folder/move_to_folder_modal.dart';
-import 'package:stashmobile/app/common_widgets/new_folder_dialog.dart';
 import 'package:stashmobile/app/common_widgets/search_field.dart';
 import 'package:stashmobile/app/common_widgets/section_header.dart';
-import 'package:stashmobile/app/common_widgets/section_list_item.dart';
-import 'package:stashmobile/app/common_widgets/share_item_modal.dart';
 import 'package:stashmobile/app/home/create_workspace_modal.dart';
+import 'package:stashmobile/app/home/home_view_model.dart';
 import 'package:stashmobile/app/web/tab_edit_modal.dart';
 import 'package:stashmobile/app/web/tab_label.dart';
 import 'package:stashmobile/app/web/tab_preview.dart';
@@ -34,6 +32,7 @@ import 'package:stashmobile/constants/color_map.dart';
 import 'package:stashmobile/extensions/color.dart';
 import 'package:stashmobile/models/workspace.dart';
 import 'package:stashmobile/routing/app_router.dart';
+//import 'package:material_symbols_icons/symbols.dart';
 
 import '../../models/resource.dart';
 
@@ -106,30 +105,58 @@ class _WorkspaceViewState extends State<WorkspaceView> {
               children: model.tabs
             )
           ),
-          _buildWebViewNavBar(),
+
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.black
+            ),
+            height: 70,
+            width: MediaQuery.of(context).size.width,
+            child: true 
+              ? _buildHorizontalTabs()
+              : _buildVerticalTabs(),
+          )
         ],
       ),
     );
   }
 
-  Widget _buildWebViewNavBar() {
+  Widget _buildHorizontalTabs() {
+    return ListView.builder(
+      scrollDirection: Axis.horizontal,
+      itemCount: model.tabs.length,
+      itemBuilder: (context, index) {
+        final tab = model.tabs[index];
+        return GestureDetector(
+          onTap: () => model.onPageChanged(index),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 10),
+            child: Container(
+              height: 35,
+              width: 50,
+              decoration: BoxDecoration(
+                color: index == model.workspace.activeTabIndex ? HexColor.fromHex('444444') : HexColor.fromHex('222222'),
+                borderRadius: BorderRadius.circular(8)
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: tab.model.resource.favIconUrl != null 
+                  ? Image.network(tab.model.resource.favIconUrl ?? '',
+                    //loadingBuilder: (context, child, loadingProgress) => Icon(Icons.language, size: 30,),
+                    errorBuilder: (context, child, loadingProgress) => Icon(Icons.public, size: 35,),
+                  )
+                  : Icon(Icons.public, size: 35,),
+              )
+              ),
+          ),
+        );
+      }
+    );
+  }
 
+  Widget _buildVerticalTabs() {
     model.tabPageController = PageController(initialPage: model.workspace.activeTabIndex!);
-    return Container(
-       decoration: BoxDecoration(
-        color: Colors.black
-        // border: model.app.currentWorkspace != null 
-        // ? Border(
-        //     top: BorderSide(
-        //       color: model.workspaceColor,
-        //       width: 3.0
-        //     )
-        //   ) 
-        // : null
-      ),
-      height: 70,
-      width: MediaQuery.of(context).size.width,
-      child: Column(
+    return Column(
         children: [
           //Icon(Icons.arrow_drop_up),
           Expanded(
@@ -140,6 +167,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 10.0),
                     child: OpenTabLabel(
+                      key: Key(tab.model.resource.id!),
                       isFirstListItem: true,
                       isLastListItem: true,
                       model: model, 
@@ -181,15 +209,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
           ),
           //Icon(Icons.arrow_drop_down),
         ],
-      )
-      
-      // Column(
-      //   children: [
-      //     _buildUrlField(context, model, webManager),
-      //     _buildNavigationButtons(context, model)
-      //   ],
-      // ),
-    );
+      );
   }
 
   Widget _buildWebViewHeader() {
@@ -239,8 +259,27 @@ class _WorkspaceViewState extends State<WorkspaceView> {
               ],
             ),
           ),
-          Icon(Icons.more_horiz, 
-            color: workspaceColor
+          GestureDetector(
+            onTap: () => showMenu(
+              context: context, 
+              position: RelativeRect.fromLTRB(10, 50, 5, 0), 
+
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8)
+              ),
+              items: [
+                PopupMenuItem(
+                  child: Container(height: 30, width: 200, child: Text('Reload')),
+                  padding: EdgeInsets.zero,
+                ),
+                PopupMenuItem(
+                  padding: EdgeInsets.zero,
+                  child: Text('Show Tab Icons')
+                )
+              ]),
+            child: Icon(Icons.more_horiz, 
+              color: workspaceColor
+            ),
           )
         ],
       ),
@@ -308,7 +347,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
           child: Padding(
             padding: const EdgeInsets.only(left: 15.0, right: 15, top: 10),
             child: SectionHeader(
-              title: 'Folders',
+              title: 'Spaces',
               isCollapsed: model.showFolders,
               onToggleCollapse: () => model.toggleShowFolders(),
             ),
@@ -399,6 +438,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                 TabPreview(
                   tab: tab.model.resource, 
                   onTap: () => model.openTab(tab.model.resource),
+                  onClose: () => model.closeTab(tab.model.resource),
                 )
               ).toList(),
             ),
@@ -447,13 +487,12 @@ class _WorkspaceViewState extends State<WorkspaceView> {
           ),
         ),
         
-
         if (model.resources.isNotEmpty)
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.only(left: 15.0, right: 15, bottom: 5),
             child: SectionHeader(
-              title: 'Saved',
+              title: 'Resources',
             ),
           ),
         ),
@@ -525,7 +564,6 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     return Container(
       decoration: BoxDecoration(
         //border: Border(bottom: BorderSide(color: HexColor.fromHex(model.workspaceHexColor))),
-        
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal:0.0),
@@ -534,7 +572,9 @@ class _WorkspaceViewState extends State<WorkspaceView> {
           children: [
             _buildBackButton(),
             //_buildTitle(context, model),
-            _buildMoreButton(),
+            model.workspace.title == null 
+            ? _buildSaveButton()
+            : _buildMoreButton(),
           ],
         ),
       ),
@@ -566,6 +606,29 @@ class _WorkspaceViewState extends State<WorkspaceView> {
             ),
           )
         ],
+      ),
+    );
+  }
+
+  Widget _buildSaveButton() {
+    return GestureDetector(
+      onTap: () {
+        showCupertinoModalBottomSheet(
+          context: context, 
+          builder: (context) => CreateWorkspaceModal(
+            initialTitle: model.tabs[0].model.resource.title,
+            onDone: (workspace) {
+              model.saveSpace(workspace);
+              Navigator.pop(context);
+              context.read(homeViewProvider).refreshWorkspaces();
+            }
+          )
+        );
+      },
+      child: Padding(
+        padding: EdgeInsets.all(8.0),
+        child: Icon(Icons.create_new_folder_outlined, color: Colors.white,),
+        
       ),
     );
   }
@@ -631,23 +694,15 @@ class _WorkspaceViewState extends State<WorkspaceView> {
           // FooterIcon(icon: Icons.history_outlined, color: color),
           // FooterIcon(icon: Icons.folder_outlined, color: color),
           // FooterIcon(icon: Icons.inbox_outlined, color: color),
-          FooterIcon(
-            onTap: () => showCupertinoModalPopup(
-              context: context, 
-              builder: (context) {
-                return model.workspace.title != null 
-                  ? NewFolderDialog(
-                    onSave: (title) => model.createNewFolder(context, title),
-                    ) 
-                  : CreateWorkspaceModal(onDone: (workspace) { 
-                      model.saveSpace(workspace.title!);
-                      Navigator.pop(context);
-                    });
-              }
-            ),
-            icon: Icons.create_new_folder_outlined, 
-            color: color, 
-            size: 30
+          model.workspace.title == null 
+          ?  FooterIcon(
+              onTap: () => model.clearTabs(),
+              icon: Icons.clear_all,
+              color: color, 
+              size: 30,
+            )
+          : Container(
+            width: 30,
           ),
           _buildResourceCounts(context, model),
           FooterIcon(
@@ -718,7 +773,7 @@ class FooterIcon extends StatelessWidget {
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.all(3.0),
-        child: Icon(icon, size: size, color: color,),
+        child: Icon(icon, size: size, color: color, weight: 100,),
       ),
     );
   }

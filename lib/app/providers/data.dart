@@ -89,11 +89,14 @@ class DataManager {
     await db.setResource(user.id, resource);
   }
 
-  deleteResource(Resource resource) async {
-    resource.deleted = DateTime.now().millisecondsSinceEpoch;
-    await db.setResource(user.id, resource);
-    //await db.deleteResource(user.id, resource.id!);
+  deleteResource(Resource resource, {bool permanent = false}) async {
     resources.removeWhere((r) => r.id == resource.id);
+    if (permanent == true) {
+      await db.deleteResource(user.id, resource.id!);
+    } else {
+      resource.deleted = DateTime.now().millisecondsSinceEpoch;
+      await db.setResource(user.id, resource);
+    }
   }
 
 

@@ -6,8 +6,10 @@ import 'package:stashmobile/models/workspace.dart';
 
 class CreateWorkspaceModal extends StatefulWidget {
 
+  final Workspace? workspace;
+  final String? initialTitle;
   final Function(Workspace workspace) onDone;
-  const CreateWorkspaceModal({Key? key, required this.onDone}) : super(key: key);
+  const CreateWorkspaceModal({Key? key, required this.onDone, this.workspace, this.initialTitle}) : super(key: key);
 
 
   @override
@@ -16,8 +18,23 @@ class CreateWorkspaceModal extends StatefulWidget {
 
 class _CreateWorkspaceModalState extends State<CreateWorkspaceModal> {
 
-  Workspace workspace = Workspace();
+  late Workspace workspace;
   TextEditingController textController = TextEditingController();
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    if (widget.workspace != null) {
+      workspace = widget.workspace!;
+    } else {
+      workspace = Workspace();
+    }
+
+    if (widget.initialTitle != null) {
+      workspace.title = widget.initialTitle;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

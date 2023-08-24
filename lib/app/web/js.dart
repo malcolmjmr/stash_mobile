@@ -238,6 +238,7 @@ class JS {
   }
 
   static String touchEndListener = """ 
+  console.log('injected');
   // Listens for swipe of hyperlink to add link to tree
     // Emits: onLinkSelected
     // Returns:
@@ -328,6 +329,17 @@ class JS {
   }
  
   
+  """;
+
+  static String checkForList = r"""
+  var unorderedLists = document.querySelectorAll('ul');
+  for (var i = 0; i < unorderedLists.length; i++) {
+    var listSize = unorderedLists[i].querySelectorAll('li').length;
+    if (listSize >= 20) {
+      window.flutter_inappwebview.callHandler("foundList");
+      break;
+    }
+  }
   """;
 
   static String createAnnotation = r"""

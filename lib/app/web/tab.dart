@@ -33,10 +33,10 @@ class TabView extends StatefulWidget {
 class _TabViewState extends State<TabView> {
 
   Widget build(BuildContext context) {
-    print(widget.model.resource.url);
+    
     return InAppWebView(
-      //windowId: widget.windowId,
-      initialUrlRequest: widget.lazyLoad ? null : URLRequest(url: Uri.parse(widget.model.resource.url!)),
+      windowId: widget.windowId,
+      initialUrlRequest: widget.lazyLoad || widget.windowId != null ? null : URLRequest(url: Uri.parse(widget.model.resource.url!)),
       pullToRefreshController: PullToRefreshController(
         options: PullToRefreshOptions(),
       ),
@@ -45,29 +45,37 @@ class _TabViewState extends State<TabView> {
           () => new EagerGestureRecognizer(),
         ),
       ].toSet(),
+      
       onWebViewCreated: widget.model.setController,
       onLoadStart: (controller, uri) => widget.model.onWebsiteLoadStart(context, controller, uri),
       onProgressChanged: (controller, progress) => widget.model.onWebsiteProgressChanged(context, controller, progress),
       onLoadStop: (controller, uri) => widget.model.onWebsiteLoadStop(context, controller, uri),
       onConsoleMessage: (controller, msg) {
-        //print('JS console:\n$msg');
+        print('JS console:\n$msg');
       },
       onCloseWindow: (controller) => widget.model.onCloseWindow(context, controller),
       onCreateWindow:(controller, createWindowAction) => widget.model.onCreateWindow(context, controller, createWindowAction),
+      shouldOverrideUrlLoading: (controller, navigationAction) => widget.model.checkNavigation(context, navigationAction),
       initialOptions: InAppWebViewGroupOptions(
+      
         crossPlatform: InAppWebViewOptions(
           disableHorizontalScroll: true,
-          incognito: false,
+          useShouldOverrideUrlLoading: true,
+          // incognito: false,
+          // javaScriptEnabled: true,
           userAgent: 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36',
-          //javaScriptCanOpenWindowsAutomatically: true,
+          // javaScriptCanOpenWindowsAutomatically: true,
+        
         ),
         ios: IOSInAppWebViewOptions(
           allowsBackForwardNavigationGestures: true,
           disableLongPressContextMenuOnLinks: true,
           allowsLinkPreview: false,
           disallowOverScroll: true,
-          sharedCookiesEnabled: true,
-          applePayAPIEnabled: true,
+          // sharedCookiesEnabled: true,
+          // applePayAPIEnabled: true,
+          
+        
         ),
       ),
     );

@@ -99,7 +99,7 @@ class ResourceListItem extends StatelessWidget {
             ],
             motion: const StretchMotion(),
             // A pane can dismiss the Slidable.
-            dismissible: DismissiblePane(onDismissed: () => model.removeTab(resource)),
+            dismissible: DismissiblePane(onDismissed: () => model.deleteResource(resource)),
             openThreshold: 0.25,
           ),
           child: Padding(

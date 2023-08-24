@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:stashmobile/app/common_widgets/list_item.dart';
 import 'package:stashmobile/app/common_widgets/section_list_item.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 import 'package:stashmobile/app/workspace/workspace_view_params.dart';
@@ -47,33 +48,14 @@ class FolderListItem extends StatelessWidget {
         //   //dismissible: DismissiblePane(onDismissed: () => model.removeTab(resource)),
         //   openThreshold: 0.25,
         // ),
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(left: 5.0, right: 10),
-                child: Container(
-                  child: Icon(Icons.folder, 
-                    size: 30, 
-                    color: HexColor.fromHex(colorMap[workspace.color ?? 'grey']!),)
-                )
-              ),
-              Expanded(
-                child: Text(workspace.title ?? '', 
-                  maxLines: 1,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w400,
-                    letterSpacing: 0.5,
-                    fontSize: 16,  
-                    overflow: TextOverflow.ellipsis),
-                  ),
-                ),
-            ],
+        child: ListItem(
+          icon: Icon(Icons.folder, 
+            color: HexColor.fromHex(colorMap[workspace.color ?? 'grey']!),
+            size: 30,
           ),
-        ),
-      ),
+          title: workspace.title ?? 'Untitled',
+        )
+      )
     );
   }
 }

@@ -81,7 +81,7 @@ class AppRouter {
             type: PageTransitionType.rightToLeft,
             curve: Curves.easeInExpo,
             child: WorkspaceView(
-              params: args as WorkspaceViewParams, 
+              params: args as WorkspaceViewParams?, 
             ),
             settings: settings,
             fullscreenDialog: true,

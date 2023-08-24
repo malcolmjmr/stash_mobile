@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:ui';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
@@ -9,6 +10,7 @@ import 'package:stashmobile/app/common_widgets/section_list_item.dart';
 import 'package:stashmobile/app/home/create_workspace_modal.dart';
 import 'package:stashmobile/app/home/workspace_listitem.dart';
 import 'package:flutter/material.dart';
+import 'package:stashmobile/app/search/search_view_model.dart';
 import 'package:stashmobile/extensions/color.dart';
 import 'package:stashmobile/routing/app_router.dart';
 import '../common_widgets/create_new_tab_modal.dart';
@@ -88,7 +90,7 @@ class HomeView extends ConsumerWidget {
             Positioned(
               bottom: 0, 
               left: 0, 
-              height: 40, 
+              height: 50, 
               width: MediaQuery.of(context).size.width, 
               child: Footer(model: model)
             ),
@@ -107,8 +109,8 @@ class HomeView extends ConsumerWidget {
             isLastListItem: false,
             onTap: model.openLooseTabs(context),
             child: ListItem(
-              title: 'Miscellaneous',
-              icon: Icon(Icons.category, 
+              title: 'Recent',
+              icon: Icon(Icons.history, 
                 color: Colors.amber,
                 size: 28,
               ),
@@ -119,7 +121,7 @@ class HomeView extends ConsumerWidget {
             isLastListItem: true,
             onTap: () => model.openPublicWorkspaces(context),
             child: ListItem(
-              title: 'Public',
+              title: 'Explore',
               icon: Icon(Icons.public, 
                 color: Colors.amber,
                 size: 28,
@@ -174,12 +176,12 @@ class Header extends StatelessWidget {
           ),
           Padding(
             padding: const EdgeInsets.only(bottom: 20),
-            child: GestureDetector(
-              onTap: () => Navigator.pushNamed(context, AppRoutes.search),
-              child: SearchField(
-                onTap: () => Navigator.pushNamed(context, AppRoutes.search), 
-                showPlaceholder: true,
-              )
+            child: SearchField(
+              onTap: () {
+                context.read(searchViewProvider).load();
+                Navigator.pushNamed(context, AppRoutes.search);
+              }, 
+              showPlaceholder: true,
             ),
           ),
         ],
@@ -195,42 +197,51 @@ class Footer extends StatelessWidget {
   final HomeViewModel model;
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: HexColor.fromHex('222222').withOpacity(0.9),
-        border: Border(
-          top: BorderSide(
-            width: 0.5,
-            color: HexColor.fromHex('333333'), 
-            style: BorderStyle.solid, 
-            )
-          ),
-          
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 5.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            CreateFolderButton(onTap: () => {
-              showCupertinoModalBottomSheet(
-                context: context, 
-                builder: (context) => CreateWorkspaceModal(
-                  onDone: (workspace) => model.createNewWorkspace(context, workspace))
-                )
-            }),
-            CreateTabButton(
-              onLongPress: () => showCupertinoModalBottomSheet(
-                context: context, 
-                builder: (context) => CreateNewTabModal()
-              ),
-              onTap:() =>  model.createNewTab(context)
+    return Stack(
+        children: <Widget>[
+          new Center(
+            child: new ClipRect(
+              child: new BackdropFilter(
+                filter: new ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                child: new Container(
+                  width: MediaQuery.of(context).size.width,
+                  height: 60,
+                  decoration: new BoxDecoration(
+                    color: HexColor.fromHex('222222').withOpacity(0.7)
+                  ),
+                  child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 5.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                CreateFolderButton(onTap: () => {
+                  showCupertinoModalBottomSheet(
+                    context: context, 
+                    builder: (context) => CreateWorkspaceModal(
+                      onDone: (workspace) => model.createNewWorkspace(context, workspace))
+                    )
+                }),
+                CreateTabButton(
+                  onLongPress: () => showCupertinoModalBottomSheet(
+                    context: context, 
+                    builder: (context) => CreateNewTabModal()
+                  ),
+                  onTap:() =>  model.createNewTab(context)
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
-    );
+          ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    
+    
+    
+    
   }
 }
 

@@ -92,56 +92,70 @@ class _TabEditModalState extends State<TabEditModal> {
         color: Colors.black,
         height: 50,
         width: MediaQuery.of(context).size.width,
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 5, vertical: 5),
-          child: Container(
-            decoration: BoxDecoration(
-              color: HexColor.fromHex('333333'),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: model.inputController,
-                      autocorrect: false,
-                      maxLines: 1,
-                      textInputAction: TextInputAction.go,
-                      onChanged: (value) {
-                        model.input = value;
-                        model.searchWorkspace();
-                      },
-                      onSubmitted: (value) {
-                        model.updateTab(context);
-                      },
-                      autofocus: true,
-                      decoration: InputDecoration(
-                        contentPadding: EdgeInsets.only(bottom: 8),
-                        border: InputBorder.none,
-                        hintStyle: TextStyle(
-                          color: Colors.white.withOpacity(0.8)
-                        )
-                      ),
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16
-                      ),
-                    ),
-                  ),
-                  if (model.input.isNotEmpty)
-                  GestureDetector(
-                    onTap: () => model.clearInput(),
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 3.0, bottom: 3.0),
-                      child: Icon(Icons.close_outlined),
-                    ),
-                  )
-                ],
+        child: Row(
+          children: [
+            GestureDetector(
+              onTap: () => model.createNewTab(context),
+              child: Padding(
+                padding: const EdgeInsets.only(left: 5.0),
+                child: Icon(Icons.add, size: 30,),
               ),
             ),
-          ),
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 5, vertical: 5),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: HexColor.fromHex('333333'),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: model.inputController,
+                            autocorrect: false,
+                            maxLines: 1,
+                            keyboardType: TextInputType.url,
+                            textInputAction: TextInputAction.go,
+                            onChanged: (value) {
+                              model.input = value;
+                              model.searchWorkspace();
+                            },
+                            onSubmitted: (value) {
+                              model.updateTab(context);
+                            },
+                            autofocus: true,
+                            decoration: InputDecoration(
+                              contentPadding: EdgeInsets.only(bottom: 8),
+                              border: InputBorder.none,
+                              hintStyle: TextStyle(
+                                color: Colors.white.withOpacity(0.8)
+                              )
+                            ),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16
+                            ),
+                          ),
+                        ),
+                        if (model.input.isNotEmpty)
+                        GestureDetector(
+                          onTap: () => model.clearInput(),
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 3.0, bottom: 3.0),
+                            child: Icon(Icons.close_outlined),
+                          ),
+                        )
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

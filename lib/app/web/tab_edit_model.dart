@@ -47,17 +47,28 @@ class TabEditModel {
   }
 
   updateTab(BuildContext context) async {
-    input = inputController.text;
-    if (input.contains('.')) {
-      final missingProtocol = !input.contains('http://') && !input.contains('https://');
-      if (missingProtocol) input = 'https://www.' + input;
-    } else {
-      input = 'https://www.google.com/search?q=' + Uri.encodeComponent(input);
-    }
-
-    await workspaceModel.updateTabFromUrlField(tab, input);
+    
+    
+    await workspaceModel.updateTabFromUrlField(tab, getUrlFromInput());
 
     Navigator.pop(context);
+  }
+
+  createNewTab(BuildContext context) {
+    workspaceModel.createNewTabFromUrl(getUrlFromInput());
+    Navigator.pop(context);
+  }
+
+  getUrlFromInput() {
+    input = inputController.text;
+    String url = input;
+    if (input.contains('.')) {
+      final missingProtocol = !input.contains('http://') && !input.contains('https://');
+      if (missingProtocol) url = 'https://www.' + input;
+    } else {
+      url = 'https://www.google.com/search?q=' + Uri.encodeComponent(input);
+    }
+    return url;
   }
 
 }

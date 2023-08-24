@@ -1,8 +1,11 @@
 
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:stashmobile/app/web/event_handlers.dart';
+import 'package:stashmobile/app/web/js.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 import 'package:stashmobile/models/resource.dart';
 
@@ -19,6 +22,9 @@ class TabViewModel {
     } else {
       resource = Resource(title: 'New Tab', url: 'https://www.google.com/');
     }
+
+    print('new tab');
+    print(initialResource?.url);
   }
 
   bool loaded = false;
@@ -29,9 +35,9 @@ class TabViewModel {
   }
 
   setController(InAppWebViewController newController) {
-    print('web view created');
-    print(resource.title);
     controller = newController;
+    
+
   }
 
   bool isNotAWebsite(Resource? content) =>
@@ -51,91 +57,130 @@ class TabViewModel {
   }
 
   onWebsiteLoadStop(BuildContext context, InAppWebViewController controller, Uri? uri) async {
+    //workspaceModel.onTabUpdated(this, controller, uri);
+    
     workspaceModel.onTabUpdated(this, controller, uri);
+    await addJsListeners();
+    await addEventHandlers(context);
   }
 
   onCloseWindow(BuildContext context, InAppWebViewController controller) {
 
   }
 
-  onCreateWindow(BuildContext context, InAppWebViewController controller, CreateWindowAction createWindowAction) {
-    workspaceModel.addTabFromNewWindow(resource, createWindowAction.windowId);
+  Future<NavigationActionPolicy> checkNavigation(BuildContext context, NavigationAction navigationAction) async {
+    final url = navigationAction.request.url.toString();
+    print('checkingNavigation');
+    print(url);
+    print(resource.url);
+    if (url == resource.url || resource.isSearch != true) {
+      return NavigationActionPolicy.ALLOW;
+    } else {
+      workspaceModel.createNewTabFromUrl(url);
+      return NavigationActionPolicy.CANCEL;
+    } 
+    
+    
   }
 
-  // addEventHandlers(BuildContext context, controller) {
-  //   controller?.addJavaScriptHandler(
-  //     handlerName: 'onLinkSelected',
-  //     callback: (args) => WebEventHandlers.onLinkSelected(context, args),
-  //   );
-  //   controller?.addJavaScriptHandler(
-  //     handlerName: 'onTextSelection',
-  //     callback: (args) => WebEventHandlers.onTextSelection(context, args),
-  //   );
-  //   controller?.addJavaScriptHandler(
-  //     handlerName: 'onLinkClicked',
-  //     callback: (args) => WebEventHandlers.onLinkClicked(context, args),
-  //   );
-  //   controller?.addJavaScriptHandler(
-  //     handlerName: 'onDocumentInfo',
-  //     callback: (args) => WebEventHandlers.onDocumentInfo(context, args),
-  //   );
-  //   controller?.addJavaScriptHandler(
-  //     handlerName: 'onDocumentResource',
-  //     callback: (args) => WebEventHandlers.onDocumentContent(context, args),
-  //   );
-  //   controller?.addJavaScriptHandler(
-  //     handlerName: 'onAnnotationTarget',
-  //     callback: (args) => WebEventHandlers.onAnnotationTarget(context, args),
-  //   );
-  //   controller?.addJavaScriptHandler(
-  //     handlerName: 'onHighlightClicked',
-  //     callback: (args) => WebEventHandlers.onHighlightClicked(context, args),
-  //   );
-  //   controller?.addJavaScriptHandler(
-  //     handlerName: 'onHighlightDoubleClicked',
-  //     callback: (args) =>
-  //         WebEventHandlers.onHighlightDoubleClicked(context, args),
-  //   );
-  //   controller?.addJavaScriptHandler(
-  //     handlerName: 'onDocumentBodyClicked',
-  //     callback: (args) => WebEventHandlers.onDocumentBodyClicked(context, args),
-  //   );
-  //   controller?.addJavaScriptHandler(
-  //     handlerName: 'onScrollEnd',
-  //     callback: (args) => WebEventHandlers.onScrollEnd(context, args),
-  //   );
-  // }
+  Future<bool?> onCreateWindow(BuildContext context, InAppWebViewController controller, CreateWindowAction createWindowAction) async {
+    workspaceModel.addTabFromNewWindow(resource, createWindowAction.windowId);
+    return true;
+    //  return showCupertinoModalBottomSheet(
+    //       context: context,
+    //       builder: (context) {
+    //         return Material(
+    //           type: MaterialType.transparency,
+    //           child: InAppWebView(
+    //                 // Setting the windowId property is important here!
+    //                 windowId: createWindowAction.windowId,
+    //                 initialOptions: InAppWebViewGroupOptions(
+    //                     crossPlatform: InAppWebViewOptions(
+    //                         //userAgent: 'stash',
+    //                     ),
+    //                 ),
+    //               ),
+    //         );
+    //       },
+    //     );
 
-  // addJsListeners() {
-  //   controller?.evaluateJavascript(
-  //       source: JS.touchEndListener +
-  //           JS.scrollListener +
-  //           JS.focusListener +
-  //           JS.clickListener +
-  //           JS.scrollListener);
-  // }
+  }
 
-  // addAnnotationFunctions() {
-  //   controller?.evaluateJavascript(
-  //       source: JS.annotationFunctions + JS.hypothesisHelpers);
-  // }
+  addJsListeners() async {
+    print('adding js');
 
-  // addJsDocument(BuildContext context, Resource content) {
-   
-  // }
+    controller.evaluateJavascript(
+        source: JS.scrollListener
+          + JS.touchEndListener
+          + JS.checkForList
+          
+    );
+  }
 
-  // String selectedText = '';
+  addEventHandlers(BuildContext context) {
+    controller.addJavaScriptHandler(
+      handlerName: 'onLinkSelected',
+      callback: onLinkSelected,
+    );
+    controller.addJavaScriptHandler(
+      handlerName: 'onTextSelection',
+      callback: onTextSelection,
+    );
+    controller.addJavaScriptHandler(
+      handlerName: 'onLinkClicked',
+      callback: onLinkClicked,
+    );
+    controller.addJavaScriptHandler(
+      handlerName: 'onScrollEnd',
+      callback: onScrollEnd,
+    );
+    controller.addJavaScriptHandler(
+      handlerName: 'foundList',
+      callback: onFoundList,
+    );
+  }
 
-  // getSelectionTarget(controller) async {
-  //   await controller?.evaluateJavascript(source: JS.getAnnotationTarget);
-  // }
+  onFoundList(args) {
+    resource.isSearch;
+  }
 
+  clearSelectedText(controller) async {
+    await controller?.evaluateJavascript(source: JS.clearSelectedText);
+  }
 
-  // clearSelectedText(controller) async {
-  //   selectedText = '';
-  //   await controller?.evaluateJavascript(source: JS.clearSelectedText);
-  // }
+  onScrollEnd(args) async  {
+    print('scroll end');
 
+    resource.image = await controller.takeScreenshot();
 
+  }
+
+  onLinkClicked(args) {
+    print('link clicked');
+  }
+
+  onLinkLongPress(args) {
+    print('link long pressed');
+  }
+
+  onLinkSelected(args) {
+    print('link selected');
+    print(args);
+
+    Resource resource = Resource(
+      title: args[0],
+      url: args[1],
+    );
+
+    resource.isQueued = true;
+
+    workspaceModel.saveResource(resource);
+
+    HapticFeedback.mediumImpact();
+  }
+
+  onTextSelection(args) {
+    print('text selected');
+  }
 
 }
