@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:stashmobile/app/common_widgets/list_item.dart';
 import 'package:stashmobile/app/common_widgets/search_field.dart';
@@ -11,7 +12,9 @@ import 'package:stashmobile/app/home/create_workspace_modal.dart';
 import 'package:stashmobile/app/home/workspace_listitem.dart';
 import 'package:flutter/material.dart';
 import 'package:stashmobile/app/search/search_view_model.dart';
+import 'package:stashmobile/app/workspace/folder_list_item.dart';
 import 'package:stashmobile/extensions/color.dart';
+import 'package:stashmobile/models/workspace.dart';
 import 'package:stashmobile/routing/app_router.dart';
 import '../common_widgets/create_new_tab_modal.dart';
 import '../common_widgets/section_header.dart';
@@ -39,10 +42,19 @@ class HomeView extends ConsumerWidget {
                   if (model.favorites.length > 0)
                   SliverToBoxAdapter(
                     child: SectionHeader(
-                      title: 'Pinned',
+                      title: 'Spaces',
                       isCollapsed: model.showFavoriteSpaces,
                       onToggleCollapse: () => model.toggleShowFavorites(),
                     )
+                  ),
+
+                  if (model.showFavoriteSpaces && model.favorites.length > 0)
+                  SliverToBoxAdapter(
+                    child: FolderListItem(
+                      isFirstListItem: true,
+                      workspace: Workspace.all(),
+                      onTap: () => model.openWorkspace(context, Workspace.all())
+                    ),
                   ),
                   if (model.showFavoriteSpaces && model.favorites.length > 0)
                   SliverList.builder(
@@ -51,7 +63,7 @@ class HomeView extends ConsumerWidget {
                       final workspace = model.favorites[index];
                       return WorkspaceListItem(
                         key: Key(workspace.id),
-                        isFirstListItem: index == 0,
+                        //isFirstListItem: index == 0,
                         isLastListItem: index == model.favorites.length - 1,
                         workspace: workspace,
                         togglePin: (context) => model.toggleWorkspacePinned(workspace),
@@ -60,29 +72,30 @@ class HomeView extends ConsumerWidget {
                       );
                     }
                   ),
-                  SliverToBoxAdapter(
-                    child: SectionHeader(
-                      title: 'All Spaces',
-                      isCollapsed: model.showAllSpaces,
-                      onToggleCollapse: () => model.setShowAllSpaces(!model.showAllSpaces),
-                    )
-                  ),
-                  if (model.showAllSpaces)
-                  SliverList.builder(
-                    itemCount: model.workspaces.length,
-                    itemBuilder: (context, index) {
-                      final workspace = model.workspaces[index];
-                      return WorkspaceListItem(
-                        key: Key(workspace.id),
-                        isFirstListItem: index == 0,
-                        isLastListItem: index == model.workspaces.length - 1,
-                        workspace: workspace,
-                        togglePin: (context) => model.toggleWorkspacePinned(workspace),
-                        onTap: () => model.openWorkspace(context, workspace),
-                        onDelete: () => model.deleteWorkspace(context, workspace),
-                      );
-                    }
-                  ),
+                  // SliverToBoxAdapter(
+                  //   child: SectionHeader(
+                  //     title: 'All Spaces',
+                  //     isCollapsed: model.showAllSpaces,
+                  //     onToggleCollapse: () => model.setShowAllSpaces(!model.showAllSpaces),
+                  //   )
+                  // ),
+                  // if (model.showAllSpaces)
+                  // SliverList.builder(
+                  //   itemCount: model.workspaces.length,
+                  //   itemBuilder: (context, index) {
+                  //     final workspace = model.workspaces[index];
+                  //     return WorkspaceListItem(
+                  //       key: Key(workspace.id),
+                  //       isFirstListItem: index == 0,
+                  //       isLastListItem: index == model.workspaces.length - 1,
+                  //       workspace: workspace,
+                  //       togglePin: (context) => model.toggleWorkspacePinned(workspace),
+                  //       onTap: () => model.openWorkspace(context, workspace),
+                  //       onDelete: () => model.deleteWorkspace(context, workspace),
+                  //     );
+                  //   }
+                  // ),
+
                   SliverToBoxAdapter(child: SizedBox(height: 100),)
                 ]
               ),
@@ -104,25 +117,28 @@ class HomeView extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Column(
         children: [
+          
           SectionListItemContainer(
             isFirstListItem: true, 
             isLastListItem: false,
-            onTap: model.openLooseTabs(context),
+            
+            onTap: () => model.openPublicWorkspaces(context),
             child: ListItem(
-              title: 'Recent',
-              icon: Icon(Icons.history, 
+              title: 'Explore',
+              icon: Icon(Icons.public, 
                 color: Colors.amber,
                 size: 28,
               ),
             )
           ),
+
           SectionListItemContainer(
             isFirstListItem: false, 
             isLastListItem: true,
-            onTap: () => model.openPublicWorkspaces(context),
+            onTap: model.openLooseTabs(context),
             child: ListItem(
-              title: 'Explore',
-              icon: Icon(Icons.public, 
+              title: 'Shared',
+              icon: Icon(Icons.folder_shared_outlined, 
                 color: Colors.amber,
                 size: 28,
               ),
@@ -256,7 +272,7 @@ class CreateFolderButton extends StatelessWidget {
       onTap: onTap,
       child: Padding(
         padding: EdgeInsets.all(5), 
-        child: Icon(Icons.create_new_folder_outlined, size: 28.0, weight: 10, color: Colors.amber),
+        child: Icon(Symbols.create_new_folder, size: 30.0, weight: 300, color: Colors.amber),
       ),
     );
   }
@@ -275,7 +291,7 @@ class CreateTabButton extends StatelessWidget {
       onLongPress: onLongPress,
       child: Padding(
         padding: EdgeInsets.all(5), 
-        child: Icon(Icons.add_box_outlined, size: 28.0, weight: 100.0, color: Colors.amber,),
+        child: Icon(Symbols.add_box, size: 30.0, weight: 300.0, color: Colors.amber,),
       ),
     );
   }

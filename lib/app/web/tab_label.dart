@@ -69,6 +69,16 @@ class OpenTabLabel extends StatelessWidget {
                 backgroundColor: Colors.green,
                 onPressed: (context) => model.saveTab(resource),
               ),
+              SlidableAction(
+                icon: Icons.folder_outlined,
+                backgroundColor: Colors.purple,
+                onPressed: (context) => showCupertinoModalBottomSheet(
+                  context: context, 
+                  builder: (context) {
+                    return MoveToFolderModal(resource: resource, onFolderSelected: (folder) => null,);
+                  }
+                )
+              ),
             ],
             motion: const ScrollMotion(),
             dismissible: DismissiblePane(onDismissed: () => model.stashTab(resource)),
@@ -87,19 +97,14 @@ class OpenTabLabel extends StatelessWidget {
                 )
               ),
               SlidableAction(
-                icon: Icons.folder_outlined,
-                backgroundColor: Colors.purple,
-                onPressed: (context) => showCupertinoModalBottomSheet(
-                  context: context, 
-                  builder: (context) {
-                    return MoveToFolderModal(resource: resource, onFolderSelected: (folder) => null,);
-                  }
-                )
+                icon: Icons.refresh,
+                backgroundColor: Colors.blueGrey,
+                onPressed: (context) => model.reloadTab(resource)
               ),
               SlidableAction(
                 icon: Icons.close,
                 backgroundColor: Colors.redAccent,
-                onPressed: (context) => model.removeTab(resource),
+                onPressed: (context) => null //model.removeTab(resource),
               )
             ],
             motion: const StretchMotion(),

@@ -11,16 +11,16 @@ class TabPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          children: [
-            Stack(
-              children: [
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Column(
+        children: [
+          Stack(
+            children: [
 
-                ClipRRect(
+              GestureDetector(
+                onTap: onTap,
+                child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: Container(
                     width: MediaQuery.of(context).size.width * .45,
@@ -41,50 +41,50 @@ class TabPreview extends StatelessWidget {
                       : Image.memory(tab.image!, fit: BoxFit.fill,),
                   ),
                 ),
-                Positioned(
-                  top: 5,
-                  right: 5,
-                  child: GestureDetector(
-                    onTap: onClose,
-                    child: Container(
-                      height: 20,
-                      width: 20,
-                      decoration: BoxDecoration(
-                        color: HexColor.fromHex('222222'),
-                        borderRadius: BorderRadius.circular(100),
-                        
-                      ),
-                      child: Center(child: Icon(Icons.close, size: 16,)),
-                    ),
-                  )
-                ),
-              ],
-            ),
-            Padding(
-              padding: const EdgeInsets.only(top: 10.0),
-              child: Container(
-                height: 20,
-                width: MediaQuery.of(context).size.width * .45,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (tab.favIconUrl != null) Padding(
-                      padding: const EdgeInsets.only(right: 3.0),
-                      child: Image.network(tab.favIconUrl!),
-                    ),
-                    Expanded(
-                      child: Text(tab.title ?? '', 
-                        textAlign: TextAlign.start,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
               ),
-            )
-          ],
-        ),
+              Positioned(
+                top: 5,
+                right: 5,
+                child: GestureDetector(
+                  onTap: onClose,
+                  child: Container(
+                    height: 20,
+                    width: 20,
+                    decoration: BoxDecoration(
+                      color: HexColor.fromHex('222222'),
+                      borderRadius: BorderRadius.circular(100),
+                      
+                    ),
+                    child: Center(child: Icon(Icons.close, size: 16,)),
+                  ),
+                )
+              ),
+            ],
+          ),
+          Padding(
+            padding: const EdgeInsets.only(top: 10.0),
+            child: Container(
+              height: 20,
+              width: MediaQuery.of(context).size.width * .45,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (tab.favIconUrl != null) Padding(
+                    padding: const EdgeInsets.only(right: 3.0),
+                    child: Image.network(tab.favIconUrl!),
+                  ),
+                  Expanded(
+                    child: Text(tab.title ?? '', 
+                      textAlign: TextAlign.start,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+        ],
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:stashmobile/app/common_widgets/list_item.dart';
 import 'package:stashmobile/app/common_widgets/section_list_item.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
@@ -25,6 +26,8 @@ class FolderListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
+    final iconColor = workspace.id == Workspace.all().id ? Colors.amber : HexColor.fromHex(colorMap[workspace.color ?? 'grey']!);
     return SectionListItemContainer(
       isFirstListItem: isFirstListItem,
       isLastListItem: isLastListItem,
@@ -49,8 +52,9 @@ class FolderListItem extends StatelessWidget {
         //   openThreshold: 0.25,
         // ),
         child: ListItem(
-          icon: Icon(Icons.folder, 
-            color: HexColor.fromHex(colorMap[workspace.color ?? 'grey']!),
+          icon: Icon(workspace.id == Workspace.all().id ? Symbols.folder_copy_rounded : Icons.folder,
+            fill: 1, 
+            color: iconColor,
             size: 30,
           ),
           title: workspace.title ?? 'Untitled',

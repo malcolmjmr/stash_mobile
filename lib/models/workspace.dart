@@ -51,6 +51,12 @@ class Workspace {
     title = 'Miscellaneous';
   }
 
+  Workspace.all() {
+    id = 'ALL';
+    title = 'All Spaces';
+    //color = 'Amber';
+  }
+
   Workspace.fromDatabase(String objectId, Map<String, dynamic> json) {
     id = objectId;
     title = json['title'];

@@ -14,15 +14,19 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:ionicons/ionicons.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:page_transition/page_transition.dart';
+import 'package:stashmobile/app/common_widgets/drop_down_menu.dart';
 import 'package:stashmobile/app/common_widgets/search_field.dart';
 import 'package:stashmobile/app/common_widgets/section_header.dart';
 import 'package:stashmobile/app/home/create_workspace_modal.dart';
 import 'package:stashmobile/app/home/home_view_model.dart';
+import 'package:stashmobile/app/web/horizontal_tabs.dart';
 import 'package:stashmobile/app/web/tab_edit_modal.dart';
 import 'package:stashmobile/app/web/tab_label.dart';
 import 'package:stashmobile/app/web/tab_preview.dart';
+import 'package:stashmobile/app/web/vertical_tabs.dart';
 import 'package:stashmobile/app/workspace/folder_list_item.dart';
 import 'package:stashmobile/app/workspace/resource_list_item.dart';
 import 'package:stashmobile/app/workspace/tab_list_item.dart';
@@ -112,9 +116,9 @@ class _WorkspaceViewState extends State<WorkspaceView> {
             ),
             height: 70,
             width: MediaQuery.of(context).size.width,
-            child: true 
-              ? _buildHorizontalTabs()
-              : _buildVerticalTabs(),
+            child: model.showHorizontalTabs 
+              ? HorizontalTabs(workspaceModel: model)
+              : VeritcalTabs(workspaceModel: model),
           )
         ],
       ),
@@ -269,13 +273,23 @@ class _WorkspaceViewState extends State<WorkspaceView> {
               ),
               items: [
                 PopupMenuItem(
-                  child: Container(height: 30, width: 200, child: Text('Reload')),
-                  padding: EdgeInsets.zero,
+                  child: DropDownMenuItem(
+                    label: 'Reload',
+                    icon: Symbols.refresh,
+                    onTap: () => model.reloadTab(null)
+                  ),
                 ),
                 PopupMenuItem(
-                  padding: EdgeInsets.zero,
-                  child: Text('Show Tab Icons')
-                )
+                  child: DropDownMenuDivider(),
+                  padding: EdgeInsets.all(0),
+                ),
+                PopupMenuItem(
+                  child: DropDownMenuItem(
+                    label: model.showHorizontalTabs ? 'Show Vertical Tabs' : 'Show Horizontal Tabs',
+                    icon: model.showHorizontalTabs ? Symbols.view_headline : Symbols.flex_no_wrap,
+                    onTap: () => model.toggleTabView()
+                  ),
+                ),
               ]),
             child: Icon(Icons.more_horiz, 
               color: workspaceColor
@@ -393,7 +407,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                 if (model.showTabs && model.tabs.isNotEmpty)
                 GestureDetector(
                   onTap: () => model.clearTabs(),
-                  child: Icon(Icons.clear_all,),
+                  child: Icon(Symbols.tab_close,),
                 ),
       
 
@@ -446,62 +460,89 @@ class _WorkspaceViewState extends State<WorkspaceView> {
         ),
 
 
-        if (model.queue.length > 0)
-          SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 15.0),
-            child: SectionHeader(
-              title: 'Queue',
-              isCollapsed: model.showQueue,
-              onToggleCollapse: () => model.toggleShowQueue(),
-            ),
-          ),
-        ),
-        if (model.showQueue && model.queue.isNotEmpty)
-        SliverList.builder(
-          itemCount: model.queue.length,
-          itemBuilder: ((context, index) {
-            final resource = model.queue[index];
-            return Padding(
-              padding: EdgeInsets.only(
-                left: 15.0, 
-                right: 15, 
-              ),
-              child: ResourceListItem(
-                isFirstListItem: index == 0,
-                isLastListItem: index == model.queue.length - 1,
-                resource: resource,
-                model: model,
-                onTap: () {
-                  model.openTab(resource);
-                }
-              ),
-            );
-          })
-        ),
+        // if (model.queue.length > 0)
+        //   SliverToBoxAdapter(
+        //   child: Padding(
+        //     padding: const EdgeInsets.symmetric(horizontal: 15.0),
+        //     child: SectionHeader(
+        //       title: 'Queue',
+        //       isCollapsed: model.showQueue,
+        //       onToggleCollapse: () => model.toggleShowQueue(),
+        //     ),
+        //   ),
+        // ),
+        // if (model.showQueue && model.queue.isNotEmpty)
+        // SliverList.builder(
+        //   itemCount: model.queue.length,
+        //   itemBuilder: ((context, index) {
+        //     final resource = model.queue[index];
+        //     return Padding(
+        //       padding: EdgeInsets.only(
+        //         left: 15.0, 
+        //         right: 15, 
+        //       ),
+        //       child: ResourceListItem(
+        //         isFirstListItem: index == 0,
+        //         isLastListItem: index == model.queue.length - 1,
+        //         resource: resource,
+        //         model: model,
+        //         onTap: () {
+        //           model.openTab(resource);
+        //         }
+        //       ),
+        //     );
+        //   })
+        // ),
 
-        if (model.showQueue && model.queue.isNotEmpty)
-          SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 5),
-          ),
-        ),
+        // if (model.showQueue && model.queue.isNotEmpty)
+        //   SliverToBoxAdapter(
+        //   child: Padding(
+        //     padding: const EdgeInsets.symmetric(vertical: 5),
+        //   ),
+        // ),
         
-        if (model.resources.isNotEmpty)
+        if (model.resources.isNotEmpty || model.queue.isNotEmpty)
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.only(left: 15.0, right: 15, bottom: 5),
+            padding: const EdgeInsets.only(top: 10, left: 15.0, right: 15, bottom: 5),
             child: SectionHeader(
               title: 'Resources',
+              actions: [
+                if (model.favorites.length > 0)
+                GestureDetector(
+                  //onTap: () => model.setResourceList('queue'),
+                  child: Padding(
+                    padding: const EdgeInsets.all(5.0),
+                    child: Icon(Symbols.star, fill: model.showQueue ? 1 : 0,),
+                  ),
+                ),
+                if (model.queue.length > 0)
+                GestureDetector(
+                  onTap: () => model.toggleShowQueue(),
+                  child: Padding(
+                    padding: const EdgeInsets.all(5.0),
+                    child: Icon(Symbols.bookmark, fill: model.showQueue ? 0 : 1,),
+                  ),
+                ),
+                if (model.queue.length > 0)
+                GestureDetector(
+                  onTap: () => model.toggleShowQueue(),
+                  child: Padding(
+                    padding: const EdgeInsets.all(5.0),
+                    child: Icon(Symbols.inbox, fill: model.showQueue ? 1 : 0,),
+                  ),
+                )
+                
+              ],
             ),
           ),
         ),
 
-        if (model.resources.isNotEmpty)
+        if (model.resources.isNotEmpty || model.queue.isNotEmpty)
         SliverList.builder(
-          itemCount: model.resources.length,
+          itemCount: model.showQueue ? model.queue.length : model.resources.length,
           itemBuilder: ((context, index) {
-            final resource = model.resources[index];
+            final resource = model.showQueue ? model.queue[index] : model.resources[index];
             return Padding(
               padding: EdgeInsets.only(
                 left: 15.0, 
@@ -509,7 +550,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
               ),
               child: ResourceListItem(
                 isFirstListItem: index == 0,
-                isLastListItem: index == model.resources.length - 1,
+                isLastListItem: index == (model.showQueue ? model.queue.length : model.resources.length) - 1,
                 resource: resource,
                 model: model,
                 onTap: () => model.openResource(context, resource),
@@ -627,7 +668,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
       },
       child: Padding(
         padding: EdgeInsets.all(8.0),
-        child: Icon(Icons.create_new_folder_outlined, color: Colors.white,),
+        child: Icon(Symbols.create_new_folder, color: Colors.white, weight: 300, size: 30),
         
       ),
     );
@@ -696,8 +737,8 @@ class _WorkspaceViewState extends State<WorkspaceView> {
           // FooterIcon(icon: Icons.inbox_outlined, color: color),
           model.workspace.title == null 
           ?  FooterIcon(
-              onTap: () => model.clearTabs(),
-              icon: Icons.clear_all,
+              onTap: () => model.clearTabs(createNewTab: true),
+              icon: Symbols.tab_close,
               color: color, 
               size: 30,
             )
@@ -709,7 +750,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
             onTap: () {
                model.createNewTab(context);
             },
-            icon: Icons.add_box_outlined, 
+            icon: Symbols.add_box, 
             color: color, 
             size: 30
           ),
@@ -720,11 +761,13 @@ class _WorkspaceViewState extends State<WorkspaceView> {
 
   Widget _buildResourceCounts(BuildContext context, WorkspaceViewModel model) {
     final tabCount = model.tabs.length;
-    return Row(
+    return tabCount > 0 
+    ? Row(
       children: [
         Text('${tabCount} Tab${tabCount > 1 ? 's' : ''}')
       ]
-    );
+    )
+    : Container();
   }
 }
 
@@ -773,7 +816,7 @@ class FooterIcon extends StatelessWidget {
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.all(3.0),
-        child: Icon(icon, size: size, color: color, weight: 100,),
+        child: Icon(icon, size: size, color: color, weight: 300,),
       ),
     );
   }

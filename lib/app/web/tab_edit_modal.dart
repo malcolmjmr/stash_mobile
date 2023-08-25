@@ -118,7 +118,7 @@ class _TabEditModalState extends State<TabEditModal> {
                             controller: model.inputController,
                             autocorrect: false,
                             maxLines: 1,
-                            keyboardType: TextInputType.url,
+                            keyboardType: TextInputType.text,
                             textInputAction: TextInputAction.go,
                             onChanged: (value) {
                               model.input = value;

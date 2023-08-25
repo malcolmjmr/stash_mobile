@@ -37,7 +37,7 @@ class SearchViewModel with ChangeNotifier {
 
    updateSearchResults(String searchString) {
     final text = searchString.toLowerCase();
-    visibleWorkspaces = data.workspaces.where((w) => w.title!.toLowerCase().contains(text)).toList();
+    visibleWorkspaces = data.workspaces.where((w) => w.title?.toLowerCase().contains(text) ?? false).toList();
     visibleWorkspaces.sort((a, b) => (b.updated ?? 0).compareTo(a.updated ?? 0));
     visibleResources= data.resources.where((r) => r.title!.toLowerCase().contains(text)).toList();
     notifyListeners();

@@ -68,19 +68,21 @@ class TabViewModel {
 
   }
 
+  int? lastNavigationCheck; 
   Future<NavigationActionPolicy> checkNavigation(BuildContext context, NavigationAction navigationAction) async {
-    final url = navigationAction.request.url.toString();
-    print('checkingNavigation');
-    print(url);
+    print('checking navigation');
     print(resource.url);
-    if (url == resource.url || resource.isSearch != true) {
+    print(navigationAction.request.url.toString());
+    final url = navigationAction.request.url.toString();
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final prevenNewTabCreation = lastNavigationCheck != null &&  now - lastNavigationCheck! < 2000;
+    if (url == resource.url || resource.isSearch != true || prevenNewTabCreation) {
       return NavigationActionPolicy.ALLOW;
     } else {
+      lastNavigationCheck = now;
       workspaceModel.createNewTabFromUrl(url);
       return NavigationActionPolicy.CANCEL;
     } 
-    
-    
   }
 
   Future<bool?> onCreateWindow(BuildContext context, InAppWebViewController controller, CreateWindowAction createWindowAction) async {

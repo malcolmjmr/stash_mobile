@@ -39,6 +39,7 @@ class WorkspaceViewModel extends ChangeNotifier {
   //List<Resource> folders = [];
   List<Workspace> folders = [];
   List<Resource> queue = [];
+  List<Resource> favorites = [];
   List<Resource> resources = [];
 
   List<TabView> tabs = [];
@@ -52,6 +53,7 @@ class WorkspaceViewModel extends ChangeNotifier {
 
   Function(Function()) setState;
   bool showWebView = false;
+  bool showHorizontalTabs = false;
 
   WorkspaceViewParams? params;
 
@@ -68,7 +70,11 @@ class WorkspaceViewModel extends ChangeNotifier {
   }
 
   loadWorkspace(Function(Workspace) onLoaded) async {
-    workspace = params?.workspaceId != null ? await data.getWorkspace(params!.workspaceId!) : Workspace(); 
+    if (params?.workspaceId == Workspace.all().id) {
+      workspace = Workspace.all();
+    } else {
+      workspace = params?.workspaceId != null ? await data.getWorkspace(params!.workspaceId!) : Workspace(); 
+    }
     if (params?.parentId != null) parentWorkspace = await data.getWorkspace(params!.parentId!);
     if (workspace.title == null ) {
       workspace.tabs = [Resource(url: 'https://www.google.com/', title: 'New Tab')];
@@ -240,6 +246,7 @@ class WorkspaceViewModel extends ChangeNotifier {
     setState(() {
       showTabs = !showTabs;
     });
+    
     
   }
 
@@ -469,6 +476,14 @@ class WorkspaceViewModel extends ChangeNotifier {
     
   }
 
+  reloadTab(Resource? resource) {
+    final tab = resource != null 
+      ? tabs.firstWhereOrNull((tab) => tab.model.resource.id == resource.id)
+      : tabs[workspace.activeTabIndex!];
+    if (tab == null) return;
+    tab.model.controller.reload();
+  }
+
   updateWorkspaceTabs({bool save = true}) {
     workspace.tabs = tabs.map((t) => t.model.resource).toList();
     if (save) {
@@ -577,20 +592,34 @@ class WorkspaceViewModel extends ChangeNotifier {
     });
   }
 
-  clearTabs() {
+  clearTabs({bool createNewTab = false}) {
+
+    
     setState(() {
       workspace.tabs = [];
       tabs = [];  
+
+      if (createNewTab) {
+        tabs.add(TabView(model: TabViewModel(workspaceModel: this), lazyLoad: false,));
+        showWebView = true;
+      }
+
     });
   }
 
   closeTab(Resource resource) {
-    tabs.removeWhere((t) => t.model.resource.id == resource.id);
-    if (workspace.activeTabIndex == tabs.length) {
-      workspace.activeTabIndex == tabs.length - 1;
-    }
-    tabPageController?.jumpToPage(workspace.activeTabIndex!);
-    updateWorkspaceTabs();
+
+      tabs.removeWhere((t) => t.model.resource.id == resource.id);
+      if (workspace.activeTabIndex == tabs.length) {
+        workspace.activeTabIndex == tabs.length - 1;
+      }
+      tabPageController?.jumpToPage(workspace.activeTabIndex!);
+      updateWorkspaceTabs();
+
+    setState(() {
+      tabs;
+      workspace.activeTabIndex;
+    });
   }
 
 
@@ -610,6 +639,16 @@ class WorkspaceViewModel extends ChangeNotifier {
 
   }
 
+
+  toggleTabView() {
+    setState(() {
+      showHorizontalTabs = !showHorizontalTabs;
+    });
+
+    if (showHorizontalTabs) {
+      tabPageController = null;
+    }
+  }
   
 }
 

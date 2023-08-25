@@ -27,7 +27,12 @@ class DataManager {
 
   
   DataManager({required this.user, required this.db}) {
+    _getWorkspacesFromCloud();
+    _getRecentResources();
+  }
 
+  _getRecentResources() async {
+    //await db.getResourcesByTime(user, DateTime.now() - Da)
   }
 
   Workspace getWorkspace(String workspaceId) {

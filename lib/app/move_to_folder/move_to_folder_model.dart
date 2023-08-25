@@ -55,7 +55,7 @@ class MoveToFolderModel {
 
   updateSearchResults(String searchString) {
     final text = searchString.toLowerCase();
-    final filter = (Workspace f) => f.title!.toLowerCase().contains(text);
+    final filter = (Workspace f) => f.title?.toLowerCase().contains(text) ?? false;
 
     setState(() {
       visibleRecentFolders = recentFolders.where(filter).toList();

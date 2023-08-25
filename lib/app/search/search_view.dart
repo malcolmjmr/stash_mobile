@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stashmobile/app/common_widgets/search_field.dart';
+import 'package:stashmobile/app/home/home_view_model.dart';
 import 'package:stashmobile/app/home/workspace_listitem.dart';
 import 'package:stashmobile/app/search/search_view_model.dart';
 import 'package:stashmobile/app/workspace/folder_list_item.dart';
@@ -39,10 +40,11 @@ class SearchView extends ConsumerWidget {
                   final workspace = model.visibleWorkspaces[index];
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 15.0),
-                    child: FolderListItem(
+                    child: WorkspaceListItem(
                       isFirstListItem: index == 0,
                       isLastListItem: index == model.visibleWorkspaces.length - 1,
                       workspace: workspace, 
+                      togglePin: (context) => context.read(homeViewProvider).toggleWorkspacePinned(workspace),
                       onTap: () {
                         Navigator.pushNamed(context, AppRoutes.workspace, 
                           arguments: WorkspaceViewParams(
