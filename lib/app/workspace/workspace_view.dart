@@ -22,19 +22,21 @@ import 'package:stashmobile/app/common_widgets/search_field.dart';
 import 'package:stashmobile/app/common_widgets/section_header.dart';
 import 'package:stashmobile/app/home/create_workspace_modal.dart';
 import 'package:stashmobile/app/home/home_view_model.dart';
+import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark.dart' hide SectionHeader;
+import 'package:stashmobile/app/modals/move_tabs/move_tabs_modal.dart';
 import 'package:stashmobile/app/web/horizontal_tabs.dart';
 import 'package:stashmobile/app/web/tab_edit_modal.dart';
 import 'package:stashmobile/app/web/tab_label.dart';
 import 'package:stashmobile/app/web/tab_preview.dart';
+import 'package:stashmobile/app/web/text_selection_menu.dart';
 import 'package:stashmobile/app/web/vertical_tabs.dart';
-import 'package:stashmobile/app/workspace/folder_list_item.dart';
+import 'package:stashmobile/app/workspace/space_list_item.dart';
 import 'package:stashmobile/app/workspace/resource_list_item.dart';
 import 'package:stashmobile/app/workspace/tab_list_item.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 import 'package:stashmobile/app/workspace/workspace_view_params.dart';
 import 'package:stashmobile/constants/color_map.dart';
 import 'package:stashmobile/extensions/color.dart';
-import 'package:stashmobile/models/workspace.dart';
 import 'package:stashmobile/routing/app_router.dart';
 //import 'package:material_symbols_icons/symbols.dart';
 
@@ -55,7 +57,6 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   late WorkspaceViewModel model; 
 
 
-  bool isLoaded = false;
   bool showTabs = true;
   bool showFolders = true;
 
@@ -68,11 +69,6 @@ class _WorkspaceViewState extends State<WorkspaceView> {
       context: context, 
       params: widget.params,
       setState: setState,
-      onLoaded: (workspace) {
-        setState(() {
-          isLoaded = true;
-        });
-      }
     );
   }
 
@@ -80,7 +76,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: isLoaded 
+      child: !model.isLoading
         ? Scaffold(
             backgroundColor: Colors.black,
             body: Container(
@@ -109,16 +105,17 @@ class _WorkspaceViewState extends State<WorkspaceView> {
               children: model.tabs
             )
           ),
-
           Container(
             decoration: BoxDecoration(
               color: Colors.black
             ),
             height: 70,
             width: MediaQuery.of(context).size.width,
-            child: model.showHorizontalTabs 
-              ? HorizontalTabs(workspaceModel: model)
-              : VeritcalTabs(workspaceModel: model),
+            child: model.showTextSelectionMenu 
+              ? TextSelectionMenu(workspaceModel: model)
+              : model.showHorizontalTabs 
+                ? HorizontalTabs(workspaceModel: model)
+                : VeritcalTabs(workspaceModel: model),
           )
         ],
       ),
@@ -377,7 +374,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                 left: 15.0, 
                 right: 15, 
               ),
-              child: FolderListItem(
+              child: SpaceListItem(
                 isFirstListItem: index == 0,
                 isLastListItem: index == model.folders.length - 1,
                 workspace: folder,
@@ -451,8 +448,11 @@ class _WorkspaceViewState extends State<WorkspaceView> {
               children: model.tabs.map((tab) => 
                 TabPreview(
                   tab: tab.model.resource, 
-                  onTap: () => model.openTab(tab.model.resource),
-                  onClose: () => model.closeTab(tab.model.resource),
+                  showSelectionToggle: model.selectedResources.length > 0,
+                  isSelected: model.selectedResources.contains(tab.model.resource.id),
+                  toggleSelection: () => model.toggleResourceSelection(tab.model.resource),
+                  open: () => model.openTab(tab.model.resource),
+                  close: () => model.closeTab(tab.model.resource),
                 )
               ).toList(),
             ),
@@ -594,7 +594,10 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                 ),
               ),
             ),
-            SearchField()
+            SearchField(
+              showPlaceholder: true,
+              onTap: () => Navigator.pushNamed(context, AppRoutes.search),
+            )
           ],
         ),
       ),
@@ -608,17 +611,45 @@ class _WorkspaceViewState extends State<WorkspaceView> {
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal:0.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _buildBackButton(),
-            //_buildTitle(context, model),
-            model.workspace.title == null 
-            ? _buildSaveButton()
-            : _buildMoreButton(),
-          ],
-        ),
+        child: model.selectedResources.isNotEmpty
+          ? _buildSelectionHeader()
+          : Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildBackButton(),
+              //_buildTitle(context, model),
+              model.workspace.title == null 
+              ? _buildSaveButton()
+              : _buildMoreButton(),
+            ],
+          ),
       ),
+    );
+  }
+
+
+
+  Widget _buildSelectionHeader() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text('${model.selectedResources.length} Selected', 
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+        GestureDetector(
+          onTap: () => model.cancelTabSelection(),
+          child: Text('Cancel',
+          
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.white.withOpacity(0.7)
+            ),
+          ),
+        )
+      ],
     );
   }
 
@@ -719,7 +750,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
 
   Widget _buildFooter() {
 
-    final color = HexColor.fromHex(model.workspaceHexColor);
+    
     return Container(
       height: 50,
       padding: EdgeInsets.symmetric(horizontal: 10),
@@ -727,7 +758,15 @@ class _WorkspaceViewState extends State<WorkspaceView> {
         //border: Border(top: BorderSide(color: HexColor.fromHex(model.workspaceHexColor), width: 1)),
         color: Colors.black, //HexColor.fromHex(model.workspaceHexColor)
       ),
-      child: Row(
+      child: model.selectedResources.isNotEmpty
+        ? _buildSelectionFooter()
+        : _buildDefaultFooter()
+    );
+  }
+
+  Widget _buildDefaultFooter() {
+    final color = HexColor.fromHex(model.workspaceHexColor);
+    return Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -747,16 +786,59 @@ class _WorkspaceViewState extends State<WorkspaceView> {
           ),
           _buildResourceCounts(context, model),
           FooterIcon(
-            onTap: () {
-               model.createNewTab(context);
-            },
+            onTap: model.createNewTab,
             icon: Symbols.add_box, 
             color: color, 
             size: 30
           ),
         ],
-      ),
-    );
+      );
+  }
+
+  Widget _buildSelectionFooter() {
+    return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+            GestureDetector(
+              onTap: () => showCupertinoModalBottomSheet(
+                context: context, 
+                builder: (context) {
+                  return MoveToSpaceModal(
+                    workspaceViewModel: model,
+                    onSpaceSelected: (workspace) => null,
+                  );
+                }
+              ),
+              child: Text('Move',
+                style: TextStyle(
+                  fontSize: 20
+                ),
+              )
+            ),
+            GestureDetector(
+              onTap: () => showCupertinoModalBottomSheet(
+                context: context, 
+                builder: (context) {
+                  return EditBookmarkModal(workspaceViewModel: model);
+                }
+              ),
+              child: Text('Save',
+                style: TextStyle(
+                  fontSize: 20
+                ),
+              )
+            ),
+            GestureDetector(
+              onTap: () => model.closeSelectedTabs(),
+              child: Text('Close', 
+                style: TextStyle(
+                  fontSize: 20
+                ),
+              )
+            ),
+        ],
+      );
   }
 
   Widget _buildResourceCounts(BuildContext context, WorkspaceViewModel model) {

@@ -5,8 +5,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
-import 'package:stashmobile/app/move_to_folder/move_to_folder_modal.dart';
 import 'package:stashmobile/app/common_widgets/section_list_item.dart';
+import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark.dart';
+import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark_model.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 import 'package:stashmobile/models/resource.dart';
 
@@ -92,7 +93,8 @@ class TabListItem extends StatelessWidget {
                 onPressed: (context) => showCupertinoModalBottomSheet(
                   context: context, 
                   builder: (context) {
-                    return MoveToFolderModal(resource: resource, onFolderSelected: (folder) => null);
+                    return EditBookmarkModal(workspaceViewModel: model, resource: resource);
+                    //return MoveToFolderModal(resource: resource, onFolderSelected: (folder) => null);
                   }
                 )
               ),

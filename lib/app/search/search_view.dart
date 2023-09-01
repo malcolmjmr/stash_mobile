@@ -3,8 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stashmobile/app/common_widgets/search_field.dart';
 import 'package:stashmobile/app/home/home_view_model.dart';
 import 'package:stashmobile/app/home/workspace_listitem.dart';
+import 'package:stashmobile/app/providers/workspace.dart';
 import 'package:stashmobile/app/search/search_view_model.dart';
-import 'package:stashmobile/app/workspace/folder_list_item.dart';
+import 'package:stashmobile/app/workspace/space_list_item.dart';
 import 'package:stashmobile/app/workspace/workspace_view_params.dart';
 import 'package:stashmobile/extensions/color.dart';
 import 'package:stashmobile/routing/app_router.dart';
@@ -46,9 +47,10 @@ class SearchView extends ConsumerWidget {
                       workspace: workspace, 
                       togglePin: (context) => context.read(homeViewProvider).toggleWorkspacePinned(workspace),
                       onTap: () {
-                        Navigator.pushNamed(context, AppRoutes.workspace, 
+                        Navigator.pushReplacementNamed(context, AppRoutes.workspace, 
                           arguments: WorkspaceViewParams(
-                            workspaceId: workspace.id
+                            workspaceId: workspace.id,
+                            parentId: context.read(workspaceProvider).state,
                           )
                         );
                       }

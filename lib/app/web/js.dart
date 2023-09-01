@@ -396,47 +396,48 @@ class JS {
        
        if (linkElement == null) { 
         window.flutter_inappwebview.callHandler("onDocumentBodyClicked");
-        return;
+       } else {
+        window.flutter_inappwebview.callHandler("onLinkClicked", linkElement.innerText, linkElement.href);
        }
        
         
-       if (clickedLink == target && !isDelayedClick) { doubleClickedLink = target; }
-       if (isDelayedClick) { isDelayedClick = false; }
+      //  if (clickedLink == target && !isDelayedClick) { doubleClickedLink = target; }
+      //  if (isDelayedClick) { isDelayedClick = false; }
        
-       let delayClick = doubleClickedLink != target && !waitingOnDoubleClick;
-       let saveLink = doubleClickedLink == target && waitingOnDoubleClick;
-       let preventClick = doubleClickedLink == target && !waitingOnDoubleClick;
+      //  let delayClick = doubleClickedLink != target && !waitingOnDoubleClick;
+      //  let saveLink = doubleClickedLink == target && waitingOnDoubleClick;
+      //  let preventClick = doubleClickedLink == target && !waitingOnDoubleClick;
 
        
-       if (delayClick) {
+      //  if (delayClick) {
          
-        event.stopPropagation();
-        event.preventDefault();
-        clickedLink = target;
-        waitingOnDoubleClick = true;
-        setTimeout(function(){ isDelayedClick = true; target.click(); }, 1000);
-        return false;
+      //   event.stopPropagation();
+      //   event.preventDefault();
+      //   clickedLink = target;
+      //   waitingOnDoubleClick = true;
+      //   setTimeout(function(){ isDelayedClick = true; target.click(); }, 1000);
+      //   return false;
        
            
-       } else if (saveLink)  {
-         event.stopPropagation();
-         event.preventDefault();
-         waitingOnDoubleClick = false;
-         if (linkElement != null) {
-             window.flutter_inappwebview.callHandler("onLinkSelected", linkElement.innerText, linkElement.href);
-         }
-         return false;
+      //  } else if (saveLink)  {
+      //    event.stopPropagation();
+      //    event.preventDefault();
+      //    waitingOnDoubleClick = false;
+      //    if (linkElement != null) {
+      //        window.flutter_inappwebview.callHandler("onLinkSelected", linkElement.innerText, linkElement.href);
+      //    }
+      //    return false;
     
-       } else { 
-        clickedLink = null;
-        doubleClickedLink = null;
-        waitingOnDoubleClick = false;
-        if (preventClick) {
-          event.stopPropagation();
-          event.preventDefault();
-          return false;
-        } 
-       }
+      //  } else { 
+      //   clickedLink = null;
+      //   doubleClickedLink = null;
+      //   waitingOnDoubleClick = false;
+      //   if (preventClick) {
+      //     event.stopPropagation();
+      //     event.preventDefault();
+      //     return false;
+      //   } 
+      //  }
     });
    
     

@@ -106,16 +106,13 @@ class DataManager {
 
 
   saveWorkspace(Workspace workspace) async {
-
     Workspace? workspaceToUpdate = workspaces.firstWhereOrNull((w) => w.id == workspace.id);
     if (workspaceToUpdate == null) {
       workspaces.add(workspace);
     } else {
       workspaceToUpdate = workspace;
     }
-
     workspace.updated = DateTime.now().millisecondsSinceEpoch;
-
     await db.setUserWorkspace(user.id, workspace);
   }
 

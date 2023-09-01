@@ -2,14 +2,18 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:stashmobile/app/providers/data.dart';
 import 'package:stashmobile/app/providers/user.dart';
+import 'package:stashmobile/app/providers/workspace.dart';
 
 import 'package:stashmobile/app/web/tab.dart';
 import 'package:stashmobile/app/web/tab_model.dart';
+import 'package:stashmobile/app/web/text_selection_menu.dart';
 import 'package:stashmobile/app/workspace/workspace_view_params.dart';
 import 'package:stashmobile/models/workspace.dart';
 import 'package:stashmobile/routing/app_router.dart';
@@ -60,21 +64,23 @@ class WorkspaceViewModel extends ChangeNotifier {
   WorkspaceViewModel({
     required this.context, 
     this.params,
-    required Function(Workspace) onLoaded, 
     required this.setState,
   }) {
     data = context.read(dataProvider);
     user = context.read(userProvider).state!; 
-    loadWorkspace(onLoaded);
+    
+    loadWorkspace();
   
   }
 
-  loadWorkspace(Function(Workspace) onLoaded) async {
+  loadWorkspace() async {
     if (params?.workspaceId == Workspace.all().id) {
       workspace = Workspace.all();
     } else {
       workspace = params?.workspaceId != null ? await data.getWorkspace(params!.workspaceId!) : Workspace(); 
     }
+
+    //context.read(workspaceProvider).state = workspace.id;
     if (params?.parentId != null) parentWorkspace = await data.getWorkspace(params!.parentId!);
     if (workspace.title == null ) {
       workspace.tabs = [Resource(url: 'https://www.google.com/', title: 'New Tab')];
@@ -88,14 +94,15 @@ class WorkspaceViewModel extends ChangeNotifier {
     
     allResources =  await data.getWorkspaceResources(workspace.id);
     await fixData();
-    processResources();
+    await processResources();
 
     loadTabs();
 
     //setLoading(false);
 
-
-    onLoaded(workspace);
+    setState(() {
+      isLoading = false;
+    });
   }
 
 
@@ -152,11 +159,16 @@ class WorkspaceViewModel extends ChangeNotifier {
 
     if (resourcesToRemove.isNotEmpty) {
       
-      
+      // print('resource to remove');
+      // print(resourcesToRemove.length);
+      // print(allResources.length);
       for (final resource in resourcesToRemove) {
-        //await app.workspaceManager.db.deleteResource(user.id, resource.id!);
+        await data.deleteResource(resource, permanent: true);
       }
+
       allResources.removeWhere((r) => resourcesToRemove.contains(r.id));
+      
+
     }
 
     if (resourcesToUpdate.isNotEmpty) {
@@ -169,7 +181,6 @@ class WorkspaceViewModel extends ChangeNotifier {
   processResources() async  {
     workspace.tabs = workspace.tabs.map((t) {
       Resource? savedResource = allResources.firstWhereOrNull((r) => r.url == t.url);
-      if (savedResource != null) savedResource.isSaved = true;
       return savedResource != null ? savedResource : t;
     }).toList();
 
@@ -192,10 +203,10 @@ class WorkspaceViewModel extends ChangeNotifier {
     for (final resource in allResources) {
       if (resource.url == null) {
         //folders.add(resource);
-        if (resource.title == workspace.title) continue;
-        Workspace folder = Workspace(title: resource.title);
-        folder.contexts.add(workspace.id);
-        folders.add(folder);
+        // if (resource.title == workspace.title) continue;
+        // Workspace folder = Workspace(title: resource.title);
+        // folder.contexts.add(workspace.id);
+        // folders.add(folder);
       } else if (resource.isQueued == true) {
         queue.add(resource);
       } else {
@@ -213,18 +224,18 @@ class WorkspaceViewModel extends ChangeNotifier {
       }
     }
 
-    folders.sort((a, b) => (a.updated ?? 0).compareTo(b.updated ?? 0));
+    folders.sort((a, b) => (b.updated ?? 0).compareTo(a.updated ?? 0));
 
   }
 
   int sortResources(Resource a, Resource b) {
-    int comp = (a.lastVisited ?? 0).compareTo(b.lastVisited ?? 0);
+    int comp = (b.lastVisited ?? 0).compareTo(a.lastVisited ?? 0);
     if (comp == 0) {
-      comp = (a.updated ?? 0).compareTo(b.lastVisited ?? 0);
+      comp = (b.updated ?? 0).compareTo(a.lastVisited ?? 0);
     }
 
     if (comp == 0) {
-      comp = (a.created ?? 0).compareTo(b.created ?? 0);
+      comp = (b.created ?? 0).compareTo(a.created ?? 0);
     }
 
     return comp;
@@ -258,7 +269,7 @@ class WorkspaceViewModel extends ChangeNotifier {
     
   }
 
-  bool showQueue = true;
+  bool showQueue = false;
   toggleShowQueue() {
     setState(() {
       showQueue = !showQueue;
@@ -277,7 +288,6 @@ class WorkspaceViewModel extends ChangeNotifier {
     } else {
       if (resource.isQueued == true) {
         resource.isQueued = false;
-        resource.isSaved = false;
         queue.removeWhere((r) => resource.id == r.id);
         data.deleteResource(resource);
       }
@@ -308,11 +318,11 @@ class WorkspaceViewModel extends ChangeNotifier {
       if (index > -1) {
         workspace.activeTabIndex = index;
       } else {
-        resource.isSaved = true;
         workspace.tabs.add(resource);
         if (workspace.title != null) data.saveWorkspace(workspace);
         tabs.add(
           TabView(
+            lazyLoad: false,
             model: TabViewModel(
               workspaceModel: this,
               initialResource: resource,
@@ -322,6 +332,12 @@ class WorkspaceViewModel extends ChangeNotifier {
         workspace.activeTabIndex = workspace.tabs.length - 1;
       }
 
+      if (resource.isQueued == true) {
+        resource.contexts = [];
+        queue.removeWhere((r) => r.id == resource.id);
+        data.deleteResource(resource, permanent: true);
+      }
+
       showWebView = true;
 
     });
@@ -329,10 +345,50 @@ class WorkspaceViewModel extends ChangeNotifier {
     tabPageController?.jumpToPage(workspace.activeTabIndex!);
   }
 
-  onTabUpdated(TabViewModel model, InAppWebViewController controller, Uri? uri) async {
-    // find resource
-    
-    print('tab updated');
+  List<String> selectedResources = [];
+  /*
+    - move 
+    - save
+    - close
+  */
+
+  toggleResourceSelection(Resource resource) {
+    setState(() {
+      final index = selectedResources.indexWhere((id) => id == resource.id);
+      if (index > -1) {
+        selectedResources.removeAt(index);
+      } else {
+        selectedResources.add(resource.id!);
+      }
+      HapticFeedback.mediumImpact();
+    });
+  }
+
+  cancelTabSelection() { 
+    setState(() {
+      selectedResources = [];
+    });
+  }
+
+  removeSelectedTabs() {
+    setState(() {
+      tabs.removeWhere((t) => selectedResources.contains(t.model.resource.id));
+      workspace.activeTabIndex = 0;
+      selectedResources = [];
+    });
+
+    updateWorkspaceTabs();
+  }
+
+  
+
+  onTabUpdated(TabViewModel model, InAppWebViewController controller, Uri? uri, {bool tabLoaded = false}) async {
+
+    if (tabLoaded) {
+      print('tab finished loading');
+    } else {
+      print ('tab is loading');
+    }
     if (!model.loaded) model.loaded = true;
     // final int resourceIndex = tabs.indexWhere((tab) => tab.model.resource.id == model.resource.id);
     // Resource resource;
@@ -341,43 +397,74 @@ class WorkspaceViewModel extends ChangeNotifier {
     //   return;
     // }
     // resource = tabs[resourceIndex].model.resource;
+
+
+    bool resourceUpdated = false;
     final url = uri.toString();
+    print (url);
+    print (model.resource.url);
 
     if (url != model.resource.url) {
-      // update tab resouce (look for existing resource or create new resourc)
-      model.resource = Resource(
+      // Todo: check if resource is from queue
+
+      final newfavIconUrl = await model.getFaviconUrl(controller);
+      final newTitle = await controller.getTitle();
+
+      model.resource = resources.firstWhereOrNull((r) => r.url == url) ?? Resource(
         url: url,
-        favIconUrl: await model.getFaviconUrl(controller),
-        title: await controller.getTitle(),
+        favIconUrl: newfavIconUrl != model.resource.favIconUrl ? newfavIconUrl : null,
+        title: newTitle != model.resource.title ? newTitle : null,
       );
 
     } else {
       // update resource if favicon != null || title != null 
-      //if (resource.favIconUrl == null) {
-        final favIconUrl = await model.getFaviconUrl(controller);
-        if (favIconUrl != null) {
-          model.resource.favIconUrl = favIconUrl;
+      
+        if (model.resource.favIconUrl == null) {
+          final favIconUrl = await model.getFaviconUrl(controller);
+          if (favIconUrl != null) {
+            model.resource.favIconUrl = favIconUrl;
+            resourceUpdated = true;
+          }
         }
-      //}
+       
 
-      //if (resource.title == null) {
-        final title = await controller.getTitle();
-        if (title != null) {
-          model.resource.title = title;
+        if (model.resource.title == null) {
+          final title = await controller.getTitle();
+        
+          if (title != null) {
+            model.resource.title = title;
+            resourceUpdated = true;
+          }
         }
-      //}
 
-      //if (resource.image == null) {
-      //if (workspace.title == null) {
+        print('tab metadata'); 
+        print(await controller.getMetaTags());
+    }
+
+    if (tabLoaded) {
+
+      if (workspace.title != null) {
+         final now = DateTime.now().millisecondsSinceEpoch;
+        if (model.resource.lastVisited == null || (now - model.resource.lastVisited!) > (1000 * 60 * 60 * 2) ) {
+          resourceUpdated = true;
+        }
+        if (resourceUpdated && model.resource.isSaved) {
+          model.resource.lastVisited = now;
+          data.saveResource(model.resource);
+          resources.sort(sortResources);
+        }
+        updateWorkspaceTabs();
+      } else {
         final image = await controller.takeScreenshot();
         if (image != null) {
           model.resource.image = image;
         }
-      //}
-      //}
+      }
     }
 
     if (model.resource.url!.contains('search') && model.resource.isSearch != true) model.resource.isSearch = true;
+
+    print(model.resource);
 
     setState(() {
       workspace;
@@ -417,10 +504,9 @@ class WorkspaceViewModel extends ChangeNotifier {
 
   }
 
-  onPageChanged(int index) {
+  onPageChanged(int index, {bool newTabCreated = false }) {
 
     workspace.activeTabIndex = index;
-    bool newTabCreated = false;
     if (tabs.length == index) {
       tabs.add(TabView(
         model: TabViewModel(workspaceModel: this),
@@ -432,6 +518,7 @@ class WorkspaceViewModel extends ChangeNotifier {
     
     final tabModel = tabs[index].model;
     if (!tabModel.loaded) {
+
       Timer(Duration(milliseconds: newTabCreated ? 300 : 0), () {
         tabModel.controller.loadUrl(urlRequest: URLRequest(url: Uri.parse(tabModel.resource.url!)));
       });
@@ -459,8 +546,10 @@ class WorkspaceViewModel extends ChangeNotifier {
 
   stashTab(Resource resource) {
     setState(() {
-      final index = tabs.indexWhere((tab) => tab.model.resource.id == resource.id);
-      tabs.removeAt(index);
+      // final index = tabs.indexWhere((tab) => tab.model.resource.id == resource.id);
+      // tabs.removeAt(index);
+
+      tabs = tabs.where((tab) => tab.model.resource.id != resource.id).toList();
       final currentIndex = workspace.activeTabIndex!;
       workspace.activeTabIndex = currentIndex > 0 ? currentIndex - 1 : currentIndex;
       tabPageController?.jumpToPage(workspace.activeTabIndex!);
@@ -493,15 +582,12 @@ class WorkspaceViewModel extends ChangeNotifier {
   }
 
   saveTab(Resource resource) {
-    if (resource.contexts.isEmpty) {
-      resource.contexts.add(workspace.id);
-    }
-    resources.add(resource);
-    data.saveResource(resource);
-    
-
     setState(() {
-      resource.isSaved = true;
+      if (resource.contexts.isEmpty) {
+        resource.contexts.add(workspace.id);
+      }
+      resources.add(resource);
+      data.saveResource(resource);
     });
 
   }
@@ -528,55 +614,28 @@ class WorkspaceViewModel extends ChangeNotifier {
     );
   }
 
-  createNewTab(BuildContext context) {
-    
-    // if(workspace.activeTabIndex != null && workspace.tabs.isNotEmpty) {
-    //   print('inserting tab');
-    //   workspace.activeTabIndex = workspace.activeTabIndex! + 1;
-    //   final newIndex = workspace.activeTabIndex!;
-    //   //workspace.tabs.insert(newIndex, newTab);
-    //   tabs.insert(newIndex, 
-    //     TabView(
-    //       model: TabViewModel(workspaceModel: this),
-    //       lazyLoad: false,
-    //     )
-    //   );
-    // } else {
-      //workspace.tabs.add(newTab);
-      
-      tabs.add(
-        TabView(
-          model: TabViewModel(workspaceModel: this),
-          lazyLoad: false,
-        )
-      );
-      workspace.activeTabIndex = tabs.length - 1;
-    //}
-    setState(() {
-      tabs;
-      workspace.activeTabIndex;
-      showWebView = true;
-    });
-   
-    tabPageController?.jumpToPage(workspace.activeTabIndex!);
-  }
-
-  createNewTabFromUrl(String url) {
-    tabs.add(
-      TabView(
-        model: TabViewModel(workspaceModel: this, initialResource: Resource(url: url)),
-        lazyLoad: false,
-      )
+  createNewTab({String? url, bool lazyload = false}) {
+    TabView tab = TabView(
+      model: TabViewModel(
+        workspaceModel: this,
+        initialResource: url != null ? Resource(url: url) : null,
+      ),
+      lazyLoad: lazyload,
     );
-    workspace.activeTabIndex = tabs.length - 1;
-    //}
     setState(() {
-      tabs;
-      workspace.activeTabIndex;
+      if(workspace.activeTabIndex != null && workspace.tabs.isNotEmpty) {
+        workspace.activeTabIndex = workspace.activeTabIndex! + 1;
+        tabs.insert(workspace.activeTabIndex!, tab);
+      } else {
+        tabs.add(tab);
+        workspace.activeTabIndex = tabs.length - 1;
+      }
       
+      if (!showWebView) showWebView = true;
     });
 
     tabPageController?.jumpToPage(workspace.activeTabIndex!);
+    
   }
 
   deleteResource(Resource resource) {
@@ -608,20 +667,27 @@ class WorkspaceViewModel extends ChangeNotifier {
   }
 
   closeTab(Resource resource) {
+    setState(() {
+      tabs = tabs.where((t) => t.model.resource.id != resource.id).toList();
+      if (workspace.activeTabIndex == tabs.length) {
+        workspace.activeTabIndex == tabs.length - 1;
+      }
+    });
 
-      tabs.removeWhere((t) => t.model.resource.id == resource.id);
+    tabPageController?.jumpToPage(workspace.activeTabIndex!);
+    updateWorkspaceTabs();
+  }
+  
+  closeSelectedTabs() {
+    setState(() {
+      tabs.removeWhere((t) => selectedResources.contains(t.model.resource.id));
       if (workspace.activeTabIndex == tabs.length) {
         workspace.activeTabIndex == tabs.length - 1;
       }
       tabPageController?.jumpToPage(workspace.activeTabIndex!);
       updateWorkspaceTabs();
-
-    setState(() {
-      tabs;
-      workspace.activeTabIndex;
     });
   }
-
 
   saveResource(Resource resource) {
     if (resource.isQueued == true) {
@@ -649,7 +715,59 @@ class WorkspaceViewModel extends ChangeNotifier {
       tabPageController = null;
     }
   }
-  
+
+  String? selectedText;
+  bool showTextSelectionMenu = false;
+
+  showTextSelectionModal(String text) {
+    setState(() {
+      selectedText = text;
+      showTextSelectionMenu = true;
+    });
+  }
+
+
+  searchSelectedText() {
+
+    TabView currentTab = tabs[workspace.activeTabIndex!];
+    currentTab.model.controller.clearFocus();
+    setState(() {
+      showTextSelectionMenu = false;
+    });
+    createNewTab(url: 'https://www.google.com/search?q=' + Uri.encodeComponent(selectedText!));
+  }
+
+  tagTabWithSelectedText() {
+    setState(() {
+      String tag = selectedText!.toLowerCase().trim();
+      TabView currentTab = tabs[workspace.activeTabIndex!];
+      Resource resource = currentTab.model.resource;
+      final tagIndex = resource.tags.indexWhere((t) => t == tag);
+      if (tagIndex > -1) {
+        resource.tags.removeAt(tagIndex);
+      } else {
+        resource.tags.add(tag);
+      }
+      if (!resource.isSaved) {
+        resource.contexts.add(workspace.id);
+      } 
+      data.saveResource(resource);
+      currentTab.model.controller.clearFocus();
+      showTextSelectionMenu = false;
+    });
+    
+
+   
+  }
+
+  onTabContentClicked() {
+    if (showTextSelectionMenu) {
+      setState(() {
+        showTextSelectionMenu = false;
+      });
+    }
+  }
+
 }
 
 

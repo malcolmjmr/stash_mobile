@@ -55,7 +55,7 @@ class TabEditModel {
   }
 
   createNewTab(BuildContext context) {
-    workspaceModel.createNewTabFromUrl(getUrlFromInput());
+    workspaceModel.createNewTab(url: getUrlFromInput());
     Navigator.pop(context);
   }
 

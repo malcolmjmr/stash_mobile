@@ -34,6 +34,10 @@ class _CreateWorkspaceModalState extends State<CreateWorkspaceModal> {
     if (widget.initialTitle != null) {
       workspace.title = widget.initialTitle;
     }
+
+    if (workspace.title != null) {
+      textController.text = workspace.title!;
+    }
   }
 
   @override

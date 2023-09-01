@@ -1,11 +1,13 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:page_transition/page_transition.dart';
+import 'package:stashmobile/app/modals/tag_selection/tag_selection.dart';
 import 'package:stashmobile/app/sign_in/email_password_sign_in_page.dart';
 import 'package:stashmobile/app/web/tab_edit_modal.dart';
 
 import 'package:stashmobile/app/workspace/workspace_view.dart';
 import 'package:stashmobile/app/workspace/workspace_view_params.dart';
+import 'package:stashmobile/models/resource.dart';
 
 import '../app/search/search_view.dart';
 
@@ -51,6 +53,9 @@ class AppRoutes {
 
 
   static const editTab = '/edit-tab';
+  static const tagSelection = '/tag-selection';
+
+  static const spaceSelection = '/space-selection';
 
   
 }
@@ -86,6 +91,24 @@ class AppRouter {
             settings: settings,
             fullscreenDialog: true,
           );
+      case AppRoutes.tagSelection:
+        return PageTransition<dynamic>(
+          type: PageTransitionType.rightToLeft,
+          curve: Curves.easeInExpo,
+          child: TagSelectionModal(resource: args as Resource),
+          settings: settings,
+          fullscreenDialog: true,
+        );
+      case AppRoutes.spaceSelection:
+        return PageTransition<dynamic>(
+          type: PageTransitionType.rightToLeft,
+          curve: Curves.easeInExpo,
+          child: WorkspaceView(
+            params: args as WorkspaceViewParams?, 
+          ),
+          settings: settings,
+          fullscreenDialog: true,
+        );
       default:
         return MaterialPageRoute(
             builder: (context) => Scaffold(

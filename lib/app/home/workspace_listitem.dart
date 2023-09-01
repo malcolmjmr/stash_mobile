@@ -4,7 +4,9 @@ import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:stashmobile/app/common_widgets/list_item.dart';
 import 'package:stashmobile/app/common_widgets/section_list_item.dart';
 import 'package:stashmobile/app/home/delete_space_dialog.dart';
-import 'package:stashmobile/app/move_to_folder/move_to_folder_modal.dart';
+import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark.dart';
+import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark_model.dart';
+import 'package:stashmobile/app/modals/edit_space/edit_space.dart';
 import 'package:stashmobile/constants/color_map.dart';
 import 'package:stashmobile/models/workspace.dart';
 import 'package:stashmobile/extensions/color.dart';
@@ -68,10 +70,7 @@ class WorkspaceListItem extends StatelessWidget {
               backgroundColor: Colors.purple,
               onPressed: (context) => showCupertinoModalBottomSheet(
                 context: context, 
-                builder: (context) => MoveToFolderModal(
-                  folder: workspace, 
-                  onFolderSelected: (folder) => null,
-                )
+                builder: (context) => EditSpaceModal()
               ),
               icon: Icons.folder_outlined,
             ),

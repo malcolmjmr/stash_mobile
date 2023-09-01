@@ -22,28 +22,33 @@ class TabViewModel {
     } else {
       resource = Resource(title: 'New Tab', url: 'https://www.google.com/');
     }
-
-    print('new tab');
-    print(initialResource?.url);
   }
 
   bool loaded = false;
+
+  
 
   Future<String?> getFaviconUrl(InAppWebViewController controller) async {
     final favIcons = await controller.getFavicons();
     return favIcons.isNotEmpty ? favIcons.first.url.toString() : null;
   }
 
-  setController(InAppWebViewController newController) {
-    controller = newController;
-    
 
+  bool controllerSet = false;
+  setController(InAppWebViewController newController) {
+
+    controller = newController;
+    controllerSet = true;
   }
 
   bool isNotAWebsite(Resource? content) =>
       content == null || content.url == null;
  
-  onWebsiteLoadStart(BuildContext context, InAppWebViewController controller, Uri? uri) async {
+  onWebsiteLoadStart(BuildContext context, InAppWebViewController _controller, Uri? uri) async {
+    if (!controllerSet) {
+      controller = _controller;
+      controllerSet = true;
+    }
     workspaceModel.onTabUpdated(this, controller, uri);
     //updateTabData(context, controller);
   }
@@ -59,7 +64,7 @@ class TabViewModel {
   onWebsiteLoadStop(BuildContext context, InAppWebViewController controller, Uri? uri) async {
     //workspaceModel.onTabUpdated(this, controller, uri);
     
-    workspaceModel.onTabUpdated(this, controller, uri);
+    workspaceModel.onTabUpdated(this, controller, uri, tabLoaded: true);
     await addJsListeners();
     await addEventHandlers(context);
   }
@@ -70,17 +75,17 @@ class TabViewModel {
 
   int? lastNavigationCheck; 
   Future<NavigationActionPolicy> checkNavigation(BuildContext context, NavigationAction navigationAction) async {
-    print('checking navigation');
-    print(resource.url);
-    print(navigationAction.request.url.toString());
+
     final url = navigationAction.request.url.toString();
-    final now = DateTime.now().millisecondsSinceEpoch;
-    final prevenNewTabCreation = lastNavigationCheck != null &&  now - lastNavigationCheck! < 2000;
+    final prevenNewTabCreation = (
+      !navigationAction.isForMainFrame 
+      || navigationAction.iosWKNavigationType == IOSWKNavigationType.OTHER 
+      || navigationAction.request.url.toString() == 'about:blank'
+    );
     if (url == resource.url || resource.isSearch != true || prevenNewTabCreation) {
       return NavigationActionPolicy.ALLOW;
     } else {
-      lastNavigationCheck = now;
-      workspaceModel.createNewTabFromUrl(url);
+      workspaceModel.createNewTab(url: url);
       return NavigationActionPolicy.CANCEL;
     } 
   }
@@ -115,6 +120,7 @@ class TabViewModel {
         source: JS.scrollListener
           + JS.touchEndListener
           + JS.checkForList
+          + JS.clickListener,
           
     );
   }
@@ -125,9 +131,15 @@ class TabViewModel {
       callback: onLinkSelected,
     );
     controller.addJavaScriptHandler(
+      handlerName: 'onDocumentBodyClicked',
+      callback: onPageClicked,
+    );
+
+    controller.addJavaScriptHandler(
       handlerName: 'onTextSelection',
       callback: onTextSelection,
     );
+
     controller.addJavaScriptHandler(
       handlerName: 'onLinkClicked',
       callback: onLinkClicked,
@@ -152,13 +164,14 @@ class TabViewModel {
 
   onScrollEnd(args) async  {
     print('scroll end');
-
+    if (workspaceModel.workspace.title == null)
     resource.image = await controller.takeScreenshot();
 
   }
 
   onLinkClicked(args) {
     print('link clicked');
+    print(args);
   }
 
   onLinkLongPress(args) {
@@ -167,7 +180,6 @@ class TabViewModel {
 
   onLinkSelected(args) {
     print('link selected');
-    print(args);
 
     Resource resource = Resource(
       title: args[0],
@@ -175,14 +187,18 @@ class TabViewModel {
     );
 
     resource.isQueued = true;
-
     workspaceModel.saveResource(resource);
 
     HapticFeedback.mediumImpact();
   }
 
   onTextSelection(args) {
-    print('text selected');
+    final text = args[0];
+    workspaceModel.showTextSelectionModal(text);
+  }
+
+  onPageClicked(args) {
+    workspaceModel.onTabContentClicked();
   }
 
 }

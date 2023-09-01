@@ -4,9 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
-import 'package:stashmobile/app/move_to_folder/move_to_folder_modal.dart';
+
 import 'package:stashmobile/app/common_widgets/section_list_item.dart';
+import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark.dart';
+import 'package:stashmobile/app/modals/move_tabs/move_tabs_modal.dart';
+import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark_model.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 import 'package:stashmobile/models/resource.dart';
 
@@ -58,30 +62,65 @@ class OpenTabLabel extends StatelessWidget {
           key: Key(resource.toString()),
           startActionPane: ActionPane(
             children: [
+              if (model.workspace.title != null)
               SlidableAction(
                 icon: Icons.move_to_inbox_outlined,
                 foregroundColor: Colors.white,
                 backgroundColor: Colors.orange,
                 onPressed: (context) => model.stashTab(resource),
               ),
+              if (resource.isSaved)
+              SlidableAction(
+                icon: Icons.edit_outlined,
+                backgroundColor: Colors.green,
+                onPressed: (context) => showCupertinoModalBottomSheet(
+                  context: context, 
+                  builder: (context) {
+                    return EditBookmarkModal(resource: resource, workspaceViewModel: model,);
+                    //return MoveToFolderModal(resource: resource, onFolderSelected: (_) => null,);
+                  }
+                )
+              )
+              else 
               SlidableAction(
                 icon: Icons.bookmark_add_outlined,
                 backgroundColor: Colors.green,
-                onPressed: (context) => model.saveTab(resource),
+                onPressed: (context) => model.workspace.title != null 
+                  ? model.saveTab(resource) 
+                  : showCupertinoModalBottomSheet(
+                      context: context, 
+                      builder: (context) {
+                        return EditBookmarkModal(resource: resource, workspaceViewModel: model,);
+                        //return MoveToFolderModal(resource: resource, onFolderSelected: (_) => null,);
+                      }
+                    )
               ),
               SlidableAction(
-                icon: Icons.folder_outlined,
+                icon: Symbols.move_item,
                 backgroundColor: Colors.purple,
                 onPressed: (context) => showCupertinoModalBottomSheet(
                   context: context, 
                   builder: (context) {
-                    return MoveToFolderModal(resource: resource, onFolderSelected: (folder) => null,);
+                    return MoveToSpaceModal(
+                      resource: resource,
+                      onSpaceSelected: (space) => model.removeTab(resource), 
+                      workspaceViewModel: model
+                    );
                   }
-                )
+                ),
               ),
             ],
             motion: const ScrollMotion(),
-            dismissible: DismissiblePane(onDismissed: () => model.stashTab(resource)),
+            dismissible: DismissiblePane(onDismissed: () => model.workspace.title != null 
+              ? model.stashTab(resource)
+              : showCupertinoModalBottomSheet(
+                  context: context, 
+                  builder: (context) {
+                    return EditBookmarkModal(resource: resource, workspaceViewModel: model,);
+                    //return MoveToFolderModal(resource: resource, onFolderSelected: (_) => null,);
+                  }
+                )
+            ),
             openThreshold: 0.5,
           ),
           endActionPane: ActionPane(
@@ -143,6 +182,13 @@ class OpenTabLabel extends StatelessWidget {
                   ),
                 if (resource.isSaved == true) 
                 Icon(Icons.bookmark_outline),
+                GestureDetector(
+                  onTap: () => null,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 3.0),
+                    child: Icon(Icons.more_vert),
+                  ),
+                ),
               ],
             ),
           ),

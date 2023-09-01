@@ -5,8 +5,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
-import 'package:stashmobile/app/move_to_folder/move_to_folder_modal.dart';
 import 'package:stashmobile/app/common_widgets/section_list_item.dart';
+import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark.dart';
+import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark_model.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 import 'package:stashmobile/models/resource.dart';
 
@@ -70,10 +71,23 @@ class TabListItem extends StatelessWidget {
                 backgroundColor: Colors.orange,
                 onPressed: (context) => model.stashTab(resource),
               ),
+              if (resource.isSaved)
+              SlidableAction(
+                icon: Icons.edit_outlined,
+                backgroundColor: Colors.green,
+                onPressed: (context) => showCupertinoModalBottomSheet(
+                  context: context, 
+                  builder: (context) {
+                    return EditBookmarkModal(resource: resource, workspaceViewModel: model,);
+                    //return MoveToFolderModal(resource: resource, onFolderSelected: (_) => null,);
+                  }
+                )
+              )
+              else 
               SlidableAction(
                 icon: Icons.bookmark_add_outlined,
                 backgroundColor: Colors.green,
-                onPressed: (context) => model.saveTab(resource),
+                onPressed: (context) => model.saveTab(resource)
               ),
             ],
             motion: const ScrollMotion(),
@@ -82,26 +96,16 @@ class TabListItem extends StatelessWidget {
           ),
           endActionPane: ActionPane(
             children: [
-              SlidableAction(
-                icon: Icons.ios_share,
-                backgroundColor: Colors.blue,
-                onPressed: (context) => showCupertinoModalBottomSheet(
-                  context: context, 
-                  builder: (context) {
-                    return Container();//ShareModal()
-                  }
-                )
-              ),
-              SlidableAction(
-                icon: Icons.folder_outlined,
-                backgroundColor: Colors.purple,
-                onPressed: (context) => showCupertinoModalBottomSheet(
-                  context: context, 
-                  builder: (context) {
-                    return MoveToFolderModal(resource: resource, onFolderSelected: (_) => null,);
-                  }
-                )
-              ),
+              // SlidableAction(
+              //   icon: Icons.ios_share,
+              //   backgroundColor: Colors.blue,
+              //   onPressed: (context) => showCupertinoModalBottomSheet(
+              //     context: context, 
+              //     builder: (context) {
+              //       return Container();//ShareModal()
+              //     }
+              //   )
+              // ),
               SlidableAction(
                 icon: Icons.close,
                 backgroundColor: Colors.redAccent,

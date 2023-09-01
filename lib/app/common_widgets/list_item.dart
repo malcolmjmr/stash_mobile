@@ -3,10 +3,17 @@
 import 'package:flutter/material.dart';
 
 class ListItem extends StatelessWidget {
-  const ListItem({Key? key, required this.icon, required this.title}) : super(key: key);
+  const ListItem({Key? key, 
+    required this.icon, 
+    required this.title,
+    this.showSubItems = false,
+    this.textColor = Colors.white,
+  }) : super(key: key);
 
   final Icon icon;
   final String title;
+  final Color textColor;
+  final bool showSubItems;
 
   @override
   Widget build(BuildContext context) {
@@ -31,11 +38,12 @@ class ListItem extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 20,
                             overflow: TextOverflow.ellipsis,
-                            color: Colors.white,
+                            color: textColor,
                             fontWeight: FontWeight.w400,
                           ),
                         )
                       ),
+                      if (showSubItems)
                       const Icon(Icons.arrow_forward_ios, 
                         size: 16.0, 
                         color: Colors.white,

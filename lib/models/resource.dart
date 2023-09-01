@@ -28,9 +28,10 @@ class Resource {
   String? parentId;
   bool? isQueued;
   bool? isFavorite;
-  bool? isSaved;
+  bool get isSaved => contexts.isNotEmpty;
   Uint8List? image;
   bool? isSearch;
+  bool? isSelected;
 
 
   Resource({ this.url, this.title, this.favIconUrl}) {

@@ -1,27 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:stashmobile/app/common_widgets/create_new_space_list_item.dart';
 import 'package:stashmobile/app/common_widgets/search_field.dart';
-import 'package:stashmobile/app/move_to_folder/move_to_folder_model.dart';
-import 'package:stashmobile/app/workspace/folder_list_item.dart';
+import 'package:stashmobile/app/workspace/space_list_item.dart';
 
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 import 'package:stashmobile/extensions/color.dart';
 import 'package:stashmobile/models/resource.dart';
 import 'package:stashmobile/models/workspace.dart';
 
-class MoveToFolderModal extends StatefulWidget {
-  const MoveToFolderModal({Key? key, this.folder, this.resource, required this.onFolderSelected, this.workspaceViewModel}) : super(key: key);
+import 'move_tabs_model.dart';
 
-  final WorkspaceViewModel? workspaceViewModel;
-  final Workspace? folder; 
+class MoveToSpaceModal extends StatefulWidget {
+  const MoveToSpaceModal({Key? key, 
+    this.resource, 
+    required this.onSpaceSelected, 
+    required this.workspaceViewModel
+  }) : super(key: key);
+
+  final WorkspaceViewModel workspaceViewModel;
   final Resource? resource;
 
-  final Function(Workspace folder) onFolderSelected;
+  final Function(Workspace folder) onSpaceSelected;
 
   @override
-  State<MoveToFolderModal> createState() => _MoveToFolderModalState();
+  State<MoveToSpaceModal> createState() => _MoveToSpaceModalState();
 }
 
-class _MoveToFolderModalState extends State<MoveToFolderModal> {
+class _MoveToSpaceModalState extends State<MoveToSpaceModal> {
   /*
     model
     sections
@@ -31,14 +36,15 @@ class _MoveToFolderModalState extends State<MoveToFolderModal> {
     - recent 
   */
 
-  late MoveToFolderModel model;
+  late MoveToSpaceModel model;
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    model = MoveToFolderModel(context, setState,
+    model = MoveToSpaceModel(context, setState,
       workspaceModel: widget.workspaceViewModel,
+      selectedResource: widget.resource,
     );
   }
 
@@ -49,10 +55,11 @@ class _MoveToFolderModalState extends State<MoveToFolderModal> {
       type: MaterialType.transparency,
       child: Container(
         color: HexColor.fromHex('111111'),
-        child: Column(
+        child: !model.isLoaded 
+          ? Container()
+          : Column(
           children: [
             _buildHeader(context),
-            if (model.isLoaded)
             Expanded(
               child: CustomScrollView(
                 slivers: [
@@ -67,23 +74,31 @@ class _MoveToFolderModalState extends State<MoveToFolderModal> {
                     title: _buildSearch(),
                   ),
                   SliverPadding(padding: EdgeInsets.symmetric(vertical: 6)),
+                  if (model.searchText.isEmpty || model.visibleSpaces.isEmpty)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 15),
+                      child: CreateNewSpaceListItem(
+                        title: model.searchText,
+                        onSpaceCreated: (space) => model.moveToSpace(context, destinationSpace: space),
+                        
+                      ),
+                    )
+                  ),
                   SliverList.builder(
-                    itemCount: model.visibleRecentFolders.length,
+                    itemCount: model.visibleSpaces.length,
                     itemBuilder: (context, index) {
-                      final folder = model.visibleRecentFolders[index];
+                      final space = model.visibleSpaces[index];
                       return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: FolderListItem(
-                          workspace: folder, 
-                          onTap: () => model.moveToFolder(
+                        padding: const EdgeInsets.symmetric(horizontal: 15),
+                        child: SpaceListItem(
+                          workspace: space, 
+                          onTap: () => model.moveToSpace(
                             context,
-                            targetFolder: widget.folder,
-                            targetResource: widget.resource,
-                            destinationFolder: folder,
-                            callback: widget.onFolderSelected
+                            destinationSpace: space,
+                            callback: widget.onSpaceSelected
                           ), 
-                          isFirstListItem: index == 0,
-                          isLastListItem: index == model.visibleRecentFolders.length,
+                          isLastListItem: index == model.visibleSpaces.length - 1,
                         ),
                       );
                     }
@@ -101,7 +116,7 @@ class _MoveToFolderModalState extends State<MoveToFolderModal> {
   Widget _buildHeader(BuildContext context) {
     return Container(
       color: HexColor.fromHex('222222'),
-      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 20),
+      padding: EdgeInsets.only(left: 10, right: 10, top: 20, bottom: 10),
       child: Column(
         children: [
           Row(
@@ -119,7 +134,7 @@ class _MoveToFolderModalState extends State<MoveToFolderModal> {
                   ),
                 ),
               ),
-              Text('Select Folder',
+              Text('Move to Space',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
@@ -128,40 +143,7 @@ class _MoveToFolderModalState extends State<MoveToFolderModal> {
               SizedBox(width: 50,), 
             ],
           ),
-          _buildItemDetails(context),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildItemDetails(BuildContext context) {
-    return widget.folder != null 
-      ? _buildFolderDetails(context)
-      : _buildResourceDetails(context);
-  }
-
-  Widget _buildFolderDetails(BuildContext context) {
-    return  Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 5.0, right: 10),
-            child: Container(
-              child: Icon(Icons.folder, size: 40)
-            )
-          ),
-          Expanded(
-            child: Text(widget.folder!.title ?? '', 
-              maxLines: 1,
-              style: TextStyle(
-                fontWeight: FontWeight.w400,
-                letterSpacing: 0.5,
-                fontSize: 30,  
-                overflow: TextOverflow.ellipsis),
-              ),
-            ),
+          _buildResourceDetails(context)
         ],
       ),
     );
@@ -169,7 +151,7 @@ class _MoveToFolderModalState extends State<MoveToFolderModal> {
 
   Widget _buildResourceDetails(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.only(top: 10.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -178,8 +160,8 @@ class _MoveToFolderModalState extends State<MoveToFolderModal> {
             child: Container(
               height: 35,
               width: 35,
-              child: widget.resource!.favIconUrl != null 
-                ? Image.network(widget.resource!.favIconUrl ?? '',
+              child: model.resources.first.favIconUrl != null 
+                ? Image.network(model.resources.first.favIconUrl ?? '',
                   //loadingBuilder: (context, child, loadingProgress) => Icon(Icons.language, size: 30,),
                   errorBuilder: (context, child, loadingProgress) => Icon(Icons.public, size: 35,),
                 )
@@ -187,14 +169,20 @@ class _MoveToFolderModalState extends State<MoveToFolderModal> {
               ),
           ),
           Expanded(
-            child: Text(widget.resource!.title ?? '', 
-              maxLines: 1,
-              style: TextStyle(
-                fontWeight: FontWeight.w400,
-                letterSpacing: 0.5,
-                fontSize: 16,  
-                overflow: TextOverflow.ellipsis),
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(model.resources.first.title ?? '', 
+                  maxLines: 1,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 0.5,
+                    fontSize: 16,  
+                    overflow: TextOverflow.ellipsis),
+                  ),
+                Text('${model.resources.length} resource${model.resources.length > 1 ? "s" : ""} selected')
+              ],
+            ),
             ),
         ],
       ),

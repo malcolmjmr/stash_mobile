@@ -12,7 +12,7 @@ import 'package:stashmobile/app/home/create_workspace_modal.dart';
 import 'package:stashmobile/app/home/workspace_listitem.dart';
 import 'package:flutter/material.dart';
 import 'package:stashmobile/app/search/search_view_model.dart';
-import 'package:stashmobile/app/workspace/folder_list_item.dart';
+import 'package:stashmobile/app/workspace/space_list_item.dart';
 import 'package:stashmobile/extensions/color.dart';
 import 'package:stashmobile/models/workspace.dart';
 import 'package:stashmobile/routing/app_router.dart';
@@ -50,7 +50,7 @@ class HomeView extends ConsumerWidget {
 
                   if (model.showFavoriteSpaces && model.favorites.length > 0)
                   SliverToBoxAdapter(
-                    child: FolderListItem(
+                    child: SpaceListItem(
                       isFirstListItem: true,
                       workspace: Workspace.all(),
                       onTap: () => model.openWorkspace(context, Workspace.all())

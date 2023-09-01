@@ -10,19 +10,21 @@ import 'package:stashmobile/extensions/color.dart';
 import 'package:stashmobile/models/workspace.dart';
 import 'package:stashmobile/routing/app_router.dart';
 
-class FolderListItem extends StatelessWidget {
-  const FolderListItem({Key? key, 
+class SpaceListItem extends StatelessWidget {
+  const SpaceListItem({Key? key, 
 
     required this.workspace, 
     required this.onTap,
     this.isFirstListItem = false,
     this.isLastListItem = false,
+    this.showSubfolders = false,
   }) : super(key: key);
 
   final Workspace workspace;
   final VoidCallback onTap;
   final bool isLastListItem;
   final bool isFirstListItem;
+  final bool showSubfolders;
 
   @override
   Widget build(BuildContext context) {

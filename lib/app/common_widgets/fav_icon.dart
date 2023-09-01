@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:stashmobile/models/resource.dart';
+import 'package:http/http.dart' as http;
 
 class FavIcon extends StatefulWidget {
   const FavIcon({Key? key, required this.resource}) : super(key: key);
@@ -17,16 +18,22 @@ class _FavIconState extends State<FavIcon> {
   loadUrl() async {
     if (widget.resource.favIconUrl == null) {
       if (widget.resource.url != null) {
-        //iconUrl = await 
+        iconUrl = await http.read(Uri.parse(widget.resource.url!));
       }
-      
     } else {
-
+      iconUrl = widget.resource.favIconUrl;
     }
     setState(() {
       isLoaded = true;
     });
     
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    loadUrl();
   }
 
   
