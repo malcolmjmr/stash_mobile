@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:stashmobile/app/home/home_view.dart';
 import 'package:stashmobile/app/providers/provider_observer.dart';
+import 'package:stashmobile/app/sign_in/email_password_sign_in_page.dart';
 
 import 'package:stashmobile/app/sign_in/sign_in_page.dart';
 import 'package:stashmobile/app/splash_screen.dart';
@@ -37,7 +38,7 @@ class MyApp extends StatelessWidget {
       home: SafeArea(
         child: AuthWidget(
           spalshScreenBuilder: (_) => SplashScreen(),
-          nonSignedInBuilder: (_) => SignInPage(),
+          nonSignedInBuilder: (_) => EmailPasswordSignInPage.withFirebaseAuth(firebaseAuth),
           signedInBuilder: (_) => HomeView(),
         ),
       ),

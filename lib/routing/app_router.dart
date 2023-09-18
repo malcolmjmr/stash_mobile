@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:page_transition/page_transition.dart';
+import 'package:stashmobile/app/history/activity_history_view.dart';
 import 'package:stashmobile/app/modals/tag_selection/tag_selection.dart';
 import 'package:stashmobile/app/sign_in/email_password_sign_in_page.dart';
 import 'package:stashmobile/app/web/tab_edit_modal.dart';
@@ -57,6 +58,8 @@ class AppRoutes {
 
   static const spaceSelection = '/space-selection';
 
+  static const history = '/activity-history';
+
   
 }
 
@@ -73,6 +76,7 @@ class AppRouter {
           fullscreenDialog: true,
         );
       case AppRoutes.search:
+
         return PageTransition<dynamic>(
             type: PageTransitionType.scale,
             alignment: Alignment.topCenter,
@@ -91,11 +95,21 @@ class AppRouter {
             settings: settings,
             fullscreenDialog: true,
           );
+      case AppRoutes.history:
+        return PageTransition<dynamic>(
+            type: PageTransitionType.scale,
+            alignment: Alignment.topCenter,
+            curve: Curves.easeInExpo,
+            child: ActivityHistoryView(),
+            settings: settings,
+            fullscreenDialog: true,
+          );
       case AppRoutes.tagSelection:
+        
         return PageTransition<dynamic>(
           type: PageTransitionType.rightToLeft,
           curve: Curves.easeInExpo,
-          child: TagSelectionModal(resource: args as Resource),
+          child: TagSelectionModal(resource: args as Resource, ),
           settings: settings,
           fullscreenDialog: true,
         );

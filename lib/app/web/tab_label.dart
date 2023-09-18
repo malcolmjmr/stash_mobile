@@ -11,7 +11,10 @@ import 'package:stashmobile/app/common_widgets/section_list_item.dart';
 import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark.dart';
 import 'package:stashmobile/app/modals/move_tabs/move_tabs_modal.dart';
 import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark_model.dart';
+import 'package:stashmobile/app/web/tab_menu.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
+import 'package:stashmobile/constants/color_map.dart';
+import 'package:stashmobile/extensions/color.dart';
 import 'package:stashmobile/models/resource.dart';
 
 class OpenTabLabel extends StatelessWidget {
@@ -42,7 +45,7 @@ class OpenTabLabel extends StatelessWidget {
       onTap: onTap,
       child: GestureDetector(
         onLongPress: () {
-          if (model.showWebView) return;
+          if (model.workspace.showWebView) return;
           HapticFeedback.mediumImpact();
           showCupertinoModalBottomSheet(
             context: context, 
@@ -181,14 +184,29 @@ class OpenTabLabel extends StatelessWidget {
                     ),
                   ),
                 if (resource.isSaved == true) 
-                Icon(Icons.bookmark_outline),
+                Icon(Icons.bookmark, color: HexColor.fromHex(colorMap[model.workspace.color ?? 'grey']!)),
                 GestureDetector(
-                  onTap: () => null,
+                  onTap: () => showCupertinoModalBottomSheet(
+                    context: context, 
+                    builder: (context) {
+                      return TabMenu(
+                        resource: resource,
+                        workspaceModel: model,
+                      );
+                    }
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 3.0),
                     child: Icon(Icons.more_vert),
                   ),
                 ),
+                GestureDetector(
+                  onTap: () => model.closeTab(resource),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 3.0),
+                    child: Icon(Icons.close),
+                  ),
+                )
               ],
             ),
           ),

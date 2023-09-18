@@ -35,14 +35,17 @@ class HomeViewModel with ChangeNotifier {
 
   refreshWorkspaces() async {
     workspaces = (await data.getWorkspaces())
-      .where((Workspace c) => c.isIncognito != true && c.contexts.isEmpty && c.deleted == null).toList();
+      .where((Workspace c) => c.isIncognito != true  && c.deleted == null).toList();
     workspaces.sort((a, b) => (b.updated ?? 0).compareTo(a.updated ?? 0));
-    favorites = workspaces.where((w) => w.isFavorite == true).toList();
+    recentSpaces = workspaces.sublist(0, 5);
+    favorites = workspaces.where((w) => w.isFavorite == true && w.contexts.isEmpty).toList();
     _setLoading(false);
   }
 
   List<Workspace> workspaces = [];
   List<Workspace> favorites = [];
+  List<Workspace> recentSpaces = [];
+
 
   bool isLoading = false;
   dynamic error;
@@ -85,6 +88,7 @@ class HomeViewModel with ChangeNotifier {
   }
 
   openWorkspace(BuildContext buildContext, Workspace workspace) {
+    buildContext.read(workspaceProvider).state = workspace.id;
     Navigator.pushNamed(buildContext, AppRoutes.workspace, arguments: WorkspaceViewParams(workspaceId: workspace.id));
   }
 
@@ -99,9 +103,8 @@ class HomeViewModel with ChangeNotifier {
 
   deleteWorkspace(BuildContext context, Workspace workspace) {
     data.deleteWorkspace(workspace);
-    workspaces.removeWhere((w) => w.id == workspace.id);
+    refreshWorkspaces();
     Navigator.pop(context);
-    notifyListeners();
   }
 
   openLooseTabs(BuildContext context) {

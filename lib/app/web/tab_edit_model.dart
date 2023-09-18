@@ -31,6 +31,15 @@ class TabEditModel {
 
   List<Resource> searchResults = [];
 
+  onInputChanged() {
+    
+    setState(() {
+      input = inputController.text;
+    });
+    searchWorkspace();
+                            
+  }
+
   searchWorkspace() {
 
   }

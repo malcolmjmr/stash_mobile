@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:stashmobile/extensions/color.dart';
 
 class ModalHeader extends StatelessWidget {
   const ModalHeader({Key? key,
@@ -13,7 +14,7 @@ class ModalHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: 8.0, right: 8.0, top: 10),
+      padding: const EdgeInsets.only(left: 8.0,),
       child: Container(
         height: 50,
         width: double.infinity,
@@ -24,7 +25,7 @@ class ModalHeader extends StatelessWidget {
             GestureDetector(
               onTap: () => Navigator.pop(context),
               child: Padding(
-                padding: const EdgeInsets.all(8.0),
+                padding: const EdgeInsets.only(right: 8.0),
                 child: Text(cancelText,
                   style: TextStyle(
                     color: Colors.amber,
@@ -36,16 +37,13 @@ class ModalHeader extends StatelessWidget {
            Expanded(
              child: Container(
               padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                child: FittedBox(
-                  fit: BoxFit.fitWidth,
-                  child: Material(
-                    type: MaterialType.transparency,
-                    child: Text(titleText,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500, 
-                        fontSize: 30,
-                      ),
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: Text(titleText,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w500, 
+                      fontSize: 20,
                     ),
                   ),
                 ),
@@ -53,7 +51,7 @@ class ModalHeader extends StatelessWidget {
            ),
             GestureDetector(
               child: Padding(
-                padding: const EdgeInsets.all(8.0),
+                padding: const EdgeInsets.only(left: 8.0),
                 child: Text(doneText,
                   style: TextStyle(
                     color: Colors.amber, 

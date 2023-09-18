@@ -3,6 +3,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 
+import 'workspace.dart';
+
 enum ResourceType {
   note,
   webPage,
@@ -19,6 +21,7 @@ class Resource {
   String? id;
   List<String> contexts = [];
   List<String> tags = [];
+  List<Highlight> highlights = [];
   int? index;
   int? created;
   int? updated;
@@ -28,10 +31,11 @@ class Resource {
   String? parentId;
   bool? isQueued;
   bool? isFavorite;
-  bool get isSaved => contexts.isNotEmpty;
+  bool get isSaved => contexts.isNotEmpty || tags.isNotEmpty;
   Uint8List? image;
   bool? isSearch;
   bool? isSelected;
+  Workspace? primaryWorkspace;
 
 
   Resource({ this.url, this.title, this.favIconUrl}) {
@@ -55,6 +59,7 @@ class Resource {
     isFavorite = json['isFavorite'];
     deleted = json['deleted'];
     updated = json['updated'];
+    highlights = json['highlights'] != null ? List<Highlight>.from(json['highlights'].map((h) => Highlight.fromJson(h))) : [];//List<Highlight>.from()
   }
 
   Map<String, dynamic> toJson() {
@@ -74,8 +79,9 @@ class Resource {
       'isFavorite': isFavorite,
       'deleted': deleted,
       'updated': updated,
+      'highlights': highlights.map((h) => h.toJson()),
     };
-    json.removeWhere((key, value) => value == null);
+    json.removeWhere((key, value) => value == null || value == []);
     return json;
   }
 
@@ -84,5 +90,30 @@ class Resource {
     // TODO: implement toString
     return toJson().toString();
   }
+}
+
+
+class Highlight {
+  late String text;
+  String? id;
+  Highlight({
+    this.id,
+    required this.text, 
+  });
+
+  Highlight.fromJson(Map<String,dynamic> json) {
+    text = json['text'];
+    id = json['id'];
+  }
+
+  Map<String,dynamic> toJson() {
+     Map<String, dynamic> json = {
+      'id': id,
+      'text': text,
+    };
+    json.removeWhere((key, value) => value == null);
+    return json;
+  }
+
 
 }

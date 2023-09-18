@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:stashmobile/app/common_widgets/fav_icon.dart';
 import 'package:stashmobile/app/common_widgets/modal_header.dart';
-import 'package:stashmobile/app/common_widgets/search_field.dart';
+import 'package:stashmobile/app/common_widgets/tag.dart';
 import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark_model.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 import 'package:stashmobile/constants/color_map.dart';
 import 'package:stashmobile/extensions/color.dart';
 import 'package:stashmobile/models/resource.dart';
+import 'package:stashmobile/models/tag.dart';
 import 'package:stashmobile/models/workspace.dart';
 import 'package:stashmobile/routing/app_router.dart';
 
@@ -52,12 +53,20 @@ class _EditBookmarkModalState extends State<EditBookmarkModal> {
         color: HexColor.fromHex('111111'),
         child: CustomScrollView(
           slivers: [
-            SliverAppBar(title: ModalHeader(titleText: 'Edit Bookmark'), floating: true,),
-            SliverAppBar(title: _buildTitle(), pinned: true),
+            SliverAppBar(
+              title: ModalHeader(titleText: 'Edit Bookmark'), 
+              backgroundColor: HexColor.fromHex('111111'),
+              floating: true, 
+              automaticallyImplyLeading: false,
+              leadingWidth: 0,
+              leading: null,
+            ),
+            SliverToBoxAdapter(
+              child: _buildDescription(),
+            ),
             SliverToBoxAdapter(
               child: _buildSpaces(),
             ),
-            if (model.showTags) 
             SliverToBoxAdapter(
               child: _buildTags(),
             )
@@ -68,98 +77,189 @@ class _EditBookmarkModalState extends State<EditBookmarkModal> {
     );
   }
 
-  Widget _buildTitle() {
+  Widget _buildDescription() {
     return Padding(
-      padding: const EdgeInsets.all(8.0),
-
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, ),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+        padding: EdgeInsets.symmetric(horizontal: 10),
         decoration: BoxDecoration(
-          color: HexColor.fromHex('222222'),
-          borderRadius: BorderRadius.circular(8)
+          borderRadius: BorderRadius.circular(8),
+          color: HexColor.fromHex('222222')
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(5.0),
+          child: Column(
+            children: [
+              _buildTitle(),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 5.0),
+                child: Container(width: double.infinity, height: 2, color: HexColor.fromHex('444444'),),
+              ),
+              _buildLinkInfo(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-        ),
-        child: Row(
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(right: 8.0),
-              child: model.resource != null
-              ? FavIcon(resource: model.resource!)
-              : Icon(Icons.folder_rounded, 
-                  color: HexColor.fromHex(colorMap[model.space!.color ?? 'grey']!)
+  Widget _buildLinkInfo() {
+    return Container(
+      child: Row(
+
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: Icon(Icons.link),
+          ),
+          Expanded(child: Text(model.resource!.url!))
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTitle() {
+    return Container(
+      child: Row(
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: model.resource != null
+            ? FavIcon(resource: model.resource!, size: 27,)
+            : Icon(Icons.folder_rounded, 
+                color: HexColor.fromHex(colorMap[model.space!.color ?? 'grey']!)
+              ),
+          ),
+          Expanded(
+            child: model.canEditTitle
+            ? TextField(
+                controller: model.titleController,
+                maxLines: null,
+                keyboardType: TextInputType.text,
+                style: TextStyle(
+                  overflow: TextOverflow.ellipsis,
+                  fontWeight: FontWeight.w500,
                 ),
-            ),
-            Expanded(
-              child: model.canEditTitle
-              ? TextField(
-                  controller: model.titleController,
-                  maxLines: null,
-                  keyboardType: TextInputType.text,
-                  style: TextStyle(
-                    overflow: TextOverflow.ellipsis,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                  ),
-                )
-              : Text(
-                  model.resource?.title ?? model.space!.title!,
-                  style: TextStyle(
-                    overflow: TextOverflow.ellipsis,
-                    fontWeight: FontWeight.w500,
-                  ),
+                decoration: InputDecoration(
+                  border: InputBorder.none,
                 ),
-            )
-          ],
-        ),
+              )
+            : Text(
+                model.resource?.title ?? model.space!.title!,
+                style: TextStyle(
+                  overflow: TextOverflow.ellipsis,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+          )
+        ],
       ),
     );
   }
 
   Widget _buildSpaces() {
-    return Container(
-      child: Column(
-        children: [
-          SectionHeader(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 20),
+      child: model.spaces.isNotEmpty
+        ? SectionHeader(
             title: 'Spaces',
             onAddClicked: () => null,
             onToggleCollapse: () => null,
             isCollapsed: false,
-          ),
-          Container(
-            child: Column(
-              children: model.spaces.map(
-                (space) => Container()
-            ).toList(),
+          )
+        : Container(
+            padding: EdgeInsets.symmetric(horizontal: 10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              color: HexColor.fromHex('222222')
+            ),
+            child: model.spaces.isEmpty
+              ? Container(
+                height: 40,
+                child: Row(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: Icon(Icons.add),
+                    ),
+                    Text('Add Space',
+                      style: TextStyle(
+                        fontSize: 18
+                      ),
+                    )
+                  ],
+                ),
+              )
+              : Column(
+                children: model.spaces.map(
+                  (space) => Container()
+              ).toList(),
             ),
           )
-        ],
-      ),
-    );
+        );
   }
 
-  Widget _buildTags() {
-    return Container(
+    Widget _buildTags() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10),
       child: Column(
         children: [
-          SectionHeader(
-            title: 'Spaces',
-            onAddClicked: () => Navigator.pushNamed(context, AppRoutes.tagSelection, arguments: model.resource),
-            onToggleCollapse: () => null,
-            isCollapsed: false,
-          ),
-          Container(
-            child: Column(
-              children: model.spaces.map(
-                (space) => Container()
-            ).toList(),
+          if (model.tags.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 15, left: 10, right: 10),
+              child: SectionHeader(
+                title: 'Tags',
+                onAddClicked: () => null,
+                onToggleCollapse: () => null,
+                isCollapsed: model.showTags,
+              ),
             ),
-          )
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 10),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                color: HexColor.fromHex('222222')
+              ),
+              child: model.tags.isEmpty
+                ? GestureDetector(
+                  onTap: () => Navigator.pushNamed(context, AppRoutes.tagSelection, arguments: model.resource),
+                  child: Container(
+                    height: 40,
+                    child: Row(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8.0),
+                          child: Icon(Icons.add),
+                        ),
+                        Text('Add Tag',
+                          style: TextStyle(
+                            fontSize: 18
+                          ),
+                        )
+                      ],
+                    ),
+                  ),
+                )
+                : Container(
+                    padding: EdgeInsets.symmetric(vertical: 10),
+                    width: double.infinity,
+                    child: Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      crossAxisAlignment: WrapCrossAlignment.start,
+                      children: model.tags.map(
+                        (tag) => TagChip(
+                          tag: Tag(name: tag,), 
+                          //isSelected: true,
+                        )
+                    ).toList(),
+                  ),
+                ),
+            ),
         ],
-      ),
-    );
-  }
+      )
+        );
+    }
 }
 
 class SectionHeader extends StatelessWidget {
@@ -183,15 +283,18 @@ class SectionHeader extends StatelessWidget {
           Text(title,
             style: TextStyle(
               fontWeight: FontWeight.w500,
-              fontSize: 20,
+              fontSize: 22,
             ),
           ),
-          Icon(Icons.add),
-          Expanded(child: Container(),),
-          Icon(isCollapsed 
-            ? Icons.keyboard_arrow_down 
-            : Icons.keyboard_arrow_right
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 5),
+            child: Icon(isCollapsed 
+              ? Icons.keyboard_arrow_down 
+              : Icons.keyboard_arrow_right
+            ),
           ),
+          Expanded(child: Container(),),
+          Icon(Icons.add)
         ],
       ),
     );

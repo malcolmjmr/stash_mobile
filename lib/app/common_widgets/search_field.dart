@@ -10,6 +10,8 @@ class SearchField extends StatelessWidget {
     this.onChanged,
     this.onSubmitted,
     this.autofocus = false,
+    this.showHero = false,
+    this.hintText = 'Search',
     }) : super(key: key);
 
   final Function()? onTap;
@@ -17,12 +19,14 @@ class SearchField extends StatelessWidget {
   final Function(String value)? onSubmitted;
   final bool showPlaceholder;
   final bool autofocus; 
+  final bool showHero;
+  final String hintText;
 
   final Color? backgroundColor;
   @override
   Widget build(BuildContext context) {
     return Hero(
-      tag: 'search',
+      tag: showHero ? 'search' : '',
       child: Material(
         type: MaterialType.transparency,
         child: Container(
@@ -68,7 +72,7 @@ class SearchField extends StatelessWidget {
                               fontWeight: FontWeight.w400,
                               color: Colors.white
                             ),
-                            hintText: 'Search'
+                            hintText: hintText,
                           ),
                         ),
                   ),

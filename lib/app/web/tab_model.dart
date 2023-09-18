@@ -8,6 +8,7 @@ import 'package:stashmobile/app/web/event_handlers.dart';
 import 'package:stashmobile/app/web/js.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 import 'package:stashmobile/models/resource.dart';
+import 'package:stashmobile/services/hypothesis.dart';
 
 class TabViewModel {
  
@@ -27,6 +28,7 @@ class TabViewModel {
   bool loaded = false;
 
   
+
 
   Future<String?> getFaviconUrl(InAppWebViewController controller) async {
     final favIcons = await controller.getFavicons();
@@ -67,6 +69,7 @@ class TabViewModel {
     workspaceModel.onTabUpdated(this, controller, uri, tabLoaded: true);
     await addJsListeners();
     await addEventHandlers(context);
+    await addAnnotationFunctions();
   }
 
   onCloseWindow(BuildContext context, InAppWebViewController controller) {
@@ -114,7 +117,6 @@ class TabViewModel {
   }
 
   addJsListeners() async {
-    print('adding js');
 
     controller.evaluateJavascript(
         source: JS.scrollListener
@@ -123,6 +125,11 @@ class TabViewModel {
           + JS.clickListener,
           
     );
+  }
+
+  addAnnotationFunctions() {
+    controller.evaluateJavascript(
+        source: JS.annotationFunctions + JS.hypothesisHelpers);
   }
 
   addEventHandlers(BuildContext context) {
@@ -152,6 +159,12 @@ class TabViewModel {
       handlerName: 'foundList',
       callback: onFoundList,
     );
+    controller.addJavaScriptHandler(
+      handlerName: 'onAnnotationTarget',
+      callback: onAnnotationTarget,
+    );
+
+   
   }
 
   onFoundList(args) {
@@ -163,7 +176,7 @@ class TabViewModel {
   }
 
   onScrollEnd(args) async  {
-    print('scroll end');
+  
     if (workspaceModel.workspace.title == null)
     resource.image = await controller.takeScreenshot();
 
@@ -193,12 +206,46 @@ class TabViewModel {
   }
 
   onTextSelection(args) {
-    final text = args[0];
+
+    final text = args[0] as String;
+    if (text.isNotEmpty)
     workspaceModel.showTextSelectionModal(text);
   }
 
   onPageClicked(args) {
     workspaceModel.onTabContentClicked();
   }
+
+  createHighlight() {
+    print('creating highlight');
+    controller.evaluateJavascript(source: 'getAnnotationTarget();');
+  }
+
+  onAnnotationTarget(args) async {
+    print('got annotation target');
+    final target = args[0];
+    final String uri = target['source'];
+    final hypothesisId = await Hypothesis().createAnnotation({
+      'document': {
+        'title': [resource.title]
+      },
+      'uri': uri.replaceFirst('.m.', '.'),
+      'target': [target],
+    });
+
+
+    workspaceModel.createHighlight(id: hypothesisId);
+    
+
+    await controller.evaluateJavascript(
+      source: JS.addAnnotation({
+        'id': hypothesisId,
+        'target': target,
+        'color': workspaceModel.workspace.color,
+      }),
+    );
+  }
+
+
 
 }

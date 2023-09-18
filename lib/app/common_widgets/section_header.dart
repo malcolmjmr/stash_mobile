@@ -6,17 +6,21 @@ class SectionHeader extends StatelessWidget {
     required this.title, 
     this.isCollapsed,
     this.actions = const [],
+    this.trailing,
   }) : super(key: key);
   final String title;
   final VoidCallback? onToggleCollapse;
   final bool? isCollapsed;
   final List<Widget> actions;
+  final Widget? trailing;
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 10.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
         children: [
           Row(
             children: [
@@ -37,20 +41,23 @@ class SectionHeader extends StatelessWidget {
                 )
             ],
           ),
+
+          if (trailing != null) 
+          trailing!,
             
-          isCollapsed != null
-            ? GestureDetector(
-                onTap: onToggleCollapse,
-                child: Padding(
-                  padding: const EdgeInsets.all(3.0),
-                  child: Icon(isCollapsed! 
-                    ? Icons.keyboard_arrow_down 
-                    : Icons.keyboard_arrow_right,
-                    //color: Colors.amber,
-                  ),
+          if (isCollapsed != null)
+          GestureDetector(
+              onTap: onToggleCollapse,
+              child: Padding(
+                padding: const EdgeInsets.all(3.0),
+                child: Icon(isCollapsed! 
+                  ? Icons.keyboard_arrow_down 
+                  : Icons.keyboard_arrow_right,
+                  //color: Colors.amber,
                 ),
-              )
-            : Container()
+              ),
+            )
+
         ],
       ),
       

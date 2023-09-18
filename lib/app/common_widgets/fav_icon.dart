@@ -3,7 +3,8 @@ import 'package:stashmobile/models/resource.dart';
 import 'package:http/http.dart' as http;
 
 class FavIcon extends StatefulWidget {
-  const FavIcon({Key? key, required this.resource}) : super(key: key);
+  const FavIcon({Key? key, required this.resource, this.size = 35}) : super(key: key);
+  final double size;
   final Resource resource;
   @override
   State<FavIcon> createState() => _FavIconState();
@@ -40,8 +41,8 @@ class _FavIconState extends State<FavIcon> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 35,
-      width: 35,
+      height: widget.size,
+      width: widget.size,
       child: iconUrl != null 
         ? Image.network(iconUrl!,
           //loadingBuilder: (context, child, loadingProgress) => Icon(Icons.language, size: 30,),

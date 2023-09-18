@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stashmobile/app/authentication/firebase_providers.dart';
@@ -34,6 +36,14 @@ class AppSession extends ChangeNotifier {
       user = await db.getUserById(auth!.uid);
       state = user != null ? SessionState.loggedIn : SessionState.loggedOut;
       notifyListeners();
+    } 
+    else {
+      // Timer(Duration(seconds: 3),  () async {
+        if (state == SessionState.loading) {
+          state = SessionState.loggedOut;
+          notifyListeners();
+        }
+      // });
     }
   }
 }

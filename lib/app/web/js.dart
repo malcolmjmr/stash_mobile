@@ -298,7 +298,7 @@ class JS {
       }
     } else {
       let textSelection = window.getSelection().toString();
-      if (textSelection != lastTextSelection) {
+      if (textSelection != lastTextSelection && textSelection != '') {
         lastTextSelection = textSelection;
         lastTextSelectionElement = target;
         //console.log('text selection: ' + textSelection);

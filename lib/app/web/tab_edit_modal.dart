@@ -96,21 +96,18 @@ class _TabEditModalState extends State<TabEditModal> {
           children: [
             GestureDetector(
               onTap: () => model.createNewTab(context),
-              child: Padding(
-                padding: const EdgeInsets.only(left: 5.0),
-                child: Icon(Icons.add, size: 30,),
-              ),
+              child: Icon(Icons.add, size: 30,),
             ),
             Expanded(
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 5, vertical: 5),
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                 child: Container(
                   decoration: BoxDecoration(
                     color: HexColor.fromHex('333333'),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    padding: const EdgeInsets.only(left: 8.0),
                     child: Row(
                       children: [
                         Expanded(
@@ -120,10 +117,7 @@ class _TabEditModalState extends State<TabEditModal> {
                             maxLines: 1,
                             keyboardType: TextInputType.text,
                             textInputAction: TextInputAction.go,
-                            onChanged: (value) {
-                              model.input = value;
-                              model.searchWorkspace();
-                            },
+                            onChanged: (value) => model.onInputChanged(),
                             onSubmitted: (value) {
                               model.updateTab(context);
                             },
@@ -145,8 +139,15 @@ class _TabEditModalState extends State<TabEditModal> {
                         GestureDetector(
                           onTap: () => model.clearInput(),
                           child: Padding(
-                            padding: const EdgeInsets.only(top: 3.0, bottom: 3.0),
-                            child: Icon(Icons.close_outlined),
+                            padding: const EdgeInsets.all(5),
+                            child: Container(
+                              height: 20, 
+                              width: 20,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(100),
+                                color: HexColor.fromHex('555555'),
+                              ),
+                              child: Center(child: Icon(Icons.close_outlined, size: 18,))),
                           ),
                         )
                       ],

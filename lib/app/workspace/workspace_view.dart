@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 
 import 'package:ionicons/ionicons.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -20,10 +21,13 @@ import 'package:page_transition/page_transition.dart';
 import 'package:stashmobile/app/common_widgets/drop_down_menu.dart';
 import 'package:stashmobile/app/common_widgets/search_field.dart';
 import 'package:stashmobile/app/common_widgets/section_header.dart';
+import 'package:stashmobile/app/common_widgets/tag.dart';
 import 'package:stashmobile/app/home/create_workspace_modal.dart';
 import 'package:stashmobile/app/home/home_view_model.dart';
 import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark.dart' hide SectionHeader;
 import 'package:stashmobile/app/modals/move_tabs/move_tabs_modal.dart';
+import 'package:stashmobile/app/providers/workspace.dart';
+import 'package:stashmobile/app/search/search_view_model.dart';
 import 'package:stashmobile/app/web/horizontal_tabs.dart';
 import 'package:stashmobile/app/web/tab_edit_modal.dart';
 import 'package:stashmobile/app/web/tab_label.dart';
@@ -81,7 +85,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
             backgroundColor: Colors.black,
             body: Container(
               child: IndexedStack(
-                index: model.showWebView ? 1 : 0,
+                index: model.workspace.showWebView ? 1 : 0,
                 children: [
                   _buildWorkspaceView(),
                   _buildWebview(),
@@ -236,7 +240,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
           GestureDetector(
             onTap: () {
               setState(() {
-                model.showWebView = false;
+                model.workspace.showWebView = false;
               });
             },
             child: Row(
@@ -378,12 +382,15 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                 isFirstListItem: index == 0,
                 isLastListItem: index == model.folders.length - 1,
                 workspace: folder,
-                onTap: () => Navigator.pushNamed(context, AppRoutes.workspace, 
-                  arguments: WorkspaceViewParams(
-                    workspaceId: folder.id,
-                    parentId: model.workspace.id, 
-                  )
-                ),
+                onTap: () {
+                  context.read(workspaceProvider).state = folder.id;
+                  Navigator.pushNamed(context, AppRoutes.workspace, 
+                    arguments: WorkspaceViewParams(
+                      workspaceId: folder.id,
+                      parentId: model.workspace.id, 
+                    )
+                  );
+                }
               ),
             );
           })
@@ -431,6 +438,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                 resource: tab.model.resource,
                 model: model,
                 onTap: () {
+                  //print(tab.model.resource);
                   model.openTab(tab.model.resource);
                 }
               ),
@@ -501,7 +509,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
         //   ),
         // ),
         
-        if (model.resources.isNotEmpty || model.queue.isNotEmpty)
+        if (model.visibleResources.isNotEmpty || model.selectedTags.isNotEmpty)
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.only(top: 10, left: 15.0, right: 15, bottom: 5),
@@ -512,15 +520,15 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                 GestureDetector(
                   //onTap: () => model.setResourceList('queue'),
                   child: Padding(
-                    padding: const EdgeInsets.all(5.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 5.0),
                     child: Icon(Symbols.star, fill: model.showQueue ? 1 : 0,),
                   ),
                 ),
-                if (model.queue.length > 0)
+                if (model.resources.length > 0)
                 GestureDetector(
                   onTap: () => model.toggleShowQueue(),
                   child: Padding(
-                    padding: const EdgeInsets.all(5.0),
+                     padding: const EdgeInsets.symmetric(horizontal: 5.0),
                     child: Icon(Symbols.bookmark, fill: model.showQueue ? 0 : 1,),
                   ),
                 ),
@@ -528,29 +536,33 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                 GestureDetector(
                   onTap: () => model.toggleShowQueue(),
                   child: Padding(
-                    padding: const EdgeInsets.all(5.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 5.0),
                     child: Icon(Symbols.inbox, fill: model.showQueue ? 1 : 0,),
                   ),
                 )
-                
               ],
             ),
           ),
         ),
 
-        if (model.resources.isNotEmpty || model.queue.isNotEmpty)
+        if (model.visibleTags.isNotEmpty) 
+        SliverToBoxAdapter(
+          child: _buildTags(),
+        ),
+
+        if (model.visibleResources.isNotEmpty)
         SliverList.builder(
-          itemCount: model.showQueue ? model.queue.length : model.resources.length,
+          itemCount: model.visibleResources.length,
           itemBuilder: ((context, index) {
-            final resource = model.showQueue ? model.queue[index] : model.resources[index];
+            final resource = model.visibleResources[index];
             return Padding(
               padding: EdgeInsets.only(
                 left: 15.0, 
                 right: 15, 
               ),
               child: ResourceListItem(
-                isFirstListItem: index == 0,
-                isLastListItem: index == (model.showQueue ? model.queue.length : model.resources.length) - 1,
+                isFirstListItem: model.visibleTags.isEmpty && index == 0,
+                isLastListItem: index == model.visibleResources.length - 1,
                 resource: resource,
                 model: model,
                 onTap: () => model.openResource(context, resource),
@@ -566,6 +578,39 @@ class _WorkspaceViewState extends State<WorkspaceView> {
       ],
     );
 
+  }
+
+  Widget _buildTags() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 15),
+      child: Container(
+        height: 40,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.only(topLeft: Radius.circular(8), topRight: Radius.circular(8)),
+          color: HexColor.fromHex('222222')
+        ),
+        //width: MediaQuery.of(context).size.width,
+        child: Padding(
+          padding: const EdgeInsets.only(top: 8.0, bottom: 5.0),
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: model.visibleTags.length,
+            itemBuilder: (context, index) {
+              final tag = model.visibleTags[index];
+              return Padding(
+                padding: EdgeInsets.only(right: 10.0, left: index == 0 ? 10 : 0),
+                child: TagChip(
+                  key: Key(tag.name),
+                  tag: tag,
+                  isSelected: model.selectedTags.firstWhereOrNull((t) => t.name == tag.name) != null,
+                  onTap: () => model.toggleTagSelection(tag),
+                ),
+              );
+            }
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildExpandedHeader() {
@@ -596,7 +641,10 @@ class _WorkspaceViewState extends State<WorkspaceView> {
             ),
             SearchField(
               showPlaceholder: true,
-              onTap: () => Navigator.pushNamed(context, AppRoutes.search),
+              onTap: () {
+                context.read(searchViewProvider).load();
+                Navigator.pushNamed(context, AppRoutes.search);
+              }
             )
           ],
         ),

@@ -117,8 +117,13 @@ class DataManager {
   }
 
   deleteWorkspace(Workspace workspace) async {
-    workspace.deleted = DateTime.now().millisecondsSinceEpoch;
-    await db.setUserWorkspace(user.id, workspace);
+    if (workspace.title == null) {
+      await db.deleteWorkspace(user.id, workspace.id);
+    } else {
+      workspace.deleted = DateTime.now().millisecondsSinceEpoch;
+      await db.setUserWorkspace(user.id, workspace);
+    }
+   
     workspaces.removeWhere((w) => w.id == workspace.id);
   }
 

@@ -35,6 +35,7 @@ class EditBookmarkModel {
         canEditTitle = false;
       }
     });
+
   }
 
   bool showSpaces = true;

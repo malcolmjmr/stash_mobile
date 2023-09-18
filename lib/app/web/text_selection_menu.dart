@@ -35,7 +35,7 @@ class TextSelectionMenu extends StatelessWidget {
             TextSelectionOption(
               icon: Symbols.ink_highlighter, 
               text: 'Highlight',
-              //onTap: () => workspaceModel.addHighlightToCurrentTab(text),
+              onTap: () => workspaceModel.currentTab.model.createHighlight(),
             )
           ],
         ),

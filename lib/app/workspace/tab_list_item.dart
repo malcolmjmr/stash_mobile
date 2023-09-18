@@ -9,6 +9,8 @@ import 'package:stashmobile/app/common_widgets/section_list_item.dart';
 import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark.dart';
 import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark_model.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
+import 'package:stashmobile/constants/color_map.dart';
+import 'package:stashmobile/extensions/color.dart';
 import 'package:stashmobile/models/resource.dart';
 
 /*
@@ -45,7 +47,7 @@ class TabListItem extends StatelessWidget {
       onTap: onTap,
       child: GestureDetector(
         onLongPress: () {
-          if (model.showWebView) return;
+          if (model.workspace.showWebView) return;
           HapticFeedback.mediumImpact();
           showCupertinoModalBottomSheet(
             context: context, 
@@ -165,7 +167,7 @@ class TabListItem extends StatelessWidget {
                   ),
                   ),
                 if (resource.isSaved == true) 
-                Icon(Icons.bookmark_outline),
+                Icon(Icons.bookmark, color: HexColor.fromHex(colorMap[model.workspace.color ?? 'grey']!)),
               ],
             ),
           ),

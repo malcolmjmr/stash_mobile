@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
+import 'package:stashmobile/app/common_widgets/freeze_container.dart';
 import 'package:stashmobile/app/common_widgets/list_item.dart';
 import 'package:stashmobile/app/common_widgets/search_field.dart';
 import 'package:stashmobile/app/common_widgets/section_list_item.dart';
@@ -39,10 +40,43 @@ class HomeView extends ConsumerWidget {
                 slivers: [
                   SliverToBoxAdapter(child: Header(model: model)),
                   SliverToBoxAdapter(child: _buildTopSection(context, model)),
+                  if (model.recentSpaces.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: SectionHeader(
+                      title: 'Recent',
+                      trailing: GestureDetector(
+                        onTap: () => Navigator.pushNamed(context, AppRoutes.history),
+                        child: Text('Show More',
+                          style: TextStyle(
+                            fontSize: 14,
+                            //fontWeight: FontWeight.w300,
+                          ),
+                        ),
+
+                      ),
+                    )
+                  ),
+                  SliverList.builder(
+                    itemCount: model.recentSpaces.length,
+                    itemBuilder: (context, index) {
+                      final workspace = model.recentSpaces[index];
+                      return WorkspaceListItem(
+                        key: Key(workspace.id),
+                        isFirstListItem: index == 0,
+                        isLastListItem: index == model.recentSpaces.length - 1,
+                        workspace: workspace,
+                        togglePin: (context) => model.toggleWorkspacePinned(workspace),
+                        onTap: () => model.openWorkspace(context, workspace),
+                        onDelete: () => model.deleteWorkspace(context, workspace),
+                      );
+                    }
+                  ),
+                  if (model.recentSpaces.isNotEmpty) 
+                  SliverPadding(padding: EdgeInsets.only(bottom: 10)),
                   if (model.favorites.length > 0)
                   SliverToBoxAdapter(
                     child: SectionHeader(
-                      title: 'Spaces',
+                      title: 'Favorites',
                       isCollapsed: model.showFavoriteSpaces,
                       onToggleCollapse: () => model.toggleShowFavorites(),
                     )
@@ -103,7 +137,7 @@ class HomeView extends ConsumerWidget {
             Positioned(
               bottom: 0, 
               left: 0, 
-              height: 50, 
+              height: 45, 
               width: MediaQuery.of(context).size.width, 
               child: Footer(model: model)
             ),
@@ -213,51 +247,28 @@ class Footer extends StatelessWidget {
   final HomeViewModel model;
   @override
   Widget build(BuildContext context) {
-    return Stack(
-        children: <Widget>[
-          new Center(
-            child: new ClipRect(
-              child: new BackdropFilter(
-                filter: new ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-                child: new Container(
-                  width: MediaQuery.of(context).size.width,
-                  height: 60,
-                  decoration: new BoxDecoration(
-                    color: HexColor.fromHex('222222').withOpacity(0.7)
-                  ),
-                  child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 5.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                CreateFolderButton(onTap: () => {
-                  showCupertinoModalBottomSheet(
-                    context: context, 
-                    builder: (context) => CreateWorkspaceModal(
-                      onDone: (workspace) => model.createNewWorkspace(context, workspace))
-                    )
-                }),
-                CreateTabButton(
-                  onLongPress: () => showCupertinoModalBottomSheet(
-                    context: context, 
-                    builder: (context) => CreateNewTabModal()
-                  ),
-                  onTap:() =>  model.createNewTab(context)
-                ),
-              ],
+    return FreezeContainer(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          CreateFolderButton(onTap: () => {
+            showCupertinoModalBottomSheet(
+              context: context, 
+              builder: (context) => CreateWorkspaceModal(
+                onDone: (workspace) => model.createNewWorkspace(context, workspace))
+              )
+          }),
+          CreateTabButton(
+            onLongPress: () => showCupertinoModalBottomSheet(
+              context: context, 
+              builder: (context) => CreateNewTabModal()
             ),
-          ),
-                ),
-              ),
-            ),
+            onTap:() =>  model.createNewTab(context)
           ),
         ],
-      );
-    
-    
-    
-    
+      ),
+    );
   }
 }
 

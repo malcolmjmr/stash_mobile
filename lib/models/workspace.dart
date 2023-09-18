@@ -37,6 +37,8 @@ class Workspace {
   bool? isIncognito;
   bool? isFavorite;
 
+  bool showWebView = false;
+
   List<String> contexts = [];
 
   Workspace({this.title, this.color}) {
@@ -83,6 +85,7 @@ class Workspace {
     isIncognito = json['isIncognito'] ?? false;
     isFavorite = json['isFavorite'] ?? false;
     contexts = json['contexts'] != null ? List<String>.from(json['contexts']) : [];
+    showWebView = json['showWebView'] ?? false;
   }
 
   Map<String, dynamic> toJson() {
@@ -112,6 +115,7 @@ class Workspace {
       'isIncognito': isIncognito,
       'isFavorite': isFavorite,
       'contexts': contexts,
+      'showWebView': showWebView,
     };
     json.removeWhere((key, value) => value == null);
     return json;

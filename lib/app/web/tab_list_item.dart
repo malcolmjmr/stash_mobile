@@ -39,7 +39,7 @@ class TabListItem extends StatelessWidget {
       onTap: onTap,
       child: GestureDetector(
         onLongPress: () {
-          if (model.showWebView) return;
+          if (model.workspace.showWebView) return;
           HapticFeedback.mediumImpact();
           showCupertinoModalBottomSheet(
             context: context, 
