@@ -139,7 +139,7 @@ class TabListItem extends StatelessWidget {
                     ),
                   ),
                 if (resource.isSaved == true) 
-                Icon(Icons.bookmark_outline),
+                Icon(Icons.star_rounded),
               ],
             ),
           ),

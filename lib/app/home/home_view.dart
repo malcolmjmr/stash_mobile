@@ -1,8 +1,8 @@
 import 'dart:math';
 import 'dart:ui';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:stashmobile/app/common_widgets/freeze_container.dart';
@@ -12,12 +12,9 @@ import 'package:stashmobile/app/common_widgets/section_list_item.dart';
 import 'package:stashmobile/app/home/create_workspace_modal.dart';
 import 'package:stashmobile/app/home/workspace_listitem.dart';
 import 'package:flutter/material.dart';
+import 'package:stashmobile/app/modals/create_new_tab/create_new_tab_modal.dart';
 import 'package:stashmobile/app/search/search_view_model.dart';
-import 'package:stashmobile/app/workspace/space_list_item.dart';
-import 'package:stashmobile/extensions/color.dart';
-import 'package:stashmobile/models/workspace.dart';
 import 'package:stashmobile/routing/app_router.dart';
-import '../common_widgets/create_new_tab_modal.dart';
 import '../common_widgets/section_header.dart';
 import 'home_view_model.dart';
 
@@ -83,21 +80,13 @@ class HomeView extends ConsumerWidget {
                   ),
 
                   if (model.showFavoriteSpaces && model.favorites.length > 0)
-                  SliverToBoxAdapter(
-                    child: SpaceListItem(
-                      isFirstListItem: true,
-                      workspace: Workspace.all(),
-                      onTap: () => model.openWorkspace(context, Workspace.all())
-                    ),
-                  ),
-                  if (model.showFavoriteSpaces && model.favorites.length > 0)
                   SliverList.builder(
                     itemCount: model.favorites.length,
                     itemBuilder: (context, index) {
                       final workspace = model.favorites[index];
                       return WorkspaceListItem(
                         key: Key(workspace.id),
-                        //isFirstListItem: index == 0,
+                        isFirstListItem: index == 0,
                         isLastListItem: index == model.favorites.length - 1,
                         workspace: workspace,
                         togglePin: (context) => model.toggleWorkspacePinned(workspace),
@@ -151,11 +140,9 @@ class HomeView extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Column(
         children: [
-          
           SectionListItemContainer(
             isFirstListItem: true, 
             isLastListItem: false,
-            
             onTap: () => model.openPublicWorkspaces(context),
             child: ListItem(
               title: 'Explore',
@@ -260,10 +247,7 @@ class Footer extends StatelessWidget {
               )
           }),
           CreateTabButton(
-            onLongPress: () => showCupertinoModalBottomSheet(
-              context: context, 
-              builder: (context) => CreateNewTabModal()
-            ),
+            onDoubleTap: () => Navigator.pushNamed(context, AppRoutes.createNewTab),
             onTap:() =>  model.createNewTab(context)
           ),
         ],
@@ -290,16 +274,16 @@ class CreateFolderButton extends StatelessWidget {
 }
 
 class CreateTabButton extends StatelessWidget {
-  const CreateTabButton({Key? key, required this.onTap, required this.onLongPress}) : super(key: key);
+  const CreateTabButton({Key? key, required this.onTap, required this.onDoubleTap}) : super(key: key);
   
   final VoidCallback onTap;
-  final VoidCallback onLongPress;
+  final VoidCallback onDoubleTap;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      onLongPress: onLongPress,
+      onDoubleTap: onDoubleTap,
       child: Padding(
         padding: EdgeInsets.all(5), 
         child: Icon(Symbols.add_box, size: 30.0, weight: 300.0, color: Colors.amber,),

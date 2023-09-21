@@ -67,6 +67,7 @@ dependencies:
   ionicons: ^0.2.2
   flutter_launcher_icons: ^0.12.0
   material_symbols_icons: ^4.2668.0
+  share_plus: ^7.1.0
 
 dev_dependencies:
   flutter_test:

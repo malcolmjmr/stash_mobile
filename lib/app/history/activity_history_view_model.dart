@@ -28,7 +28,7 @@ class ActivityHistoryViewModel extends ChangeNotifier {
   List<Section> sections = [];
 
   getTimeSections() async {
-    spaces = (await data.getWorkspaces()).where((s) => s.isIncognito != true && s.updated != null).toList();
+    spaces = data.workspaces.where((s) => s.isIncognito != true && s.updated != null).toList();
     spaces.sort(sortSpaces);
     Map<String, Section> sectionMap = {};
     final now = DateTime.now();

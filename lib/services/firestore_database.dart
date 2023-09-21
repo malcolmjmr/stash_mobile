@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:stashmobile/models/domain.dart';
 
 import 'package:stashmobile/models/user/model.dart';
 
@@ -60,6 +61,23 @@ class FirestoreDatabase {
           builder: (id, data) => Workspace.fromDatabase(id, data)
       );
 
+  Future<List<Domain>> getUserDomains(User user) => 
+    _service.collection(
+      path: FirestorePath.userDomains(userId: user.id),
+      builder: (id, data) => Domain.fromDatabase(id, data),
+      //queryBuilder: (query) => query.where('isFavorite', isEqualTo: true),
+    );
+
+   Future<void> setDomain(
+          String userId, Domain domain) =>
+      _service.setData(
+          path: FirestorePath.userDomain(
+              userId: userId,
+              domainId: domain.id!),
+          data: domain.toJson(),
+          merge: true,
+      );
+
   Stream<List<Resource>> getWorkspaceResourceStream(User user, String workspaceId) =>
       _service.collectionStream(
           path: FirestorePath.userResources(userId: user.id),
@@ -86,6 +104,14 @@ class FirestoreDatabase {
       path: FirestorePath.userResources(userId: user.id),
       builder: (id, data) => Resource.fromDatabase(id, data),
       queryBuilder: (query) => query.where('contexts', arrayContainsAny: [contextIds]),
+    );
+
+
+  Future<List<Resource>> getFavoriteResources(User user) => 
+    _service.collection(
+      path: FirestorePath.userResources(userId: user.id),
+      builder: (id, data) => Resource.fromDatabase(id, data),
+      queryBuilder: (query) => query.where('isFavorite', isEqualTo: true),
     );
 
   Future<List<Resource>> getMiscResources(User user) =>

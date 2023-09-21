@@ -14,11 +14,13 @@ class TabView extends StatefulWidget {
     required this.model,
     this.windowId,
     this.lazyLoad = true,
+    this.incognito = false,
   }) : super(key: UniqueKey());
 
   final bool lazyLoad;
   final TabViewModel model;
   final int? windowId;
+  final bool incognito;
   //final Function(TabViewModel model, InAppWebViewController controller, Uri? uri) onTabUpdated;
 
   // final Function() onWindowCreated
@@ -61,7 +63,7 @@ class _TabViewState extends State<TabView> {
         crossPlatform: InAppWebViewOptions(
           disableHorizontalScroll: true,
           useShouldOverrideUrlLoading: true,
-          // incognito: false,
+          incognito: widget.incognito,
           // javaScriptEnabled: true,
           userAgent: 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36',
           // javaScriptCanOpenWindowsAutomatically: true,

@@ -3,8 +3,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:stashmobile/app/web/event_handlers.dart';
 import 'package:stashmobile/app/web/js.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 import 'package:stashmobile/models/resource.dart';
@@ -17,7 +15,11 @@ class TabViewModel {
   late Resource resource;
   WorkspaceViewModel workspaceModel;
 
+  String id = UniqueKey().toString();
+
   TabViewModel({required this.workspaceModel, Resource? initialResource}) {
+    print('creating tab');
+    print(id);
     if (initialResource != null) {
       resource = initialResource;
     } else {
@@ -26,9 +28,6 @@ class TabViewModel {
   }
 
   bool loaded = false;
-
-  
-
 
   Future<String?> getFaviconUrl(InAppWebViewController controller) async {
     final favIcons = await controller.getFavicons();
@@ -65,7 +64,6 @@ class TabViewModel {
 
   onWebsiteLoadStop(BuildContext context, InAppWebViewController controller, Uri? uri) async {
     //workspaceModel.onTabUpdated(this, controller, uri);
-    
     workspaceModel.onTabUpdated(this, controller, uri, tabLoaded: true);
     await addJsListeners();
     await addEventHandlers(context);
@@ -184,7 +182,8 @@ class TabViewModel {
 
   onLinkClicked(args) {
     print('link clicked');
-    print(args);
+    final title = args[0];
+    final url = args[0];
   }
 
   onLinkLongPress(args) {
@@ -214,6 +213,33 @@ class TabViewModel {
 
   onPageClicked(args) {
     workspaceModel.onTabContentClicked();
+    checkIfUrlOrTitleHaveChanged();
+    
+  }
+
+  checkIfUrlOrTitleHaveChanged() async {
+    final url = await controller.getUrl();
+    final title = await controller.getTitle();
+    //final favIcon = await controller.get
+
+    bool tabChanged = false;
+
+    if (url.toString() != resource.url) {
+      // print('url changed');
+      // print(url);
+      tabChanged = true;
+    }
+
+    if (title != resource.title) {
+      // print('title changed');
+      // print(title);
+      tabChanged = true;
+    }
+
+    if (tabChanged) {
+      workspaceModel.onTabUpdated(this, controller, url, tabLoaded: true);
+    }
+    
   }
 
   createHighlight() {
@@ -245,7 +271,4 @@ class TabViewModel {
       }),
     );
   }
-
-
-
 }

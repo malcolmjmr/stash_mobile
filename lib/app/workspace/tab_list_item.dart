@@ -167,7 +167,7 @@ class TabListItem extends StatelessWidget {
                   ),
                   ),
                 if (resource.isSaved == true) 
-                Icon(Icons.bookmark, color: HexColor.fromHex(colorMap[model.workspace.color ?? 'grey']!)),
+                Icon(Icons.star_rounded, size: 30, color: HexColor.fromHex(colorMap[model.workspace.color ?? 'grey']!)),
               ],
             ),
           ),

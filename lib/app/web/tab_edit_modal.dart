@@ -94,10 +94,6 @@ class _TabEditModalState extends State<TabEditModal> {
         width: MediaQuery.of(context).size.width,
         child: Row(
           children: [
-            GestureDetector(
-              onTap: () => model.createNewTab(context),
-              child: Icon(Icons.add, size: 30,),
-            ),
             Expanded(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 8, vertical: 5),

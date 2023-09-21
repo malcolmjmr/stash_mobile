@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:stashmobile/models/domain.dart';
 
 import '../../models/workspace.dart';
 import '../../models/resource.dart';
@@ -9,7 +10,7 @@ import '../../services/firestore_database.dart';
 import '../authentication/firebase_providers.dart';
 import '../authentication/session_provider.dart';
 
-final dataProvider = Provider<DataManager>((ref) {
+final dataProvider = ChangeNotifierProvider<DataManager>((ref) {
   final user = ref.watch(sessionProvider).user;
   final db = ref.watch(databaseProvider);
   if (user != null) {
@@ -18,21 +19,63 @@ final dataProvider = Provider<DataManager>((ref) {
   throw UnimplementedError();
 });
 
-class DataManager {
+class DataManager extends ChangeNotifier {
   User user;
   FirestoreDatabase db;
-  List<Workspace> workspaces = [];
-  List<Resource> resources = [];
+  Map<String, Workspace> _workspaces = {};
+  List<Workspace> get workspaces => _workspaces.values.toList();
+  Map<String, Resource> _resources = {};
+  List<Resource> get resources => _resources.values.toList();
   List<String?> loadedWorkspaces = [];
+  Map<String, Domain> _domains = {};
+  List<Domain> get domains => _domains.values.toList();
+
 
   
   DataManager({required this.user, required this.db}) {
-    _getWorkspacesFromCloud();
-    _getRecentResources();
+    _load();
+  }
+
+  bool _isLoaded = false;
+  _load() async {
+    await _getWorkspacesFromCloud();
+    await _getRecentResources();
+    await _getFavoriteResources();
+    await _getDomains();
+    _isLoaded = true;
+    notifyListeners();
+  }
+
+  _getDomains() async  {
+    final domains = await db.getUserDomains(user);
+    for (final domain in domains) {
+      if (_domains[domain.id] == null) {
+        _domains[domain.id!] = domain;
+      }
+    }
+  }
+  
+  saveDomain(Domain domain) {
+    
   }
 
   _getRecentResources() async {
-    //await db.getResourcesByTime(user, DateTime.now() - Da)
+    final aMonthAgo = DateTime.now().millisecondsSinceEpoch - (1000 * 60 * 60 * 24 * 30);
+    final recentResources = await db.getResourcesByTime(user, aMonthAgo);
+    for (final resource in recentResources) {
+      if (_resources[resource.id] == null) {
+        _resources[resource.id!] = resource;
+      }
+    }
+  }
+
+  _getFavoriteResources() async {
+    final favoriteResources = await db.getFavoriteResources(user);
+    for (final resource in favoriteResources) {
+      if (_resources[resource.id] == null) {
+        _resources[resource.id!] = resource;
+      }
+    }
   }
 
   Workspace getWorkspace(String workspaceId) {
@@ -69,11 +112,11 @@ class DataManager {
 
 
   _getWorkspacesFromCloud() async  {
-    workspaces = (await db.getUserWorkspaces(user)).where((w) => w.isIncognito != true).toList();
-    Workspace miscWorkspace = Workspace.miscellaneous();
-    final foundMiscWorkspace = workspaces.firstWhereOrNull((workspace) => miscWorkspace.id == workspace.id);
-    if (foundMiscWorkspace == null) {
-      workspaces.add(miscWorkspace);
+    final workspaces = (await db.getUserWorkspaces(user)).where((w) => w.isIncognito != true).toList();
+    for (final workspace in workspaces) {
+      if (_workspaces[workspace.id] == null) {
+        _workspaces[workspace.id] = workspace;
+      }
     }
   }
 
@@ -84,18 +127,12 @@ class DataManager {
 
 
   saveResource(Resource resource) async {
-    Resource? resourceToUpdate = resources.firstWhereOrNull((w) => w.id == resource.id);
-    if (resourceToUpdate == null) {
-      resources.add(resource);
-    } else {
-      resourceToUpdate = resource;
-    }
-
+    _resources[resource.id!] = resource;
     await db.setResource(user.id, resource);
   }
 
   deleteResource(Resource resource, {bool permanent = false}) async {
-    resources.removeWhere((r) => r.id == resource.id);
+    _resources.remove(resource.id);
     if (permanent == true) {
       await db.deleteResource(user.id, resource.id!);
     } else {
@@ -106,25 +143,20 @@ class DataManager {
 
 
   saveWorkspace(Workspace workspace) async {
-    Workspace? workspaceToUpdate = workspaces.firstWhereOrNull((w) => w.id == workspace.id);
-    if (workspaceToUpdate == null) {
-      workspaces.add(workspace);
-    } else {
-      workspaceToUpdate = workspace;
-    }
+    
     workspace.updated = DateTime.now().millisecondsSinceEpoch;
+    _workspaces[workspace.id] = workspace;
     await db.setUserWorkspace(user.id, workspace);
   }
 
   deleteWorkspace(Workspace workspace) async {
+    _workspaces.remove(workspace.id);
     if (workspace.title == null) {
       await db.deleteWorkspace(user.id, workspace.id);
     } else {
       workspace.deleted = DateTime.now().millisecondsSinceEpoch;
       await db.setUserWorkspace(user.id, workspace);
     }
-   
-    workspaces.removeWhere((w) => w.id == workspace.id);
   }
 
   

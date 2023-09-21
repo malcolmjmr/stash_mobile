@@ -8,6 +8,7 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:stashmobile/app/providers/data.dart';
 import 'package:stashmobile/app/providers/user.dart';
 import 'package:stashmobile/app/providers/workspace.dart';
@@ -16,6 +17,7 @@ import 'package:stashmobile/app/web/tab.dart';
 import 'package:stashmobile/app/web/tab_model.dart';
 import 'package:stashmobile/app/web/text_selection_menu.dart';
 import 'package:stashmobile/app/workspace/workspace_view_params.dart';
+import 'package:stashmobile/models/domain.dart';
 import 'package:stashmobile/models/tag.dart';
 import 'package:stashmobile/models/workspace.dart';
 import 'package:stashmobile/routing/app_router.dart';
@@ -74,9 +76,7 @@ class WorkspaceViewModel extends ChangeNotifier {
   }) {
     data = context.read(dataProvider);
     user = context.read(userProvider).state!; 
-    
     loadWorkspace();
-  
   }
 
   loadWorkspace() async {
@@ -102,8 +102,11 @@ class WorkspaceViewModel extends ChangeNotifier {
     });
   }
 
+  
 
   loadTabs() {
+    // check workspace params for new tab
+    
     if (workspace.title == null ) {
       workspace.tabs = [Resource(url: 'https://www.google.com/', title: 'New Tab')];
       workspace.showWebView = true;
@@ -130,13 +133,16 @@ class WorkspaceViewModel extends ChangeNotifier {
       lazyLoad = false;
     }
 
+    final openedTab = workspace.showWebView ? workspace.tabs[workspace.activeTabIndex!] : null;
+
     tabs = workspace.tabs.map((tab) {
+      final isOpenedTab = openedTab != null && openedTab.url == tab.url;
       return TabView(
         model: TabViewModel(
           workspaceModel: this,
           initialResource: tab,
         ), 
-        lazyLoad: lazyLoad,
+        lazyLoad: isOpenedTab ? false : lazyLoad,
       );
     }).toList();
 
@@ -197,7 +203,7 @@ class WorkspaceViewModel extends ChangeNotifier {
   }
 
   loadFolders() async {
-    folders = (await data.getWorkspaces())
+    folders = data.workspaces
       .where((w) => w.contexts.contains(workspace.id))
       .toList();
 
@@ -390,7 +396,7 @@ class WorkspaceViewModel extends ChangeNotifier {
       workspace.activeTabIndex = workspace.tabs.length;
     }
     
-    if (workspace.title != null) updateWorkspaceTabs();
+    updateWorkspaceTabs();
     setState(() {
       workspace.activeTabIndex;
       workspace.showWebView = true;
@@ -483,11 +489,10 @@ class WorkspaceViewModel extends ChangeNotifier {
     // }
     // resource = tabs[resourceIndex].model.resource;
 
+    if (tabLoaded) checkTabForSearch(model, controller, uri);
 
     bool resourceUpdated = false;
     final url = uri.toString();
-    print (url);
-    print (model.resource.url);
 
     if (url != model.resource.url) {
       // Todo: check if resource is from queue
@@ -504,22 +509,20 @@ class WorkspaceViewModel extends ChangeNotifier {
     } else {
       // update resource if favicon != null || title != null 
       
-        if (model.resource.favIconUrl == null) {
+        //if (model.resource.favIconUrl == null) {
           final favIconUrl = await model.getFaviconUrl(controller);
-          if (favIconUrl != null) {
+          if (favIconUrl != null && favIconUrl != model.resource.favIconUrl) {
             model.resource.favIconUrl = favIconUrl;
             resourceUpdated = true;
           }
-        }
+        //}
        
         final title = await controller.getTitle();
-        print('title: ${title}');
-        if (model.resource.title == null || model.resource.title!.isEmpty) {
-          if (title != null && title.isNotEmpty) {
-            model.resource.title = title;
-            resourceUpdated = true;
-          }
+        if (title != null && title.isNotEmpty && title != model.resource.title) {
+          model.resource.title = title;
+          resourceUpdated = true;
         }
+        
     }
 
     if (tabLoaded) {
@@ -544,8 +547,6 @@ class WorkspaceViewModel extends ChangeNotifier {
     }
 
     if (model.resource.url!.contains('search') && model.resource.isSearch != true) model.resource.isSearch = true;
-
-    print(model.resource);
 
     setState(() {
       workspace;
@@ -619,7 +620,7 @@ class WorkspaceViewModel extends ChangeNotifier {
       workspace.activeTabIndex = currentIndex > 0 ? currentIndex - 1 : currentIndex;
       tabPageController?.jumpToPage(workspace.activeTabIndex!);
       tabs.removeAt(index);
-      if (workspace.title != null) updateWorkspaceTabs();
+      updateWorkspaceTabs();
     });
 
   }
@@ -653,9 +654,9 @@ class WorkspaceViewModel extends ChangeNotifier {
     tab.model.controller.reload();
   }
 
-  updateWorkspaceTabs({bool save = true}) {
+  updateWorkspaceTabs() {
     workspace.tabs = tabs.map((t) => t.model.resource).toList();
-    if (save) {
+    if (workspace.title != null) {
       workspace.updated = DateTime.now().millisecondsSinceEpoch;
       data.saveWorkspace(workspace);
     }
@@ -694,8 +695,9 @@ class WorkspaceViewModel extends ChangeNotifier {
     );
   }
 
-  createNewTab({String? url, bool lazyload = false}) {
+  createNewTab({String? url, bool lazyload = false, bool incognito = false}) {
     TabView tab = TabView(
+      incognito: incognito,
       model: TabViewModel(
         workspaceModel: this,
         initialResource: url != null ? Resource(url: url) : null,
@@ -878,6 +880,94 @@ class WorkspaceViewModel extends ChangeNotifier {
     }
   }
 
+  onShare(Resource resource) async {
+    final box = context.findRenderObject() as RenderBox?;
+
+    await Share.shareUri(
+      Uri.parse(resource.url!)
+    );
+  }
+
+
+  InputData? lastInput;
+
+  onInputEntered(TabView tab, String text) {
+    lastInput = InputData(
+      text: text, 
+      time: DateTime.now().millisecondsSinceEpoch, 
+      tabId: tab.model.id, 
+      url: tab.model.resource.url!
+    );
+  }
+
+
+
+  checkTabForSearch(TabViewModel model, InAppWebViewController controller, Uri? uri) {
+
+    if (lastInput == null) return;
+    
+    Domain? searchDomain;
+    final matchingDomain = data.domains.firstWhereOrNull((d) => d.url == uri?.host && d.searchTemplate != null);
+
+    if (matchingDomain != null) {
+      matchingDomain.checkIfUrlIsSearch(uri.toString());
+    } else {
+      final template = Uri.decodeFull(uri.toString())
+          .replaceAll('%3A', ':').replaceAll('+', ' ')
+          .replaceFirst(lastInput!.text, Domain.searchPlaceholder);
+
+      final foundSearch = (
+          lastInput?.tabId == model.id
+          && (DateTime.now().millisecondsSinceEpoch - lastInput!.time) < 2000
+          && lastInput!.url == uri!.host
+          && template.contains(Domain.searchPlaceholder)
+      );
+
+      if (foundSearch) {
+          searchDomain = Domain(
+            url: Uri.parse(lastInput!.url).host.toString(),
+            title: model.resource.title,
+            favIconUrl: model.resource.favIconUrl,
+          );
+          searchDomain.lastVisited = lastInput!.time;
+      }
+    }
+
+    if (searchDomain != null) {
+        data.saveDomain(searchDomain);
+    }
+  }
+
+  bool get activeTabHasSavedDomain {
+    TabView activeTab = tabs[workspace.activeTabIndex!];
+    final uri = Uri.parse(activeTab.model.resource.url!);
+    print('checking if active tab has saved domain');
+    print(uri.authority);
+    print(uri.host);
+    final savedDomain = data.domains.firstWhereOrNull((d) => d.url == uri.host);
+    return false;
+  }
+
+  addDomain(Resource resource) {
+
+  }
+
+  removeDomain(Resource resource) {
+
+  }
 }
 
+class InputData {
+  String tabId;
+  String text;
+  int time;
+  String url;
 
+  InputData({
+    required this.text,
+    required this.time,
+    required this.tabId,
+    required this.url,
+  });
+
+}

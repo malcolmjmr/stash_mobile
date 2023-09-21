@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:stashmobile/app/history/activity_history_view.dart';
+import 'package:stashmobile/app/modals/create_new_tab/create_new_tab_modal.dart';
 import 'package:stashmobile/app/modals/tag_selection/tag_selection.dart';
 import 'package:stashmobile/app/sign_in/email_password_sign_in_page.dart';
 import 'package:stashmobile/app/web/tab_edit_modal.dart';
@@ -60,6 +61,8 @@ class AppRoutes {
 
   static const history = '/activity-history';
 
+  static const createNewTab = '/create-new-tab';
+
   
 }
 
@@ -76,7 +79,6 @@ class AppRouter {
           fullscreenDialog: true,
         );
       case AppRoutes.search:
-
         return PageTransition<dynamic>(
             type: PageTransitionType.scale,
             alignment: Alignment.topCenter,
@@ -97,12 +99,21 @@ class AppRouter {
           );
       case AppRoutes.history:
         return PageTransition<dynamic>(
-            type: PageTransitionType.scale,
+            type: PageTransitionType.leftToRight,
             alignment: Alignment.topCenter,
             curve: Curves.easeInExpo,
             child: ActivityHistoryView(),
             settings: settings,
             fullscreenDialog: true,
+          );
+      case AppRoutes.createNewTab: 
+        return PageTransition<dynamic>(
+            type: PageTransitionType.fade,
+            alignment: Alignment.topCenter,
+            curve: Curves.easeInExpo,
+            child: CreateNewTab(),
+            settings: settings,
+            fullscreenDialog: false,
           );
       case AppRoutes.tagSelection:
         

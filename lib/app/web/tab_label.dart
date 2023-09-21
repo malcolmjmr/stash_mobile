@@ -63,6 +63,7 @@ class OpenTabLabel extends StatelessWidget {
         },
         child: Slidable(
           key: Key(resource.toString()),
+          
           startActionPane: ActionPane(
             children: [
               if (model.workspace.title != null)
@@ -129,82 +130,112 @@ class OpenTabLabel extends StatelessWidget {
           endActionPane: ActionPane(
             children: [
               SlidableAction(
-                icon: Icons.ios_share,
+                icon: Icons.more_horiz,
                 backgroundColor: Colors.blue,
                 onPressed: (context) => showCupertinoModalBottomSheet(
                   context: context, 
                   builder: (context) {
-                    return Container();//ShareModal()
+                    return TabMenu(
+                      resource: resource,
+                      workspaceModel: model,
+                    );
                   }
-                )
+                ),
               ),
+              // SlidableAction(
+              //   icon: Icons.ios_share,
+              //   backgroundColor: Colors.blue,
+              //   onPressed: (context) => model.onShare(resource),
+              // ),
               SlidableAction(
                 icon: Icons.refresh,
-                backgroundColor: Colors.blueGrey,
+                backgroundColor: Colors.orange,
+                foregroundColor: Colors.white,
                 onPressed: (context) => model.reloadTab(resource)
               ),
               SlidableAction(
-                icon: Icons.close,
-                backgroundColor: Colors.redAccent,
-                onPressed: (context) => null //model.removeTab(resource),
+                icon: Icons.add,
+                backgroundColor: Colors.green,
+                onPressed: (context) => model.createNewTab(),
               )
             ],
             motion: const StretchMotion(),
             // A pane can dismiss the Slidable.
-            dismissible: DismissiblePane(onDismissed: () => model.removeTab(resource)),
+            dismissible: DismissiblePane(onDismissed: () => model.createNewTab()),
             openThreshold: 0.25,
           ),
           child: Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(10.0),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Padding(
-                  padding: const EdgeInsets.only(right: 5.0),
+                  padding: const EdgeInsets.only(right: 8.0),
                   child: Container(
-                    height: 35,
-                    width: 35,
+                    height: 25,
+                    width: 25,
                     child: resource.favIconUrl != null 
                       ? Image.network(resource.favIconUrl ?? '',
                         //loadingBuilder: (context, child, loadingProgress) => Icon(Icons.language, size: 30,),
-                        errorBuilder: (context, child, loadingProgress) => Icon(Icons.public, size: 35,),
+                        errorBuilder: (context, child, loadingProgress) => Icon(Icons.public, size: 25,),
                       )
-                      : Icon(Icons.public, size: 35,)
+                      : Icon(Icons.public, size: 25,)
                     ),
                 ),
                 Expanded(
-                  child: Text(resource.title ?? '', 
-                    maxLines: 1,
-                    style: TextStyle(
-                      color: isLastActiveTab ? Colors.amber : Colors.white,
-                      fontWeight: FontWeight.w400,
-                      letterSpacing: 0.5,
-                      fontSize: 16,  
-                      overflow: TextOverflow.ellipsis),
-                    ),
-                  ),
-                if (resource.isSaved == true) 
-                Icon(Icons.bookmark, color: HexColor.fromHex(colorMap[model.workspace.color ?? 'grey']!)),
-                GestureDetector(
-                  onTap: () => showCupertinoModalBottomSheet(
-                    context: context, 
-                    builder: (context) {
-                      return TabMenu(
-                        resource: resource,
-                        workspaceModel: model,
-                      );
-                    }
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 3.0),
-                    child: Icon(Icons.more_vert),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * (resource.isSaved == true ? .65 : .75)),
+                        child: Text(resource.title ?? '', 
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                          style: TextStyle(
+                            color: isLastActiveTab ? Colors.amber : Colors.white,
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 0.5,
+                            fontSize: 16,  
+                            overflow: TextOverflow.ellipsis
+                          ),
+                        ),
+                      ),
+                      if (resource.isSaved == true) 
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 5),
+                        child: Icon(Icons.star_rounded, color: HexColor.fromHex(colorMap[model.workspace.color ?? 'grey']!)),
+                      ),
+                    ],
                   ),
                 ),
+                
+                // GestureDetector(
+                //   onTap: () => showCupertinoModalBottomSheet(
+                //     context: context, 
+                //     builder: (context) {
+                //       return TabMenu(
+                //         resource: resource,
+                //         workspaceModel: model,
+                //       );
+                //     }
+                //   ),
+                //   child: Padding(
+                //     padding: const EdgeInsets.symmetric(horizontal: 3.0),
+                //     child: Icon(Icons.more_vert),
+                //   ),
+                // ),
+                //Expanded(child: Container(),),
                 GestureDetector(
                   onTap: () => model.closeTab(resource),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 3.0),
-                    child: Icon(Icons.close),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(100),
+                      color: HexColor.fromHex('333333')
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(2.0),
+                      child: Icon(Icons.close),
+                    ),
                   ),
                 )
               ],

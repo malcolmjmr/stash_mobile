@@ -7,6 +7,13 @@ class FirestorePath {
   static String userWorkspace(
           {required String userId, required String workspaceId}) =>
       'users/$userId/contexts/$workspaceId';
+  static String userDomains(
+          {required String userId}) =>
+      'users/$userId/domains';
+ static String userDomain(
+          {required String userId,
+          required String domainId}) =>
+      'users/$userId/domains/$domainId';
   static String userResources(
           {required String userId}) =>
       'users/$userId/resources';

@@ -42,7 +42,7 @@ class MoveToSpaceModel {
   bool isLoaded = false;
   load() async {
 
-    final allSpaces = (await data.getWorkspaces()).where((s) => s.title != null && s.title!.isNotEmpty).toList();
+    final allSpaces = data.workspaces.where((s) => s.title != null && s.title!.isNotEmpty).toList();
     recentSpaces = allSpaces;
     recentSpaces.sort((a, b) => (b.updated ?? 0).compareTo(a.updated ?? 0));
     visibleSpaces = recentSpaces;

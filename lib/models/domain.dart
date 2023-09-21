@@ -1,0 +1,82 @@
+import 'package:uuid/uuid.dart';
+
+class Domain {
+
+  /*
+
+  */
+
+  late String? id;
+
+  late bool isIncognito;
+  late bool isFavorite;
+
+  String? title;
+  String? favIconUrl;
+  late String url;
+
+  String? searchTemplate;
+  int searchCount = 0;
+
+  late int created;
+  int? lastVisited;
+
+  Domain({
+    required this.url, 
+    this.isIncognito = false,
+    this.isFavorite = false,
+    this.searchTemplate,
+    this.favIconUrl,
+    this.title,
+  }) {
+    id = Uuid().v4().split('-').last;
+    created = DateTime.now().millisecondsSinceEpoch;
+  }
+
+  Domain.fromDatabase(String objectId, Map<String, dynamic> json) {
+    id = objectId;
+    url = json['url'];
+    favIconUrl = json['favIconUrl'];
+    title = json['title'];
+    created = json['created'];
+    lastVisited = json['lastVisited'];
+    isIncognito = json['isIncognito'] ?? false;
+    isFavorite = json['isFavorite'] ?? false;
+    searchCount = json['searchCount'] ?? 0;
+    searchTemplate = json['searchTemplate'];
+  }
+
+  Map<String, dynamic> toJson() {
+    Map<String, dynamic> json = {
+      'id': id,
+      'url': url,
+      'favIconUrl': favIconUrl,
+      'title': title,
+      'created': created,
+      'lastVisited': lastVisited,
+      'isIncognito': isIncognito,
+      'isFavorite': isFavorite,
+      'searchCount': searchCount,
+      'searchTemplate': searchTemplate,
+    };
+    json.removeWhere((key, value) => value == null || value == [] || !value || value == 0);
+    return json;
+  }
+
+  static const String searchPlaceholder = '<|search|>';
+
+  checkIfUrlIsSearch(String url) {
+    final searchPrefix = searchTemplate!.split(searchPlaceholder)[0];
+    final matchesSearchTemplate = url.startsWith(searchPrefix);
+    if (matchesSearchTemplate) {
+        searchCount += 1;
+        lastVisited = DateTime.now().millisecondsSinceEpoch;
+        //isIncognito = tab.incognito;
+        return true;
+    }
+
+    return false;
+  }
+
+  
+}

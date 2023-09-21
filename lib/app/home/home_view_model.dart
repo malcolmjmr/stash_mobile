@@ -1,29 +1,28 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:stashmobile/app/providers/data.dart';
 import 'package:stashmobile/app/providers/workspace.dart';
 import 'package:stashmobile/app/workspace/workspace_view_params.dart';
-import 'package:stashmobile/models/resource.dart';
 import 'package:stashmobile/routing/app_router.dart';
 
 import '../../models/workspace.dart';
 
 
 final homeViewProvider = ChangeNotifierProvider<HomeViewModel>(
-  (ref) => HomeViewModel(ref.read)
+  (ref) => HomeViewModel(ref.read, ref.watch(dataProvider))
 );
 
 
 class HomeViewModel with ChangeNotifier {
 
   Reader read;
-  late DataManager data;
+  DataManager data;
 
-  HomeViewModel(this.read) {
+  HomeViewModel(this.read, this.data) {
     data = read(dataProvider);
     load();
   }
@@ -34,10 +33,10 @@ class HomeViewModel with ChangeNotifier {
   }
 
   refreshWorkspaces() async {
-    workspaces = (await data.getWorkspaces())
+    workspaces = data.workspaces
       .where((Workspace c) => c.isIncognito != true  && c.deleted == null).toList();
     workspaces.sort((a, b) => (b.updated ?? 0).compareTo(a.updated ?? 0));
-    recentSpaces = workspaces.sublist(0, 5);
+    recentSpaces = workspaces.sublist(0, min(5, workspaces.length));
     favorites = workspaces.where((w) => w.isFavorite == true && w.contexts.isEmpty).toList();
     _setLoading(false);
   }
