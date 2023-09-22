@@ -136,36 +136,27 @@ class HomeView extends ConsumerWidget {
   }
 
   Widget _buildTopSection(BuildContext context, HomeViewModel model) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Column(
-        children: [
-          SectionListItemContainer(
-            isFirstListItem: true, 
-            isLastListItem: false,
-            onTap: () => model.openPublicWorkspaces(context),
-            child: ListItem(
-              title: 'Explore',
-              icon: Icon(Icons.public, 
-                color: Colors.amber,
-                size: 28,
-              ),
-            )
-          ),
+    return Container(
+      height: 50,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: model.topDomains.length + 1,
+        itemBuilder: (context, index) {
 
-          SectionListItemContainer(
-            isFirstListItem: false, 
-            isLastListItem: true,
-            onTap: model.openLooseTabs(context),
-            child: ListItem(
-              title: 'Shared',
-              icon: Icon(Icons.folder_shared_outlined, 
-                color: Colors.amber,
-                size: 28,
+          if (index == 0) {
+            return SizedBox(width: 10,);
+          } else {
+            final domain = model.topDomains[index - 1];
+            return Padding(
+              padding: const EdgeInsets.only(right: 20.0),
+              child: DomainIcon(
+                domain: domain,
+                onTap: () => model.createNewTab(context, url: domain.url),
               ),
-            )
-          ),
-        ],
+            );
+          }
+          
+        }
       ),
     );
   }
@@ -235,22 +226,25 @@ class Footer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FreezeContainer(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          CreateFolderButton(onTap: () => {
-            showCupertinoModalBottomSheet(
-              context: context, 
-              builder: (context) => CreateWorkspaceModal(
-                onDone: (workspace) => model.createNewWorkspace(context, workspace))
-              )
-          }),
-          CreateTabButton(
-            onDoubleTap: () => Navigator.pushNamed(context, AppRoutes.createNewTab),
-            onTap:() =>  model.createNewTab(context)
-          ),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 5.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            CreateFolderButton(onTap: () => {
+              showCupertinoModalBottomSheet(
+                context: context, 
+                builder: (context) => CreateWorkspaceModal(
+                  onDone: (workspace) => model.createNewWorkspace(context, workspace))
+                )
+            }),
+            CreateTabButton(
+              onDoubleTap: () => Navigator.pushNamed(context, AppRoutes.createNewTab),
+              onTap:() =>  model.createNewTab(context)
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -267,7 +261,7 @@ class CreateFolderButton extends StatelessWidget {
       onTap: onTap,
       child: Padding(
         padding: EdgeInsets.all(5), 
-        child: Icon(Symbols.create_new_folder, size: 30.0, weight: 300, color: Colors.amber),
+        child: Icon(Symbols.create_new_folder, size: 35.0, weight: 300, color: Colors.amber),
       ),
     );
   }
@@ -286,7 +280,7 @@ class CreateTabButton extends StatelessWidget {
       onDoubleTap: onDoubleTap,
       child: Padding(
         padding: EdgeInsets.all(5), 
-        child: Icon(Symbols.add_box, size: 30.0, weight: 300.0, color: Colors.amber,),
+        child: Icon(Symbols.add_box, size: 32.0, weight: 300.0, color: Colors.amber,),
       ),
     );
   }

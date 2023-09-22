@@ -7,6 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stashmobile/app/providers/data.dart';
 import 'package:stashmobile/app/providers/workspace.dart';
 import 'package:stashmobile/app/workspace/workspace_view_params.dart';
+import 'package:stashmobile/models/domain.dart';
+import 'package:stashmobile/models/resource.dart';
 import 'package:stashmobile/routing/app_router.dart';
 
 import '../../models/workspace.dart';
@@ -38,12 +40,25 @@ class HomeViewModel with ChangeNotifier {
     workspaces.sort((a, b) => (b.updated ?? 0).compareTo(a.updated ?? 0));
     recentSpaces = workspaces.sublist(0, min(5, workspaces.length));
     favorites = workspaces.where((w) => w.isFavorite == true && w.contexts.isEmpty).toList();
+    topDomains = data.domains;
+    topDomains.sort(sorDomains);
     _setLoading(false);
   }
 
   List<Workspace> workspaces = [];
   List<Workspace> favorites = [];
   List<Workspace> recentSpaces = [];
+
+  List<Domain> topDomains = [];
+
+  int sorDomains(Domain a, Domain b) {
+    final countComp = b.searchCount - a.searchCount;
+    if (countComp != 0) {
+      return countComp;
+    } 
+    final visitComp = (b.lastVisited ?? 0) - (a.lastVisited ?? 0);
+    return visitComp;
+  }
 
 
   bool isLoading = false;
@@ -79,10 +94,15 @@ class HomeViewModel with ChangeNotifier {
     Navigator.pushNamed(buildContext, AppRoutes.workspace);
   }
 
-  createNewTab(BuildContext buildContext) {
+  createNewTab(BuildContext buildContext, {url}) {
     Navigator.pushNamed(
       buildContext, 
       AppRoutes.workspace,
+      arguments: url != null
+        ? WorkspaceViewParams(
+          resourceToOpen: Resource(url: url)
+        )
+        : null
     );
   }
 

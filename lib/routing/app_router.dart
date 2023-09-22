@@ -111,9 +111,9 @@ class AppRouter {
             type: PageTransitionType.fade,
             alignment: Alignment.topCenter,
             curve: Curves.easeInExpo,
-            child: CreateNewTab(),
+            child: CreateNewTabModal(),
             settings: settings,
-            fullscreenDialog: false,
+            fullscreenDialog: true,
           );
       case AppRoutes.tagSelection:
         

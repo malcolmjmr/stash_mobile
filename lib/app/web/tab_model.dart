@@ -120,7 +120,8 @@ class TabViewModel {
         source: JS.scrollListener
           + JS.touchEndListener
           + JS.checkForList
-          + JS.clickListener,
+          + JS.clickListener
+          + JS.inputListener
           
     );
   }
@@ -161,8 +162,22 @@ class TabViewModel {
       handlerName: 'onAnnotationTarget',
       callback: onAnnotationTarget,
     );
+    controller.addJavaScriptHandler(
+      handlerName: 'onInputEntered',
+      callback: onInputEntered,
+    );
+  }
 
-   
+  onInputEntered(args) {
+    print('input entered');
+    final textInput = args[0];
+    print(textInput);
+    workspaceModel.lastInput = InputData(
+      text: textInput, 
+      time: DateTime.now().millisecondsSinceEpoch, 
+      tabId: id, 
+      url: resource.url!
+    );
   }
 
   onFoundList(args) {

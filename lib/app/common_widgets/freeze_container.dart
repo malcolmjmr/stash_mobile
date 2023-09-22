@@ -20,7 +20,7 @@ class FreezeContainer extends StatelessWidget {
                 width: MediaQuery.of(context).size.width,
                 height: double.infinity,
                 decoration: new BoxDecoration(
-                  color: HexColor.fromHex('222222').withOpacity(0.85)
+                  color: HexColor.fromHex('333333').withOpacity(0.85)
                 ),
                 child: child,
               ),

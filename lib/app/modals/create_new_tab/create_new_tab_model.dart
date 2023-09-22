@@ -20,6 +20,7 @@ class CreateNewTabModel {
   }
 
   String textInput = '';
+  TextEditingController inputController = TextEditingController();
 
   List<Domain> favoriteDomains = [];
   List<Domain> favoirteSearchDomains = [];
@@ -28,6 +29,15 @@ class CreateNewTabModel {
     data = context.read(dataProvider);
     favoriteDomains = data.domains.where((d) => d.isFavorite).toList();
     favoirteSearchDomains = favoriteDomains.where((d) => d.searchTemplate != null).toList();
+  }
+
+
+  onInputChanged() {
+    textInput = inputController.text;
+  }
+
+  createTab() {
+    //Navigator.pushNamed(context, AppRoutes.workspace, arguments: WorkspaceViewParams(resourceToOpen: Resource()));
   }
 
   onDomainTap(Domain domain) {
@@ -50,5 +60,13 @@ class CreateNewTabModel {
   onDomainLongPress(Domain domain) {
     // set as default
     //data.
+  }
+
+  clearInput() {
+
+  }
+
+  dispose() {
+    inputController.dispose();
   }
 }

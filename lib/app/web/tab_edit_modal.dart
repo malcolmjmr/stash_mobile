@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:stashmobile/app/modals/create_new_tab/create_new_tab_modal.dart';
 import 'package:stashmobile/app/web/tab_edit_model.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 import 'package:stashmobile/extensions/color.dart';
@@ -62,6 +63,7 @@ class _TabEditModalState extends State<TabEditModal> {
           child: Column(
             children: [
               _buildBackground(),
+              _buildCreateOptions(),
               _buildUrlField(),
             ],
           ),
@@ -83,6 +85,15 @@ class _TabEditModalState extends State<TabEditModal> {
 
   Widget _buildSearchResults() {
     return Container();
+  }
+
+  Widget _buildCreateOptions() {
+    return Container(
+      child: Row(
+        children: model.visibleDomains
+          .map((domain) => DomainIcon(domain: domain, onTap: () => model.createNewTab(context))).toList(),
+      ),
+    );
   }
 
   Widget _buildUrlField() {

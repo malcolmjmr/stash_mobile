@@ -33,6 +33,7 @@ class _TabMenuState extends State<TabMenu> {
     - Home
     - Search
     - Favorites 
+    - tab previews
     - Reading list
     - Settings
 
@@ -64,33 +65,31 @@ class _TabMenuState extends State<TabMenu> {
       type: MaterialType.transparency,
       child: Container(
         height: MediaQuery.of(context).size.height * .50,
-        color: Colors.transparent,
+        color: HexColor.fromHex('222222'),
         // decoration: BoxDecoration(
         //   color: Colors.black,
         // ),
-        child: FreezeContainer(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 15.0),
-            child: CustomScrollView(
-              slivers: [
-                // SliverToBoxAdapter(
-                //   child: _buildTabInfo(),
-                // ),
-                SliverPadding(padding: const EdgeInsets.only(top: 20,)),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 10, bottom: 10),
-                    child: _buildTabActions(),
-                  ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 15.0),
+          child: CustomScrollView(
+            slivers: [
+              // SliverToBoxAdapter(
+              //   child: _buildTabInfo(),
+              // ),
+              SliverPadding(padding: const EdgeInsets.only(top: 20,)),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 10, bottom: 10),
+                  child: _buildTabActions(),
                 ),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 10, bottom: 10),
-                    child: _buildBookmarkActions(),
-                  ),
-                )
-              ],
-            ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 10, bottom: 10),
+                  child: _buildBookmarkActions(),
+                ),
+              )
+            ],
           ),
         ),
       ),
@@ -193,7 +192,7 @@ class _TabMenuState extends State<TabMenu> {
           ) 
           : MenuItem(
             title: 'Edit Bookmark', 
-            icon: Symbols.edit,
+            icon: Icons.star_rounded,
             onTap: () => showCupertinoModalBottomSheet(
               context: context, 
               builder: (context) {
@@ -213,13 +212,13 @@ class _TabMenuState extends State<TabMenu> {
           !widget.workspaceModel.activeTabHasSavedDomain
           ? MenuItem(
             title: 'Add to Favorite Domains', 
-            icon: Symbols.control_point_duplicate,
+            icon: Symbols.ev_shadow_add,
             onTap: () => widget.workspaceModel.addDomain(widget.resource),
             showBottomBorder: false,
           )
           : MenuItem(
-            title: 'Add to Favorite Domains', 
-            icon: Symbols.control_point_duplicate,
+            title: 'Remove from Favorite Domains', 
+            icon: Symbols.ev_shadow_minus,
             onTap: () => widget.workspaceModel.removeDomain(widget.resource),
             showBottomBorder: false,
           )

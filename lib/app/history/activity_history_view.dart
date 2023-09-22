@@ -17,7 +17,7 @@ class ActivityHistoryView extends ConsumerWidget {
     final model = watch(historyViewProvider);
     return SafeArea(
       child: Scaffold(
-        backgroundColor: HexColor.fromHex('111111'),
+        backgroundColor: Colors.black,
         body: CustomScrollView(
           slivers: [
             SliverAppBar(

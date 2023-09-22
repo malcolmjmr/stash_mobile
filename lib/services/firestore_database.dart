@@ -78,6 +78,15 @@ class FirestoreDatabase {
           merge: true,
       );
 
+   Future<void> deleteDomain(
+          String userId, String domainId) =>
+      _service.deleteData(
+          path: FirestorePath.userDomain(
+              userId: userId,
+              domainId: domainId));
+
+    
+
   Stream<List<Resource>> getWorkspaceResourceStream(User user, String workspaceId) =>
       _service.collectionStream(
           path: FirestorePath.userResources(userId: user.id),

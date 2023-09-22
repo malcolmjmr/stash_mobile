@@ -47,16 +47,24 @@ class DataManager extends ChangeNotifier {
   }
 
   _getDomains() async  {
-    final domains = await db.getUserDomains(user);
+    List<Domain> domains = await db.getUserDomains(user);
     for (final domain in domains) {
-      if (_domains[domain.id] == null) {
-        _domains[domain.id!] = domain;
+      if (_domains[domain.url] == null) {
+        _domains[domain.url] = domain;
       }
     }
   }
   
-  saveDomain(Domain domain) {
-    
+  saveDomain(Domain domain) async {
+    _domains[domain.url] = domain;
+    await db.setDomain(user.id, domain);
+  }
+
+  deleteDomain(String url) async {
+    final domain = _domains[url];
+    if (domain == null) return;
+    await db.deleteDomain(user.id, domain.id!);
+    _domains.remove(url);
   }
 
   _getRecentResources() async {

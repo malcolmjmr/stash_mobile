@@ -106,8 +106,21 @@ class WorkspaceViewModel extends ChangeNotifier {
 
   loadTabs() {
     // check workspace params for new tab
-    
-    if (workspace.title == null ) {
+
+    print('loading workspaces');
+    print(params?.resourceToOpen);
+    if (params?.resourceToOpen != null) {
+
+      final index = workspace.tabs.indexWhere((t) => t.url == params!.resourceToOpen!.url);
+
+      if (index > -1) {
+        workspace.activeTabIndex = index;
+      } else {
+        workspace.tabs.add(params!.resourceToOpen!);
+        workspace.activeTabIndex = workspace.tabs.length - 1;
+      }
+      workspace.showWebView = true;
+    } else if (workspace.title == null) {
       workspace.tabs = [Resource(url: 'https://www.google.com/', title: 'New Tab')];
       workspace.showWebView = true;
     }
@@ -116,12 +129,7 @@ class WorkspaceViewModel extends ChangeNotifier {
       workspace.activeTabIndex = 0;
     }
 
-    if (params?.resourceToOpen != null) {
-      final tab = workspace.tabs.firstWhereOrNull((t) => t.url == params!.resourceToOpen!.url);
-      if (tab == null) {
-        workspace.tabs.add(params!.resourceToOpen!);
-      }
-    }
+    
 
     workspace.tabs = workspace.tabs.map((t) {
       Resource? savedResource = allResources.firstWhereOrNull((r) => r.url == t.url);
@@ -904,30 +912,41 @@ class WorkspaceViewModel extends ChangeNotifier {
 
   checkTabForSearch(TabViewModel model, InAppWebViewController controller, Uri? uri) {
 
-    if (lastInput == null) return;
+    final now = DateTime.now().microsecondsSinceEpoch;
+
+    if (lastInput == null || (now - lastInput!.time < 20000)) return;
     
     Domain? searchDomain;
-    final matchingDomain = data.domains.firstWhereOrNull((d) => d.url == uri?.host && d.searchTemplate != null);
-
+    final matchingDomain = data.domains.firstWhereOrNull((d) => d.url == uri?.origin);
+    
     if (matchingDomain != null) {
-      matchingDomain.checkIfUrlIsSearch(uri.toString());
+
+      bool isSearch = false;
+      if (matchingDomain.searchTemplate != null) {
+        isSearch = matchingDomain.checkIfUrlIsSearch(uri.toString());
+      } else  {
+        final searchTemplate = Domain.checkIfUrlContainsInput(lastInput!, uri!);
+        if (searchTemplate != null) {
+          matchingDomain.searchTemplate = searchTemplate;
+          isSearch = true;
+        }
+      }
+
+      if (isSearch) {
+        matchingDomain.searchCount += 1;
+        matchingDomain.lastVisited = DateTime.now().millisecondsSinceEpoch;
+        searchDomain = matchingDomain;
+      }
     } else {
-      final template = Uri.decodeFull(uri.toString())
-          .replaceAll('%3A', ':').replaceAll('+', ' ')
-          .replaceFirst(lastInput!.text, Domain.searchPlaceholder);
 
-      final foundSearch = (
-          lastInput?.tabId == model.id
-          && (DateTime.now().millisecondsSinceEpoch - lastInput!.time) < 2000
-          && lastInput!.url == uri!.host
-          && template.contains(Domain.searchPlaceholder)
-      );
-
-      if (foundSearch) {
+      final searchTemplate = Domain.checkIfUrlContainsInput(lastInput!, uri!);
+      
+      if (searchTemplate != null) {
           searchDomain = Domain(
             url: Uri.parse(lastInput!.url).host.toString(),
             title: model.resource.title,
             favIconUrl: model.resource.favIconUrl,
+            searchTemplate: searchTemplate,
           );
           searchDomain.lastVisited = lastInput!.time;
       }
@@ -941,19 +960,27 @@ class WorkspaceViewModel extends ChangeNotifier {
   bool get activeTabHasSavedDomain {
     TabView activeTab = tabs[workspace.activeTabIndex!];
     final uri = Uri.parse(activeTab.model.resource.url!);
-    print('checking if active tab has saved domain');
-    print(uri.authority);
-    print(uri.host);
-    final savedDomain = data.domains.firstWhereOrNull((d) => d.url == uri.host);
+    final savedDomain = data.domains.firstWhereOrNull((d) => d.url == uri.origin);
+    print(activeTab.model.resource);
+    if(savedDomain != null) return true;
     return false;
   }
 
   addDomain(Resource resource) {
-
+    final uri = Uri.parse(resource.url!);
+    data.saveDomain(
+      Domain(
+        url: uri.origin,
+        favIconUrl: resource.favIconUrl,
+      )
+    );
+    Navigator.pop(context);
   }
 
   removeDomain(Resource resource) {
-
+    final uri = Uri.parse(resource.url!);
+    data.deleteDomain(uri.origin);
+    Navigator.pop(context);
   }
 }
 

@@ -1,10 +1,7 @@
+import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 import 'package:uuid/uuid.dart';
 
 class Domain {
-
-  /*
-
-  */
 
   late String? id;
 
@@ -59,23 +56,43 @@ class Domain {
       'searchCount': searchCount,
       'searchTemplate': searchTemplate,
     };
-    json.removeWhere((key, value) => value == null || value == [] || !value || value == 0);
+    json.removeWhere((key, value) => value == null || value == [] || value == false || value == 0);
     return json;
   }
 
   static const String searchPlaceholder = '<|search|>';
 
   checkIfUrlIsSearch(String url) {
-    final searchPrefix = searchTemplate!.split(searchPlaceholder)[0];
-    final matchesSearchTemplate = url.startsWith(searchPrefix);
-    if (matchesSearchTemplate) {
-        searchCount += 1;
-        lastVisited = DateTime.now().millisecondsSinceEpoch;
-        //isIncognito = tab.incognito;
-        return true;
-    }
+    if (searchTemplate != null) {
+      final searchPrefix = searchTemplate!.split(searchPlaceholder)[0];
+      final matchesSearchTemplate = url.startsWith(searchPrefix);
+      if (matchesSearchTemplate) {
 
+          //isIncognito = tab.incognito;
+          return true;
+      }
+    } 
     return false;
+  }
+
+
+  static String? checkIfUrlContainsInput(InputData input, Uri uri) {
+    print('checking last input against url');
+    print(input.text);
+    print(uri);
+    final template = Uri.decodeFull(uri.toString())
+          .replaceAll('%3A', ':').replaceAll('+', ' ')
+          .replaceFirst(input.text, searchPlaceholder);
+
+    print(template);
+
+    final foundSearch = (
+        // (DateTime.now().millisecondsSinceEpoch - input.time) < 2000
+        // && Uri.parse(input.url).origin == uri.origin
+        template.contains(Domain.searchPlaceholder)
+    );
+
+    return foundSearch ? template : null;
   }
 
   

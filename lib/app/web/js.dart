@@ -445,6 +445,17 @@ class JS {
     
   """;
 
+
+  static String inputListener = """
+    document.addEventListener('keydown', (e) => {
+      const key = e.code?.replace('Key', '');
+      if (key.includes('Enter')) {
+          const inputText = e.target.value;
+          window.flutter_inappwebview.callHandler("onInputEntered", inputText);
+      }
+    });
+  """;
+
   static String focusListener = """
   
   """;

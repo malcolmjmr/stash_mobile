@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:stashmobile/app/workspace/workspace_view.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
+import 'package:stashmobile/models/domain.dart';
 import 'package:stashmobile/models/resource.dart';
 
 class TabEditModel {
@@ -63,8 +64,19 @@ class TabEditModel {
     Navigator.pop(context);
   }
 
-  createNewTab(BuildContext context) {
-    workspaceModel.createNewTab(url: getUrlFromInput());
+  List<Domain> visibleDomains = [];
+  createNewTab(BuildContext context, {Domain? domain}) {
+    String? url;
+    if (domain != null) {
+      if (inputController.text.isNotEmpty) {
+        //domain.createSearchUrlFromInput(inputController.text); 
+      } else {
+        url = domain.url;
+      }
+    } else {
+      url = getUrlFromInput();
+    }
+    workspaceModel.createNewTab(url: url);
     Navigator.pop(context);
   }
 
