@@ -212,11 +212,7 @@ class TabViewModel {
       title: args[0],
       url: args[1],
     );
-
-    resource.isQueued = true;
-    workspaceModel.saveResource(resource);
-
-    HapticFeedback.mediumImpact();
+    workspaceModel.saveLink(resource);
   }
 
   onTextSelection(args) {

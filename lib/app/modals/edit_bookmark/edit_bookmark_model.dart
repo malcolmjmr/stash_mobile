@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:stashmobile/app/providers/data.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 import 'package:stashmobile/models/resource.dart';
 import 'package:stashmobile/models/workspace.dart';
@@ -9,6 +11,7 @@ class EditBookmarkModel {
   Function(Function()) setState;
   Resource? resource;
   Workspace? space;
+  late DataManager  data;
 
   bool canEditTitle = true;
 
@@ -20,9 +23,24 @@ class EditBookmarkModel {
     this.space, 
     required this.workspaceModel
   }) {
+    data = context.read(dataProvider);
+    refreshData();
+  }
+
+  onDone() {
+    if (resource != null) {
+      data.saveResource(resource!);
+    }
+  }
+
+  updateTitle() {
+    resource!.title = titleController.text;
+  }
+
+  refreshData() {
     setState(() {
       if (resource != null) {
-        spaces = resource!.contexts.map((id) => workspaceModel.data.workspaces.firstWhere((s) => s.id == id)).toList();
+        spaces = resource!.contexts.map((id) => data.getWorkspace(id)).toList();
         tags = resource!.tags;
         if (resource!.title != null) {
           titleController.text = resource!.title!;
@@ -35,29 +53,60 @@ class EditBookmarkModel {
         canEditTitle = false;
       }
     });
-
   }
 
   bool showSpaces = true;
 
   List<Workspace> spaces = [];
 
-  addSpaces(List<Workspace> spacesToAdd) {
-    if (resource != null) {
-      resource!.contexts.addAll(spacesToAdd.map((s) => s.id));
-      spaces.addAll(spacesToAdd);
-    }
+  createSpace(String title) {
+
   }
+
+  addSpace(Workspace space) {
+    setState(() {
+      if (resource != null) {
+        resource!.contexts.add(space.id);
+        spaces.add(space);
+      }
+    });
+  }
+
+  removeSpace(Workspace space) {
+    setState(() {
+      resource!.contexts.removeWhere((id) => id == space.id);
+      spaces.removeWhere((s) => space.id == s.id);
+    }); 
+  }
+
+  
+
 
   bool showTags = true;
 
   List<String> tags = [];
-  addTags(List<String> tagsToAdd) {
-    if (resource != null) {
-      resource!.tags.addAll(tagsToAdd);
-      tags = resource!.tags;
-    }
+  addTag(String tag) {
+    setState(() {
+      if (resource != null) {
+        resource!.tags.add(tag);
+        tags = resource!.tags;
+      }
+    });
   }
+
+  removeTag(String tag) {
+    setState(() {
+      if (resource != null) {
+        resource!.tags.add(tag);
+        tags = resource!.tags;
+      }
+    });
+  }
+
+  onTagSearchChange(String value) {
+
+  }
+
 
   /*
 

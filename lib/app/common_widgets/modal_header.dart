@@ -5,11 +5,15 @@ class ModalHeader extends StatelessWidget {
   const ModalHeader({Key? key,
     required this.titleText,
     this.cancelText = 'Cancel',
-    this.doneText = 'Done'
+    this.doneText = 'Done',
+    this.onDone,
+    this.onCancel,
   }) : super(key: key);
   final String cancelText;
   final String titleText;
   final String doneText;
+  final Function()? onDone;
+  final Function()? onCancel;
 
   @override
   Widget build(BuildContext context) {
@@ -50,6 +54,7 @@ class ModalHeader extends StatelessWidget {
               ),
            ),
             GestureDetector(
+              onTap: onDone,
               child: Padding(
                 padding: const EdgeInsets.only(left: 8.0),
                 child: Text(doneText,

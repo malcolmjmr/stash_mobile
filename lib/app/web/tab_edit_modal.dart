@@ -93,23 +93,21 @@ class _TabEditModalState extends State<TabEditModal> {
 
   Widget _buildCreateOptions() {
     return Container(
-      height: 45,
-      //width: MediaQuery.of(context).size.width,
-      
-      child: Container(
-        decoration: BoxDecoration(
-          //borderRadius: BorderRadius.circular(8),
-          color: Colors.black,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: model.visibleDomains
-            .map((domain) => Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10.0),
-              child: DomainIcon(domain: domain, onTap: () => model.createNewTab(context, domain: domain)),
-            )).toList(),
-        ),
+      height: 40,
+      decoration: BoxDecoration(
+        //borderRadius: BorderRadius.circular(8),
+        color: Colors.black,
+      ),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: model.visibleDomains.length,
+        itemBuilder: (context, index) {
+          final domain = model.visibleDomains[index];
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10.0),
+            child: Center(child: DomainIcon(domain: domain, onTap: () => model.createNewTab(context, domain: domain))),
+          );
+        },
       ),
     );
   }

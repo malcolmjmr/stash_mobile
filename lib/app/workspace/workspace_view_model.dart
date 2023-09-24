@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark.dart';
 import 'package:stashmobile/app/providers/data.dart';
 import 'package:stashmobile/app/providers/user.dart';
 import 'package:stashmobile/app/providers/workspace.dart';
@@ -570,19 +571,28 @@ class WorkspaceViewModel extends ChangeNotifier {
   }
 
   addTabFromNewWindow(Resource parent, int windowId) {
-
-    tabs.add(
-      TabView(
-        windowId: windowId,
-        model: TabViewModel(workspaceModel: this, ),
-        lazyLoad: false,
-      )
+    TabView tab = TabView(
+      incognito: tabs.firstWhere((t) => t.model.resource.id == parent.id).incognito,
+      windowId: windowId,
+      model: TabViewModel(
+        workspaceModel: this,
+      ),
+      lazyLoad: false,
     );
-
     setState(() {
-      tabs;
-      workspace.activeTabIndex = tabs.length - 1;
+      if(workspace.activeTabIndex != null && workspace.tabs.isNotEmpty) {
+        workspace.activeTabIndex = workspace.activeTabIndex! + 1;
+        tabs.insert(workspace.activeTabIndex!, tab);
+      } else {
+        tabs.add(tab);
+        workspace.activeTabIndex = tabs.length - 1;
+      }
+      
+      if (!showWebView) workspace.showWebView = true;
     });
+
+    tabPageController?.jumpToPage(workspace.activeTabIndex!);
+
 
     tabPageController?.jumpToPage(workspace.activeTabIndex!);
   }
@@ -627,12 +637,13 @@ class WorkspaceViewModel extends ChangeNotifier {
   }
 
   removeTab(Resource resource) async {
+    HapticFeedback.mediumImpact();
+    tabPageController?.jumpToPage(workspace.activeTabIndex! - 1 );
     setState(() {
       final index = tabs.indexWhere((t) => t.model.resource.id == resource.id);
-      final currentIndex = workspace.activeTabIndex!;
-      workspace.activeTabIndex = currentIndex > 0 ? currentIndex - 1 : currentIndex;
-      tabPageController?.jumpToPage(workspace.activeTabIndex!);
-      tabs.removeAt(index);
+      workspace.activeTabIndex = index > 0 ? index - 1 : index;
+      
+      tabs = tabs.where((tab) => tab.model.resource.id != resource.id).toList();
       updateWorkspaceTabs();
     });
 
@@ -676,6 +687,7 @@ class WorkspaceViewModel extends ChangeNotifier {
   }
 
   saveTab(Resource resource) {
+    HapticFeedback.mediumImpact();
     setState(() {
       if (resource.contexts.isEmpty) {
         resource.contexts.add(workspace.id);
@@ -762,6 +774,7 @@ class WorkspaceViewModel extends ChangeNotifier {
   }
 
   closeTab(Resource resource) {
+    HapticFeedback.mediumImpact();
     setState(() {
       tabs = tabs.where((t) => t.model.resource.id != resource.id).toList();
       if (workspace.activeTabIndex == tabs.length) {
@@ -835,6 +848,7 @@ class WorkspaceViewModel extends ChangeNotifier {
   }
 
   tagTabWithSelectedText() {
+    HapticFeedback.mediumImpact();
     List<String> selectedTags = selectedText!.toLowerCase().trim().split(' ');
     setState(() {
       TabView currentTab = tabs[workspace.activeTabIndex!];
@@ -860,6 +874,11 @@ class WorkspaceViewModel extends ChangeNotifier {
       data.saveResource(resource);
       currentTab.model.controller.clearFocus();
       showTextSelectionMenu = false;
+      showNotification(NotificationParams(
+        title: 'Added ${selectedTags.map((t) => '"'+t+'"').join('and ')} to tags',
+        action: editBookmarkAction,
+        actionLabel: 'Edit'
+      ));
 
       // if (tags.firstWhereOrNull((t) => t.name == tag) == null) {
       //   tags.add(Tag(lastViewed: resource.lastVisited ?? 0, name: tag));
@@ -875,14 +894,20 @@ class WorkspaceViewModel extends ChangeNotifier {
         id: id,
     );
 
+    Resource resource = currentTab.model.resource;
     setState(() {
-      Resource resource = currentTab.model.resource;
       resource.highlights.add(highlight);
       resource.updated = now;
       data.saveResource(resource);
       currentTab.model.controller.clearFocus();
       showTextSelectionMenu = false;
     });
+
+    showNotification(NotificationParams(
+      title: 'Highlight Added', 
+      action: () => editBookmarkAction(resource: resource), 
+      actionLabel: 'Edit')
+    );
   }
 
   onTabContentClicked() {
@@ -987,6 +1012,49 @@ class WorkspaceViewModel extends ChangeNotifier {
     data.deleteDomain(uri.origin);
     Navigator.pop(context);
   }
+
+  bool notificationIsVisible = false;
+  NotificationParams? notificationParams;
+
+  showNotification(NotificationParams params) {
+    
+    notificationParams = params;
+    setState(() {
+      notificationIsVisible = true;
+    });
+    
+    Timer(Duration(milliseconds:  2500 ), () {
+      setState(() {
+        notificationIsVisible = false;
+      });
+    });
+  }
+
+  editBookmarkAction({Resource? resource}) {
+    
+    showCupertinoModalBottomSheet(
+      context: context, 
+      builder: (context) => EditBookmarkModal(
+        workspaceViewModel: this, 
+        resource: resource ?? tabs[workspace.activeTabIndex!].model.resource
+      ) 
+    );
+    
+  }
+
+
+  saveLink(Resource resource) {
+
+    resource.isQueued = true;
+    saveResource(resource);
+    showNotification(NotificationParams(
+      title: '"${resource.title}" saved for later',
+      action: () => editBookmarkAction(resource: resource),
+      actionLabel: 'Edit',
+    ));
+
+    HapticFeedback.mediumImpact();
+  }
 }
 
 class InputData {
@@ -1002,4 +1070,11 @@ class InputData {
     required this.url,
   });
 
+}
+
+class NotificationParams {
+  String title;
+  Function()? action;
+  String? actionLabel;
+  NotificationParams({required this.title, this.action, this.actionLabel});
 }

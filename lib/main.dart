@@ -14,21 +14,22 @@ import 'package:stashmobile/app/authentication/firebase_providers.dart';
 /*
 
   Todo: 
-  - tags 
-    - retrieve all tagged resources
-    - get tags value counts
-    - add tags section to home view
-      - only show tags with multiple appearances
-    - add tags to search view
+
   - bottom notification on web view
     - link saved
     - tag added
-    - tab saved 
-
+    - tab saved
   - bookmark edit modal
+    - update title
+    - edit spaces 
+    - edit tags
     - set rating/importance/priority
     - highlights (set preview)
     - images (set preview item)
+  - using tags in search
+    - tap tag to replace selected tags
+    - longpress tag to add it to filter
+    - let user select tags from items in results
   - reconcile mobile and desktop urls
 
 

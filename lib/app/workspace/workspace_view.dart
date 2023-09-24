@@ -115,13 +115,59 @@ class _WorkspaceViewState extends State<WorkspaceView> {
             ),
             height: 70,
             width: MediaQuery.of(context).size.width,
-            child: model.showTextSelectionMenu 
-              ? TextSelectionMenu(workspaceModel: model)
-              : model.showHorizontalTabs 
-                ? HorizontalTabs(workspaceModel: model)
-                : VeritcalTabs(workspaceModel: model),
+            child: model.notificationIsVisible
+              ?  _buildNotification()
+              : model.showTextSelectionMenu 
+                ? TextSelectionMenu(workspaceModel: model)
+                : model.showHorizontalTabs 
+                  ? HorizontalTabs(workspaceModel: model)
+                  : VeritcalTabs(workspaceModel: model),
           )
         ],
+      ),
+    );
+  }
+
+  Widget _buildNotification() {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Container(
+        decoration: BoxDecoration(
+          color: HexColor.fromHex('222222'),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Text(model.notificationParams!.title,
+                  //overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500
+                  ),
+                ),
+              ),
+              if (model.notificationParams!.actionLabel != null)
+              GestureDetector(
+                onTap: () => model.notificationParams?.action?.call(),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                  child: Text(model.notificationParams!.actionLabel!,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    
+                      color: Colors.amber,
+                    ),
+                  ),
+                ),
+              )
+            ],
+          ),
+        ),
       ),
     );
   }
