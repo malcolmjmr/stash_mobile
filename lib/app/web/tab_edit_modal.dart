@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:stashmobile/app/common_widgets/domain_icon.dart';
+import 'package:stashmobile/app/common_widgets/freeze_container.dart';
 import 'package:stashmobile/app/modals/create_new_tab/create_new_tab_modal.dart';
 import 'package:stashmobile/app/web/tab_edit_model.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
@@ -63,8 +65,10 @@ class _TabEditModalState extends State<TabEditModal> {
           child: Column(
             children: [
               _buildBackground(),
-              _buildCreateOptions(),
+             
               _buildUrlField(),
+              if (model.visibleDomains.isNotEmpty)
+              _buildCreateOptions(),
             ],
           ),
         )
@@ -89,9 +93,23 @@ class _TabEditModalState extends State<TabEditModal> {
 
   Widget _buildCreateOptions() {
     return Container(
-      child: Row(
-        children: model.visibleDomains
-          .map((domain) => DomainIcon(domain: domain, onTap: () => model.createNewTab(context))).toList(),
+      height: 45,
+      //width: MediaQuery.of(context).size.width,
+      
+      child: Container(
+        decoration: BoxDecoration(
+          //borderRadius: BorderRadius.circular(8),
+          color: Colors.black,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: model.visibleDomains
+            .map((domain) => Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10.0),
+              child: DomainIcon(domain: domain, onTap: () => model.createNewTab(context, domain: domain)),
+            )).toList(),
+        ),
       ),
     );
   }
@@ -122,7 +140,7 @@ class _TabEditModalState extends State<TabEditModal> {
                             controller: model.inputController,
                             autocorrect: false,
                             maxLines: 1,
-                            keyboardType: TextInputType.text,
+                            keyboardType: TextInputType.visiblePassword,
                             textInputAction: TextInputAction.go,
                             onChanged: (value) => model.onInputChanged(),
                             onSubmitted: (value) {

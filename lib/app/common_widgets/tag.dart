@@ -19,7 +19,7 @@ class TagChip extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
-          color: isSelected ? Colors.amberAccent : HexColor.fromHex('333333'),
+          color: isSelected ? Colors.amber.withOpacity(0.9) : HexColor.fromHex('333333'),
         ),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 3),

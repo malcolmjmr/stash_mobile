@@ -14,12 +14,23 @@ import 'package:stashmobile/app/authentication/firebase_providers.dart';
 /*
 
   Todo: 
-  - create new tab view
-    - format modal
-    - format home footer 
-  - add to favorite domains
-  - check url for seaerch 
-  - reconcile mobile and desktop url 
+  - tags 
+    - retrieve all tagged resources
+    - get tags value counts
+    - add tags section to home view
+      - only show tags with multiple appearances
+    - add tags to search view
+  - bottom notification on web view
+    - link saved
+    - tag added
+    - tab saved 
+
+  - bookmark edit modal
+    - set rating/importance/priority
+    - highlights (set preview)
+    - images (set preview item)
+  - reconcile mobile and desktop urls
+
 
 */
 

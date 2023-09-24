@@ -101,11 +101,18 @@ class FirestoreDatabase {
           queryBuilder: (query) => query.where('contexts', arrayContains: workspaceId),
       );
 
+  Future<List<Resource>> getAllResources(User user, int time) => 
+    _service.collection(
+      path: FirestorePath.userResources(userId: user.id),
+      builder: (id, data) => Resource.fromDatabase(id, data),
+      queryBuilder: (query) => query.where('tags', isNull: false),
+  );
+
   Future<List<Resource>> getResourcesByTime(User user, int time) => 
     _service.collection(
       path: FirestorePath.userResources(userId: user.id),
       builder: (id, data) => Resource.fromDatabase(id, data),
-      queryBuilder: (query) => query.where('updated', isGreaterThan: time),
+      queryBuilder: (query) => query.where('updated', isNull: false),
     );
   
   Future<List<Resource>> getResourcesByContexts(User user, List<String> contextIds) => 

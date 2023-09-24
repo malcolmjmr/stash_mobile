@@ -3,13 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stashmobile/app/common_widgets/resource_list_item.dart';
 import 'package:stashmobile/app/common_widgets/search_field.dart';
 import 'package:stashmobile/app/common_widgets/section_header.dart';
+import 'package:stashmobile/app/common_widgets/tag.dart';
 import 'package:stashmobile/app/home/home_view_model.dart';
 import 'package:stashmobile/app/home/workspace_listitem.dart';
 import 'package:stashmobile/app/providers/workspace.dart';
 import 'package:stashmobile/app/search/search_view_model.dart';
-import 'package:stashmobile/app/workspace/space_list_item.dart';
+import 'package:stashmobile/app/search/search_view_params.dart';
 import 'package:stashmobile/app/workspace/workspace_view_params.dart';
-import 'package:stashmobile/extensions/color.dart';
 import 'package:stashmobile/routing/app_router.dart';
 
 
@@ -36,10 +36,15 @@ class SearchView extends ConsumerWidget {
                 leading: null,
               ),
 
-              if (model.searchString.isEmpty)
+              if (model.visibleTags.isNotEmpty)
+              SliverToBoxAdapter(
+                child: _buildTags(context, model),
+              ),
+
+              if (model.searchString.isEmpty && model.selectedTags.isEmpty)
               SliverPadding(padding: EdgeInsets.only(top: 20)),
 
-              if (model.searchString.isEmpty)
+              if (model.searchString.isEmpty && model.selectedTags.isEmpty)
               SliverList.builder(
                 itemCount: model.suggestedResources.length,
                 itemBuilder: (context, index) {
@@ -91,7 +96,7 @@ class SearchView extends ConsumerWidget {
                   }
                 },
               ),
-              if (model.searchString.isNotEmpty && model.visibleResources.isNotEmpty)
+              if ((model.searchString.isNotEmpty || model.selectedTags.isNotEmpty) && model.visibleResources.isNotEmpty)
               SliverList.builder(
                 itemCount: model.visibleResources.length + 1,
                 itemBuilder: (context, index) {
@@ -112,9 +117,7 @@ class SearchView extends ConsumerWidget {
                         isLastListItem: index == model.visibleResources.length,
                         workspace: resource.contexts.isEmpty ? null : model.workspaceMap[resource.contexts.first],
                         resource: resource, 
-                        onTap: () {
-                          
-                        }
+                        onTap: () => model.openResource(context, resource)
                       ),
                     );
                   }
@@ -161,6 +164,36 @@ class SearchView extends ConsumerWidget {
 
   Widget _buildResults(BuildContext context, SearchViewModel model) {
     return  Container();
+  }
+
+  Widget _buildTags(BuildContext context, SearchViewModel model) {
+    return Container(
+      width: MediaQuery.of(context).size.width,
+      height: 50,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: model.visibleTags.length + 1,
+        padding: EdgeInsets.only(top: 20),
+        itemBuilder: (context, index) {
+          if (index == 0) {
+            return SizedBox(width: 20,);
+          } else {
+            final tag = model.visibleTags[index - 1];
+            return Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: Center(
+                child: TagChip(
+                  tag: tag,
+                  isSelected: tag.isSelected,
+                  onTap: () => model.toggleTagSelection(tag),
+                ),
+              ),
+            );
+          }
+          
+        }
+      ),
+    );
   }
 
   // Widget _buildFolderSection() {

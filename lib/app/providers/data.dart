@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:stashmobile/models/domain.dart';
+import 'package:stashmobile/models/tag.dart';
 
 import '../../models/workspace.dart';
 import '../../models/resource.dart';
@@ -29,6 +30,7 @@ class DataManager extends ChangeNotifier {
   List<String?> loadedWorkspaces = [];
   Map<String, Domain> _domains = {};
   List<Domain> get domains => _domains.values.toList();
+  Map<String, Set<Resource>> _tags = {};
 
 
   
@@ -46,26 +48,21 @@ class DataManager extends ChangeNotifier {
     notifyListeners();
   }
 
-  _getDomains() async  {
-    List<Domain> domains = await db.getUserDomains(user);
-    for (final domain in domains) {
-      if (_domains[domain.url] == null) {
-        _domains[domain.url] = domain;
-      }
-    }
-  }
-  
-  saveDomain(Domain domain) async {
-    _domains[domain.url] = domain;
-    await db.setDomain(user.id, domain);
+  /*
+
+    
+
+  */
+
+
+  List<Tag> get tags  {
+    return _tags.entries
+      .sorted((a, b) => b.value.length.compareTo(a.value.length))
+      .map((e) => Tag(name: e.key, valueCount: e.value.length))
+      .toList();
+    
   }
 
-  deleteDomain(String url) async {
-    final domain = _domains[url];
-    if (domain == null) return;
-    await db.deleteDomain(user.id, domain.id!);
-    _domains.remove(url);
-  }
 
   _getRecentResources() async {
     final aMonthAgo = DateTime.now().millisecondsSinceEpoch - (1000 * 60 * 60 * 24 * 30);
@@ -73,6 +70,11 @@ class DataManager extends ChangeNotifier {
     for (final resource in recentResources) {
       if (_resources[resource.id] == null) {
         _resources[resource.id!] = resource;
+        for (final tag in resource.tags) {
+          if (_tags[tag] == null) _tags[tag] = Set();
+          _tags[tag]!.add(resource);
+        }
+
       }
     }
   }
@@ -87,7 +89,7 @@ class DataManager extends ChangeNotifier {
   }
 
   Workspace getWorkspace(String workspaceId) {
-    return workspaces.firstWhere((w) => w.id == workspaceId);
+    return _workspaces[workspaceId]!;
   }
 
   getWorkspaceResources(String? workspaceId) async {
@@ -135,6 +137,11 @@ class DataManager extends ChangeNotifier {
 
 
   saveResource(Resource resource) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (_resources[resource.id!] == null) {
+      resource.created = now;
+    }
+    resource.updated = now;
     _resources[resource.id!] = resource;
     await db.setResource(user.id, resource);
   }
@@ -166,6 +173,31 @@ class DataManager extends ChangeNotifier {
       await db.setUserWorkspace(user.id, workspace);
     }
   }
+
+
+   _getDomains() async  {
+    List<Domain> domains = await db.getUserDomains(user);
+    for (final domain in domains) {
+      if (_domains[domain.url] == null) {
+        _domains[domain.url] = domain;
+      }
+    }
+  }
+  
+  saveDomain(Domain domain) async {
+    _domains[domain.url] = domain;
+    await db.setDomain(user.id, domain);
+  }
+
+  deleteDomain(String url) async {
+    final domain = _domains[url];
+    if (domain == null) return;
+    await db.deleteDomain(user.id, domain.id!);
+    _domains.remove(url);
+  }
+
+
+
 
   
 

@@ -17,6 +17,7 @@ class TabEditModel {
     input = tab.url!;
     inputController.text = input;
     inputController.selection = TextSelection(baseOffset: 0, extentOffset: input.length);
+    visibleDomains = workspaceModel.data.domains;
     setState(() {
       isLoaded = true;
     });
@@ -35,7 +36,15 @@ class TabEditModel {
   onInputChanged() {
     
     setState(() {
+      if (tab.url != inputController.text) {
+        if (input.isEmpty && inputController.text.isNotEmpty) {
+          visibleDomains = workspaceModel.data.domains.where((d) => d.searchTemplate != null).toList();
+        } else if (input.isNotEmpty && inputController.text.isEmpty) {
+          visibleDomains = workspaceModel.data.domains;
+        }
+      }
       input = inputController.text;
+      
     });
     searchWorkspace();
                             
@@ -69,7 +78,7 @@ class TabEditModel {
     String? url;
     if (domain != null) {
       if (inputController.text.isNotEmpty) {
-        //domain.createSearchUrlFromInput(inputController.text); 
+        url = domain.createSearchUrlFromInput(inputController.text); 
       } else {
         url = domain.url;
       }

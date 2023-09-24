@@ -71,7 +71,7 @@ class MoveToSpaceModel {
     workspaceModel.removeSelectedTabs();
     destinationSpace.tabs.addAll(resources);
     await data.saveWorkspace(destinationSpace);
-    context.read(homeViewProvider).refreshWorkspaces();
+    context.read(homeViewProvider).refreshData();
     Navigator.pop(context);
     callback?.call(destinationSpace);
   }

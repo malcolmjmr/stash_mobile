@@ -642,7 +642,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
             SearchField(
               showPlaceholder: true,
               onTap: () {
-                context.read(searchViewProvider).load();
+                context.read(searchViewProvider).initBeforeNavigation();
                 Navigator.pushNamed(context, AppRoutes.search);
               }
             )
@@ -702,7 +702,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   }
 
   Widget _buildBackButton() {
-    final text = model.parentWorkspace != null ? model.parentWorkspace!.title! : 'Stash';
+    final text = model.parentWorkspace != null ? model.parentWorkspace!.title! : 'Back';
     final color = model.parentWorkspace != null ? HexColor.fromHex(colorMap[model.parentWorkspace?.color ?? 'grey']!) : null;
     return GestureDetector(
       onTap: () => Navigator.pop(context),
@@ -740,7 +740,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
             onDone: (workspace) {
               model.saveSpace(workspace);
               Navigator.pop(context);
-              context.read(homeViewProvider).refreshWorkspaces();
+              context.read(homeViewProvider).refreshData();
             }
           )
         );

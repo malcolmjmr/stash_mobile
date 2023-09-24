@@ -1,4 +1,4 @@
-import 'dart:async';
+
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
@@ -6,9 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stashmobile/app/providers/data.dart';
 import 'package:stashmobile/app/providers/workspace.dart';
+import 'package:stashmobile/app/search/search_view_model.dart';
 import 'package:stashmobile/app/workspace/workspace_view_params.dart';
 import 'package:stashmobile/models/domain.dart';
 import 'package:stashmobile/models/resource.dart';
+import 'package:stashmobile/models/tag.dart';
 import 'package:stashmobile/routing/app_router.dart';
 
 import '../../models/workspace.dart';
@@ -31,10 +33,10 @@ class HomeViewModel with ChangeNotifier {
 
   load() async {
     _setLoading(true);
-    await refreshWorkspaces();
+    await refreshData();
   }
 
-  refreshWorkspaces() async {
+  refreshData() async {
     workspaces = data.workspaces
       .where((Workspace c) => c.isIncognito != true  && c.deleted == null).toList();
     workspaces.sort((a, b) => (b.updated ?? 0).compareTo(a.updated ?? 0));
@@ -42,6 +44,7 @@ class HomeViewModel with ChangeNotifier {
     favorites = workspaces.where((w) => w.isFavorite == true && w.contexts.isEmpty).toList();
     topDomains = data.domains;
     topDomains.sort(sorDomains);
+    tags = data.tags.where((t) => t.valueCount > 1).toList();
     _setLoading(false);
   }
 
@@ -50,6 +53,7 @@ class HomeViewModel with ChangeNotifier {
   List<Workspace> recentSpaces = [];
 
   List<Domain> topDomains = [];
+  List<Tag> tags = [];
 
   int sorDomains(Domain a, Domain b) {
     final countComp = b.searchCount - a.searchCount;
@@ -84,6 +88,19 @@ class HomeViewModel with ChangeNotifier {
     notifyListeners();
   }
 
+  bool showTags = true;
+  toggleShowTags() {
+    showTags = !showTags;
+    notifyListeners();
+  }
+
+  openSearchFromTag(BuildContext context, Tag tag) {
+
+    context.read(searchViewProvider).initBeforeNavigation(tags: [tag]);
+    Navigator.pushNamed(context, AppRoutes.search);
+  }
+
+  
 
 
   createNewWorkspace (BuildContext buildContext, Workspace workspace) {
@@ -113,16 +130,14 @@ class HomeViewModel with ChangeNotifier {
 
   toggleWorkspacePinned(Workspace workspace) async {
     workspace.isFavorite = !(workspace.isFavorite == true);
-    print('workspace is favorite');
-    print(workspace.isFavorite);
     await data.saveWorkspace(workspace);
-    await refreshWorkspaces();
+    await refreshData();
     notifyListeners();
   }
 
   deleteWorkspace(BuildContext context, Workspace workspace) {
     data.deleteWorkspace(workspace);
-    refreshWorkspaces();
+    refreshData();
     Navigator.pop(context);
   }
 

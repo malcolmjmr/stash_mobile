@@ -110,7 +110,7 @@ class ActivityHistoryView extends ConsumerWidget {
       padding: const EdgeInsets.only(left: 5, right: 5, top: 10),
       child: SearchField(
         onTap: () {
-          context.read(searchViewProvider).load();
+          context.read(searchViewProvider).initBeforeNavigation();
           Navigator.pushNamed(context, AppRoutes.search);
         }, 
         showPlaceholder: true,

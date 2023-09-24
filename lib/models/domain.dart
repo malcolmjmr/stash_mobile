@@ -95,5 +95,10 @@ class Domain {
     return foundSearch ? template : null;
   }
 
+
+  createSearchUrlFromInput(String input) {
+    return Uri.encodeFull(searchTemplate!.replaceFirst(searchPlaceholder, input));
+  }
+
   
 }

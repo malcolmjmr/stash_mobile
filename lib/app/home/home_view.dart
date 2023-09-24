@@ -5,15 +5,19 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
+import 'package:stashmobile/app/common_widgets/domain_icon.dart';
 import 'package:stashmobile/app/common_widgets/freeze_container.dart';
 import 'package:stashmobile/app/common_widgets/list_item.dart';
 import 'package:stashmobile/app/common_widgets/search_field.dart';
 import 'package:stashmobile/app/common_widgets/section_list_item.dart';
+import 'package:stashmobile/app/common_widgets/tag.dart';
 import 'package:stashmobile/app/home/create_workspace_modal.dart';
 import 'package:stashmobile/app/home/workspace_listitem.dart';
 import 'package:flutter/material.dart';
 import 'package:stashmobile/app/modals/create_new_tab/create_new_tab_modal.dart';
 import 'package:stashmobile/app/search/search_view_model.dart';
+import 'package:stashmobile/extensions/color.dart';
+import 'package:stashmobile/models/tag.dart';
 import 'package:stashmobile/routing/app_router.dart';
 import '../common_widgets/section_header.dart';
 import 'home_view_model.dart';
@@ -22,7 +26,6 @@ class HomeView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, ScopedReader watch) {
     final model = watch(homeViewProvider);
-  
     return Scaffold(
       backgroundColor: Colors.black,
       body: model.isLoading 
@@ -95,29 +98,20 @@ class HomeView extends ConsumerWidget {
                       );
                     }
                   ),
-                  // SliverToBoxAdapter(
-                  //   child: SectionHeader(
-                  //     title: 'All Spaces',
-                  //     isCollapsed: model.showAllSpaces,
-                  //     onToggleCollapse: () => model.setShowAllSpaces(!model.showAllSpaces),
-                  //   )
-                  // ),
-                  // if (model.showAllSpaces)
-                  // SliverList.builder(
-                  //   itemCount: model.workspaces.length,
-                  //   itemBuilder: (context, index) {
-                  //     final workspace = model.workspaces[index];
-                  //     return WorkspaceListItem(
-                  //       key: Key(workspace.id),
-                  //       isFirstListItem: index == 0,
-                  //       isLastListItem: index == model.workspaces.length - 1,
-                  //       workspace: workspace,
-                  //       togglePin: (context) => model.toggleWorkspacePinned(workspace),
-                  //       onTap: () => model.openWorkspace(context, workspace),
-                  //       onDelete: () => model.deleteWorkspace(context, workspace),
-                  //     );
-                  //   }
-                  // ),
+
+                  //if (model.showFavoriteSpaces && model.favorites.isNotEmpty)
+                  SliverPadding(padding: EdgeInsets.only(bottom: 10)),
+                  SliverToBoxAdapter(
+                    child: SectionHeader(
+                      title: 'Tags',
+                      isCollapsed: model.showTags,
+                      onToggleCollapse: () => model.toggleShowTags(),
+                    )
+                  ),
+                  if (model.showTags)
+                  SliverToBoxAdapter(
+                    child: _buildTags(context, model),
+                  ),
 
                   SliverToBoxAdapter(child: SizedBox(height: 100),)
                 ]
@@ -138,8 +132,11 @@ class HomeView extends ConsumerWidget {
   Widget _buildTopSection(BuildContext context, HomeViewModel model) {
     return Container(
       height: 50,
+      color: Colors.transparent,
       child: ListView.builder(
+        shrinkWrap: true,
         scrollDirection: Axis.horizontal,
+        
         itemCount: model.topDomains.length + 1,
         itemBuilder: (context, index) {
 
@@ -147,11 +144,13 @@ class HomeView extends ConsumerWidget {
             return SizedBox(width: 10,);
           } else {
             final domain = model.topDomains[index - 1];
-            return Padding(
-              padding: const EdgeInsets.only(right: 20.0),
-              child: DomainIcon(
-                domain: domain,
-                onTap: () => model.createNewTab(context, url: domain.url),
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.only(right: 20.0),
+                child: DomainIcon(
+                  domain: domain,
+                  onTap: () => model.createNewTab(context, url: domain.url),
+                ),
               ),
             );
           }
@@ -160,6 +159,34 @@ class HomeView extends ConsumerWidget {
       ),
     );
   }
+
+  Widget _buildTags(BuildContext context, HomeViewModel model) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        color: HexColor.fromHex('222222')
+      ),
+      child: Container(
+          padding: EdgeInsets.symmetric(vertical: 10),
+          width: double.infinity,
+          child: Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            crossAxisAlignment: WrapCrossAlignment.start,
+            children: model.tags.map(
+              (tag) => TagChip(
+                onTap: () => model.openSearchFromTag(context, tag),
+                tag: tag, 
+                //isSelected: true,
+              )
+          ).toList(),
+        ),
+      ),
+    );
+  }
+
+  
 }
 
 
@@ -206,7 +233,7 @@ class Header extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 20),
             child: SearchField(
               onTap: () {
-                context.read(searchViewProvider).load();
+                context.read(searchViewProvider).initBeforeNavigation();
                 Navigator.pushNamed(context, AppRoutes.search);
               }, 
               showPlaceholder: true,

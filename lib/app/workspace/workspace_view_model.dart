@@ -1,5 +1,6 @@
 
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -139,6 +140,10 @@ class WorkspaceViewModel extends ChangeNotifier {
     bool lazyLoad = true;
     if (workspace.title  == null && workspace.tabs.length == 1) {
       lazyLoad = false;
+    }
+
+    if (workspace.activeTabIndex! > workspace.tabs.length - 1) {
+      workspace.activeTabIndex = workspace.tabs.length - 1;
     }
 
     final openedTab = workspace.showWebView ? workspace.tabs[workspace.activeTabIndex!] : null;
@@ -843,7 +848,7 @@ class WorkspaceViewModel extends ChangeNotifier {
         }
       }
 
-      final now = DateTime.now().millisecond;
+      final now = DateTime.now().millisecondsSinceEpoch;
       if (!resource.isSaved) {
         resource.created = now;
         resource.lastVisited = now;
@@ -851,7 +856,7 @@ class WorkspaceViewModel extends ChangeNotifier {
       if (workspace.title != null && !resource.contexts.contains(workspace.id)) resource.contexts.add(workspace.id);
       if (resource.deleted != null) resource.deleted = null;
       if (resource.isQueued == true) resource.isQueued = null;
-      resource.updated = now;
+
       data.saveResource(resource);
       currentTab.model.controller.clearFocus();
       showTextSelectionMenu = false;

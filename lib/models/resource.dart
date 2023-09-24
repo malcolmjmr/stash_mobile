@@ -1,6 +1,7 @@
 
 
 import 'package:flutter/foundation.dart';
+import 'package:stashmobile/models/tag.dart';
 import 'package:uuid/uuid.dart';
 
 import 'workspace.dart';
@@ -36,6 +37,7 @@ class Resource {
   bool? isSearch;
   bool? isSelected;
   Workspace? primaryWorkspace;
+  List<Tag> matchingTags = [];
 
 
   Resource({ this.url, this.title, this.favIconUrl}) {

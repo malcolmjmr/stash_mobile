@@ -147,36 +147,3 @@ class _CreateNewTabModalState extends State<CreateNewTabModal> {
     );
   }
 }
-class DomainIcon extends StatelessWidget {
-  final Function() onTap;
-  final Function()? onLongPress;
-  final Domain domain;
-  const DomainIcon({Key? key,
-    required this.domain, 
-    required this.onTap, 
-    this.onLongPress
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      onLongPress: onLongPress,
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8)
-        ),
-        height: 30,
-        width: 30,
-        child: domain.favIconUrl != null 
-          ? Image.network(domain.favIconUrl!,
-            //loadingBuilder: (context, child, loadingProgress) => Icon(Icons.language, size: 30,),
-            errorBuilder: (context, child, loadingProgress) => Icon(Icons.public, size: 35,),
-          )
-          : Icon(Icons.public, size: 35,)
-        ),
-    );
-            
-  }
-  
-}
