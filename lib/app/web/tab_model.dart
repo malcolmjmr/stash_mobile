@@ -18,8 +18,6 @@ class TabViewModel {
   String id = UniqueKey().toString();
 
   TabViewModel({required this.workspaceModel, Resource? initialResource}) {
-    print('creating tab');
-    print(id);
     if (initialResource != null) {
       resource = initialResource;
     } else {

@@ -32,6 +32,7 @@ class ResourceListItem extends StatelessWidget {
     this.isFirstListItem = false,
     this.isLastListItem = false,
     this.isLastActiveTab = false,
+    this.showHighlights = false,
   }) : super(key: key);
 
   final WorkspaceViewModel model;
@@ -40,6 +41,7 @@ class ResourceListItem extends StatelessWidget {
   final bool isLastListItem;
   final bool isFirstListItem;
   final bool isLastActiveTab;
+  final bool showHighlights;
 
   @override
   Widget build(BuildContext context) {
@@ -109,55 +111,91 @@ class ResourceListItem extends StatelessWidget {
           ),
           child: Padding(
             padding: const EdgeInsets.all(8.0),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
+            child: Column(
+              //mainAxisSize: MainAxisSize.min,
               children: [
-                Padding(
-                  padding: const EdgeInsets.only(right: 5.0),
-                  child: Container(
-                    height: 35,
-                    width: 35,
-                    child: resource.favIconUrl != null 
-                      ? Image.network(resource.favIconUrl ?? '',
-                        //loadingBuilder: (context, child, loadingProgress) => Icon(Icons.language, size: 30,),
-                        errorBuilder: (context, child, loadingProgress) => Icon(Icons.public, size: 35,),
-                      )
-                      : Icon(Icons.public, size: 35,)
-                    ),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                Container(
+                  height: 38,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Text(resource.title ?? '', 
-                        maxLines: 1,
-                        style: TextStyle(
-                          color: isLastActiveTab ? Colors.amber : Colors.white,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
-                          fontSize: 16,  
-                          overflow: TextOverflow.ellipsis),
-                        ),
-                      Row(
-                        children: [
-                          Text(Uri.parse(resource.url!).host.replaceAll('www.', '') ?? '', 
-                            maxLines: 1,
-                            style: TextStyle(
-                              color: isLastActiveTab ? Colors.amber : Colors.white,
-                              fontWeight: FontWeight.w300,
-                              letterSpacing: 0.5,
-                              fontSize: 14,  
-                              overflow: TextOverflow.ellipsis),
+                      Padding(
+                        padding: const EdgeInsets.only(right: 5.0),
+                        child: Container(
+                          height: 35,
+                          width: 35,
+                          child: resource.favIconUrl != null 
+                            ? Image.network(resource.favIconUrl ?? '',
+                              //loadingBuilder: (context, child, loadingProgress) => Icon(Icons.language, size: 30,),
+                              errorBuilder: (context, child, loadingProgress) => Icon(Icons.public, size: 35,),
+                            )
+                            : Icon(Icons.public, size: 35,)
                           ),
-                        ],
                       ),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(resource.title ?? '', 
+                              maxLines: 1,
+                              style: TextStyle(
+                                color: isLastActiveTab ? Colors.amber : Colors.white,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                                fontSize: 16,  
+                                overflow: TextOverflow.ellipsis),
+                              ),
+                            Row(
+                              children: [
+                                Text(Uri.parse(resource.url!).host.replaceAll('www.', '') ?? '', 
+                                  maxLines: 1,
+                                  style: TextStyle(
+                                    color: isLastActiveTab ? Colors.amber : Colors.white,
+                                    fontWeight: FontWeight.w300,
+                                    letterSpacing: 0.5,
+                                    fontSize: 14,  
+                                    overflow: TextOverflow.ellipsis),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        ),
                     ],
                   ),
-                  ),
+                ),
+                if (resource.highlights.isNotEmpty && showHighlights)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: _buildHighlights(context),
+                ),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildHighlights(BuildContext context) {
+    return Container(
+      width: MediaQuery.of(context).size.width,
+      height: 200,
+      child: PageView.builder(
+        //scrollDirection: Axis.,
+        itemCount: resource.highlights.length,
+        padEnds: true,
+        itemBuilder: (context, index) {
+          final highlight = resource.highlights[index];
+          return Text(highlight.text, 
+            style: TextStyle(
+              fontSize: 16,
+            ),
+            maxLines: 200,
+            
+            overflow: TextOverflow.ellipsis,
+          );
+        }
       ),
     );
   }

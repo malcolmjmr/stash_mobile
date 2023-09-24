@@ -284,11 +284,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           GestureDetector(
-            onTap: () {
-              setState(() {
-                model.workspace.showWebView = false;
-              });
-            },
+            onTap: () => model.goBackToWorkspaceView(),
             child: Row(
               children: [
                 Icon(Icons.arrow_back_ios,
@@ -562,30 +558,33 @@ class _WorkspaceViewState extends State<WorkspaceView> {
             child: SectionHeader(
               title: 'Resources',
               actions: [
-                if (model.favorites.length > 0)
+                if (model.hasFavorites)
                 GestureDetector(
-                  //onTap: () => model.setResourceList('queue'),
+                  onTap: () => model.setResourceView(ResourceView.important),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 5.0),
-                    child: Icon(Symbols.star, fill: model.showQueue ? 1 : 0,),
+                    child: Icon(Symbols.star, fill: model.resourceView == ResourceView.important ? 1 : 0,),
                   ),
                 ),
-                if (model.resources.length > 0)
+
+                if (model.hasHighlights)
                 GestureDetector(
-                  onTap: () => model.toggleShowQueue(),
-                  child: Padding(
-                     padding: const EdgeInsets.symmetric(horizontal: 5.0),
-                    child: Icon(Symbols.bookmark, fill: model.showQueue ? 0 : 1,),
-                  ),
-                ),
-                if (model.queue.length > 0)
-                GestureDetector(
-                  onTap: () => model.toggleShowQueue(),
+                  onTap: () => model.setResourceView(ResourceView.highlights),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 5.0),
-                    child: Icon(Symbols.inbox, fill: model.showQueue ? 1 : 0,),
+                    child: Icon(Symbols.ink_highlighter, fill: model.resourceView == ResourceView.highlights ? 1 : 0,),
                   ),
-                )
+                ),
+
+                if (model.hasQueue)
+                GestureDetector(
+                  onTap: () => model.setResourceView(ResourceView.queue),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                    child: Icon(Symbols.inbox, fill: model.resourceView == ResourceView.queue ? 1 : 0,),
+                  ),
+                ),
+
               ],
             ),
           ),
@@ -612,6 +611,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                 resource: resource,
                 model: model,
                 onTap: () => model.openResource(context, resource),
+                showHighlights: model.resourceView == ResourceView.highlights,
                 
               ),
             );
