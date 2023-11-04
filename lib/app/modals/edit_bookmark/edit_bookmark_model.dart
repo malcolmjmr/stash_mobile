@@ -27,6 +27,8 @@ class EditBookmarkModel {
     refreshData();
   }
 
+  bool changesToSave = false;
+
   onDone() {
     if (resource != null) {
       data.saveResource(resource!);
@@ -34,7 +36,12 @@ class EditBookmarkModel {
   }
 
   updateTitle() {
+    
     resource!.title = titleController.text;
+    setState(() {
+      if (!changesToSave) changesToSave = true;
+    });
+    
   }
 
   refreshData() {
@@ -105,6 +112,14 @@ class EditBookmarkModel {
 
   onTagSearchChange(String value) {
 
+  }
+
+  setRating(int rating) {
+    data.saveResource(resource!);
+    setState(() {
+      resource!.rating = rating;
+      print(resource!.rating);
+    });
   }
 
 

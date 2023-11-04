@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:page_transition/page_transition.dart';
 import 'package:stashmobile/app/common_widgets/editable_tag.dart';
 import 'package:stashmobile/app/common_widgets/fav_icon.dart';
 import 'package:stashmobile/app/common_widgets/modal_header.dart';
@@ -7,6 +8,7 @@ import 'package:stashmobile/app/common_widgets/section_header.dart';
 import 'package:stashmobile/app/common_widgets/tag.dart';
 import 'package:stashmobile/app/home/workspace_listitem.dart';
 import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark_model.dart';
+import 'package:stashmobile/app/modals/tag_selection/tag_selection.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 import 'package:stashmobile/constants/color_map.dart';
 import 'package:stashmobile/extensions/color.dart';
@@ -65,12 +67,23 @@ class _EditBookmarkModalState extends State<EditBookmarkModal> {
               leadingWidth: 0,
               leading: null,
             ),
+           
             SliverToBoxAdapter(
               child: _buildDescription(),
+            ),
+             SliverToBoxAdapter(
+              child: _buildRating(),
             ),
             SliverToBoxAdapter(
               child: _buildSpaces(),
             ),
+            SliverToBoxAdapter(
+              child: _buildTags(),
+            ),
+            SliverToBoxAdapter(
+              child: _buildHighlights(),
+            ),
+            
             // SliverList.builder(
             //   itemCount: model.spaces.length + 1,
             //   itemBuilder: (context, index) {
@@ -83,9 +96,7 @@ class _EditBookmarkModalState extends State<EditBookmarkModal> {
                 
             //   }
             // ),
-            SliverToBoxAdapter(
-              child: _buildTags(),
-            )
+            
 
           ],
         ),
@@ -112,6 +123,8 @@ class _EditBookmarkModalState extends State<EditBookmarkModal> {
                 child: Container(width: double.infinity, height: 2, color: HexColor.fromHex('444444'),),
               ),
               _buildLinkInfo(),
+             
+              
             ],
           ),
         ),
@@ -121,14 +134,21 @@ class _EditBookmarkModalState extends State<EditBookmarkModal> {
 
   Widget _buildLinkInfo() {
     return Container(
+      height: 30,
       child: Row(
-
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
             child: Icon(Icons.link),
           ),
-          Expanded(child: Text(model.resource!.url!))
+          Expanded(child: 
+            ListView(
+              shrinkWrap: true,
+              scrollDirection: Axis.horizontal,
+              children: [Center(child: Text(model.resource!.url!))]
+            )
+          )
         ],
       ),
     );
@@ -176,28 +196,30 @@ class _EditBookmarkModalState extends State<EditBookmarkModal> {
 
   Widget _buildSpaces() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 15),
       child: Column(
           children: [
             SectionHeader(
               title: 'Spaces',
-              //onAddClicked: () => null,
+              actions: [
+                _buildAddButton(),
+              ],
               //onToggleCollapse: () => null,
               //isCollapsed: false,
             ),
             Container(
               width: MediaQuery.of(context).size.width,
-              padding: EdgeInsets.symmetric(horizontal: 10),
+              padding: EdgeInsets.only(right: 10),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
                 color: HexColor.fromHex('222222')
               ),
               child: Column(
                 children: [
-                  _buildAddSpaceInput(
-                    onChanged: (value) => null, 
-                    onSubmitted: (value) => null,
-                  ),
+                  // _buildAddSpaceInput(
+                  //   onChanged: (value) => null, 
+                  //   onSubmitted: (value) => null,
+                  // ),
                   ...model.spaces.map(
                     (space) => GestureDetector(
                       onTap: () => model.removeSpace(space),
@@ -210,13 +232,15 @@ class _EditBookmarkModalState extends State<EditBookmarkModal> {
                               child: WorkspaceListItem(
                                 onTap: () => null,
                                 workspace: space,
+                                isFirstListItem: true,
+                                isLastListItem: true,
                               ),
                             ),
                             Padding(
                               padding: const EdgeInsets.only(right: 3.0),
                               child: Container(
                                 decoration: BoxDecoration(
-                                  color: HexColor.fromHex('444444'),
+                                  //color: HexColor.fromHex('444444'),
                                   borderRadius: BorderRadius.circular(100),
                                 ),
                                 child: Padding(
@@ -240,18 +264,35 @@ class _EditBookmarkModalState extends State<EditBookmarkModal> {
 
     Widget _buildTags() {
       return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 0),
         child: Column(
           children: [
-            if (model.tags.isNotEmpty)
+            
               Padding(
-                padding: const EdgeInsets.only(bottom: 15, left: 10, right: 10),
+                padding: const EdgeInsets.only(bottom: 2, left: 0, right: 0),
                 child: SectionHeader(
                   title: 'Tags',
                   //trailing: Text('Edit'),
                   //onAddClicked: () => null,
+                  actions: [
+                    _buildAddButton(onTap: () {
+                      Navigator.push(
+                        context, 
+                        PageTransition<dynamic>(
+                          type: PageTransitionType.rightToLeft,
+                          alignment: Alignment.topCenter,
+                          curve: Curves.easeInExpo,
+                          child: TagSelectionModal(
+                            resource: model.resource!,
+                            onDone: () => null,
+                          ),
+                          fullscreenDialog: true,
+                        )
+                      );
+                    }),
+                  ],
                   onToggleCollapse: () => null,
-                  isCollapsed: model.showTags,
+                  isCollapsed: model.tags.isNotEmpty ? model.showTags : null,
                 ),
               ),
               Container(
@@ -263,15 +304,23 @@ class _EditBookmarkModalState extends State<EditBookmarkModal> {
                 child: Container(
                   padding: EdgeInsets.symmetric(vertical: 10),
                   width: double.infinity,
-                  child: Wrap(
+                  child: model.tags.isEmpty
+                  ? Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 3.0),
+                    child: Container(
+                      child: Text(
+                        'No tags have been added',
+                        style: TextStyle(
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  )
+                  : Wrap(
                       spacing: 10,
                       runSpacing: 10,
                       crossAxisAlignment: WrapCrossAlignment.start,
                       children: [
-                        _buildAddTagChip(
-                          onChanged: model.onTagSearchChange,
-                          onSubmitted: model.addTag, 
-                        ), 
                         // need to 
                         ...model.tags.map(
                         (tag) => EditableTagChip(
@@ -288,81 +337,100 @@ class _EditBookmarkModalState extends State<EditBookmarkModal> {
       );
     }
 
-    Widget _buildEditButton({Function()? onTap}) {
+    Widget _buildAddButton({Function()? onTap}) {
       return GestureDetector(
         onTap: onTap,
-        child: Text('Edit',
-          style: TextStyle(
-            fontSize: 12,
+        child: Container(
+          decoration: BoxDecoration(
+            color: HexColor.fromHex('222222'),
+            borderRadius: BorderRadius.circular(8)
           ),
-        ),
-      );
-    }
-
-    Widget _buildAddSpaceInput({
-      required Function(String value) onChanged, 
-      required Function(String value) onSubmitted
-    }) {
-      return Row(
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(right: 12.0, left: 15),
-            child: Icon(Symbols.add_rounded, weight: 800,),
-          ),
-          Expanded(
-            child: TextField(
-              onChanged: onChanged,
-              onSubmitted: onSubmitted,
-              style: TextStyle(
-                fontSize: 20
-              ),
-              decoration: InputDecoration(
-                hintText: 'Add Space',
-                hintStyle: TextStyle(
-                  fontSize: 20,
-                ),
-                border: InputBorder.none,
-              ),
+          child: Padding(
+            padding: const EdgeInsets.all(3.0),
+            child: Icon(Symbols.add_rounded, 
+              weight: 1200, 
+              size: 20,
+              //color: Colors.amber,
             ),
           ),
-        ],
+        ),
       );
     }
 
-    Widget _buildAddTagChip({
-      required Function(String value) onChanged, 
-      required Function(String value) onSubmitted
-    }) {
-      return Container(
-        decoration: BoxDecoration(
-          color: HexColor.fromHex('444444'),
+    Widget _buildRating() {
+      final color = HexColor.fromHex(colorMap[model.workspaceModel.workspace.color ?? 'grey']!);
+      return Padding(
+        padding: const EdgeInsets.only(left: 20.0, right: 20, top: 20),
+        child: Column(
+          children: [
+            SectionHeader(
+              title: 'Rating',
+              
+              //onToggleCollapse: () => null,
+              //isCollapsed: false,
+            ),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                child: Row(
+                  children: [1, 2, 3, 4, 5, 6, 7].map((rating) {
+                    return Expanded(
+                      child: GestureDetector(
+                        onTap: () => model.setRating(rating),
+                        child: Container(
+                          decoration: BoxDecoration(
+                              color: color.withOpacity((rating + 3)/10),
+                              border: model.resource?.rating == rating
+                              ?  Border.symmetric(vertical: BorderSide(color: Colors.black, width: 3))
+                              : null
+                            ),
+                          height: 30,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                )
+              ),
+            ),
+          ],
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(3.0),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
+      );
+    }
+
+    Widget _buildHighlights() {
+      return model.resource!.highlights.isNotEmpty 
+      ? Container(
+        padding: const EdgeInsets.only(left: 20.0, right: 20, top: 15),
+        child: Container(
+          child: Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.only(right: 3),
-                child: Icon(Symbols.add_rounded, weight: 800,),
-              ),
-              Expanded(
-                child: TextField(
-                  onChanged: onChanged,
-                  onSubmitted: onSubmitted,
-                  style: TextStyle(
-                    fontSize: 16
-                  ),
-                  decoration: InputDecoration(
-                    hintText: 'Add Tag',
-                    hintStyle: TextStyle(
-                      fontSize: 16,
-                    ),
-                    border: InputBorder.none,
-                  ),
+              SectionHeader(title: 'Highlights'),
+              Container(
+                 decoration: BoxDecoration(
+                  color: HexColor.fromHex('222222'),
+                  borderRadius: BorderRadius.circular(8)
                 ),
-              ),
+                child: Padding(
+                  padding: const EdgeInsets.all(15.0),
+                  child: Column(
+                    children: model.resource!.highlights.map((highlight)  {
+                      return _buildHighlight(highlight);
+                    }).toList(),
+                  ),
+                )
+              )
             ],
+          ),
+        ),
+      )
+      : Container();
+    }
+
+    Widget _buildHighlight(Highlight highlight) {
+      return Container(
+        child: Text(highlight.text,
+          style: TextStyle(
+            fontSize: 16
           ),
         ),
       );

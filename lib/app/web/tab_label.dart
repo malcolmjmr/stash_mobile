@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 
@@ -12,10 +13,12 @@ import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark.dart';
 import 'package:stashmobile/app/modals/move_tabs/move_tabs_modal.dart';
 import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark_model.dart';
 import 'package:stashmobile/app/web/tab_menu.dart';
+import 'package:stashmobile/app/web/vertical_tabs_modal.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 import 'package:stashmobile/constants/color_map.dart';
 import 'package:stashmobile/extensions/color.dart';
 import 'package:stashmobile/models/resource.dart';
+import 'package:stashmobile/routing/app_router.dart';
 
 class OpenTabLabel extends StatelessWidget {
   const OpenTabLabel({Key? key, 
@@ -37,45 +40,43 @@ class OpenTabLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
+    final isIncognito = model.tabs.firstWhereOrNull((t) => t.model.resource.id == resource.id)?.incognito == true;
+
     List<SlidableAction> leftActions = [];
 
     return SectionListItemContainer(
       isFirstListItem: isFirstListItem,
       isLastListItem: isLastListItem,
+      isHighlighted: isLastActiveTab,
       onTap: onTap,
       child: GestureDetector(
         onLongPress: () {
-          if (model.workspace.showWebView) return;
-          HapticFeedback.mediumImpact();
+          
           showCupertinoModalBottomSheet(
             context: context, 
             builder: (context) => Material(
               type: MaterialType.transparency,
-              child: Container(
-                height: MediaQuery.of(context).size.height * .66,
-                width: MediaQuery.of(context).size.width * .66,
-                child: InAppWebView(
-                  initialUrlRequest: URLRequest(url: Uri.parse(resource.url!)),
-                ),
+              child: VeritcalTabsModal(
+                workspaceModel: model
               ),
             )
           );
         },
         child: Slidable(
           key: Key(resource.toString()),
-          
+          closeOnScroll: true,
           startActionPane: ActionPane(
             children: [
-              if (model.workspace.title != null)
+              if (model.workspace.title != null && !resource.isSaved)
               SlidableAction(
-                icon: Icons.move_to_inbox_outlined,
+                icon: Symbols.move_to_inbox_rounded,
                 foregroundColor: Colors.white,
                 backgroundColor: Colors.orange,
                 onPressed: (context) => model.stashTab(resource),
               ),
               if (resource.isSaved)
               SlidableAction(
-                icon: Icons.edit_outlined,
+                icon: Icons.bookmark_rounded,
                 backgroundColor: Colors.green,
                 onPressed: (context) => showCupertinoModalBottomSheet(
                   context: context, 
@@ -87,7 +88,7 @@ class OpenTabLabel extends StatelessWidget {
               )
               else 
               SlidableAction(
-                icon: Icons.bookmark_add_outlined,
+                icon: Symbols.bookmark_add_rounded,
                 backgroundColor: Colors.green,
                 onPressed: (context) => model.workspace.title != null 
                   ? model.saveTab(resource) 
@@ -99,23 +100,38 @@ class OpenTabLabel extends StatelessWidget {
                       }
                     )
               ),
+              if (resource.isSaved)
               SlidableAction(
-                icon: Symbols.move_item,
-                backgroundColor: Colors.purple,
+                icon: Symbols.priority_high_rounded,
+                backgroundColor: Colors.green.withOpacity(0.8),
                 onPressed: (context) => showCupertinoModalBottomSheet(
                   context: context, 
                   builder: (context) {
-                    return MoveToSpaceModal(
-                      resource: resource,
-                      onSpaceSelected: (space) => model.removeTab(resource), 
-                      workspaceViewModel: model
-                    );
+                    return EditBookmarkModal(resource: resource, workspaceViewModel: model,);
+                    //return MoveToFolderModal(resource: resource, onFolderSelected: (_) => null,);
                   }
-                ),
+                )
+              ),
+              if (resource.isSaved)
+              SlidableAction(
+                icon: Symbols.tag_rounded,
+                backgroundColor: Colors.green.withOpacity(0.6),
+                onPressed: (context) => showCupertinoModalBottomSheet(
+                  context: context, 
+                  builder: (context) {
+                    return EditBookmarkModal(resource: resource, workspaceViewModel: model,);
+                    //return MoveToFolderModal(resource: resource, onFolderSelected: (_) => null,);
+                  }
+                )
+              ),
+              SlidableAction(
+                icon: Symbols.ios_share_rounded,
+                backgroundColor: Colors.blue.withOpacity(0.6),
+                onPressed: (context) => model.onShare(resource),
               ),
             ],
             motion: const ScrollMotion(),
-            dismissible: DismissiblePane(onDismissed: () => model.workspace.title != null 
+            dismissible: DismissiblePane(onDismissed: () => model.workspace.title != null && !resource.isSaved
               ? model.stashTab(resource)
               : showCupertinoModalBottomSheet(
                   context: context, 
@@ -125,7 +141,8 @@ class OpenTabLabel extends StatelessWidget {
                   }
                 )
             ),
-            openThreshold: 0.5,
+            openThreshold: 0.25,
+            extentRatio: resource.isSaved ? 0.75 : 0.5,
           ),
           endActionPane: ActionPane(
             children: [
@@ -147,22 +164,36 @@ class OpenTabLabel extends StatelessWidget {
               //   backgroundColor: Colors.blue,
               //   onPressed: (context) => model.onShare(resource),
               // ),
+              // SlidableAction(
+              //   icon: Icons.refresh,
+              //   backgroundColor: Colors.orange,
+              //   foregroundColor: Colors.white,
+              //   onPressed: (context) => model.reloadTab(resource)
+              // ),
               SlidableAction(
-                icon: Icons.refresh,
-                backgroundColor: Colors.orange,
-                foregroundColor: Colors.white,
-                onPressed: (context) => model.reloadTab(resource)
-              ),
-              SlidableAction(
-                icon: Icons.add,
+                icon: Icons.add_box_rounded,
                 backgroundColor: Colors.green,
                 onPressed: (context) => model.createNewTab(),
+              ),
+              SlidableAction(
+                icon: Symbols.new_window_rounded,
+                backgroundColor: Colors.orange,
+                foregroundColor: Colors.white,
+                onPressed: (context) => Navigator.of(context).pushNamed(AppRoutes.workspace),
               )
             ],
             motion: const StretchMotion(),
             // A pane can dismiss the Slidable.
-            dismissible: DismissiblePane(onDismissed: () => model.createNewTab()),
+            dismissible: DismissiblePane(
+              onDismissed: () {
+                Navigator.of(context).pushNamed(AppRoutes.workspace);
+              },
+              //closeOnCancel: true,
+              //confirmDismiss: () => Future.value(false),
+            ),
+            
             openThreshold: 0.25,
+            extentRatio: 0.50,
           ),
           child: Padding(
             padding: const EdgeInsets.all(10.0),
@@ -187,18 +218,23 @@ class OpenTabLabel extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
-                        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * (resource.isSaved == true ? .65 : .75)),
+                        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * (resource.isSaved == true || isIncognito ? .65 : .75)),
                         child: Text(resource.title ?? '', 
                           overflow: TextOverflow.ellipsis,
                           maxLines: 1,
                           style: TextStyle(
-                            color: isLastActiveTab ? Colors.amber : Colors.white,
+                            color: Colors.white,
                             fontWeight: FontWeight.w500,
                             letterSpacing: 0.5,
                             fontSize: 16,  
                             overflow: TextOverflow.ellipsis
                           ),
                         ),
+                      ),
+                      if (isIncognito) 
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 5),
+                        child: Icon(Icons.visibility_off),
                       ),
                       if (resource.isSaved == true) 
                       Padding(
@@ -227,14 +263,17 @@ class OpenTabLabel extends StatelessWidget {
                 //Expanded(child: Container(),),
                 GestureDetector(
                   onTap: () => model.closeTab(resource),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(100),
-                      color: HexColor.fromHex('333333')
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(2.0),
-                      child: Icon(Icons.close),
+                  child: Padding(
+                    padding: const EdgeInsets.all(1.0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(100),
+                        color: HexColor.fromHex('333333')
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(2.0),
+                        child: Icon(Icons.close),
+                      ),
                     ),
                   ),
                 )

@@ -117,7 +117,8 @@ class SearchView extends ConsumerWidget {
                         isLastListItem: index == model.visibleResources.length,
                         workspace: resource.contexts.isEmpty ? null : model.workspaceMap[resource.contexts.first],
                         resource: resource, 
-                        onTap: () => model.openResource(context, resource)
+                        onTap: () => model.openResource(context, resource),
+                        onTagClicked: (tag) => model.replaceSelectedTags(tag),
                       ),
                     );
                   }
@@ -174,6 +175,7 @@ class SearchView extends ConsumerWidget {
         scrollDirection: Axis.horizontal,
         itemCount: model.visibleTags.length + 1,
         padding: EdgeInsets.only(top: 20),
+        controller: model.tagsScrollController,
         itemBuilder: (context, index) {
           if (index == 0) {
             return SizedBox(width: 20,);
@@ -185,7 +187,10 @@ class SearchView extends ConsumerWidget {
                 child: TagChip(
                   tag: tag,
                   isSelected: tag.isSelected,
-                  onTap: () => model.toggleTagSelection(tag),
+                  onTap: () => model.replaceSelectedTags(tag),
+                  onLongPress: () => model.toggleTagSelection(tag),
+                   // tag negation 
+                  
                 ),
               ),
             );

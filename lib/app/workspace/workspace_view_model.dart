@@ -50,6 +50,8 @@ class WorkspaceViewModel extends ChangeNotifier {
   bool hasQueue = false;
   bool hasHighlights = false;
   bool hasFavorites = false;
+  bool hasDomains = false;
+  bool hasTags = false;
 
   ResourceView? resourceView;
   //List<Resource> folders = [];
@@ -59,7 +61,7 @@ class WorkspaceViewModel extends ChangeNotifier {
   List<Tag> selectedTags = [];
   List<Tag> visibleTags = [];
   List<Resource> visibleResources = [];
-
+  List<Domain> domains = [];
   List<TabView> tabs = [];
 
   
@@ -89,7 +91,9 @@ class WorkspaceViewModel extends ChangeNotifier {
     if (params?.workspaceId == Workspace.all().id) {
       workspace = Workspace.all();
     } else {
-      workspace = params?.workspaceId != null ? await data.getWorkspace(params!.workspaceId!) : Workspace(); 
+      workspace = params?.workspaceId != null 
+        ? await data.getWorkspace(params!.workspaceId!) 
+        : Workspace(color: colorMap.keys.toList()[(new Random()).nextInt(9)]); 
     }
 
     //context.read(workspaceProvider).state = workspace.id;
@@ -147,6 +151,10 @@ class WorkspaceViewModel extends ChangeNotifier {
 
     if (workspace.activeTabIndex! > workspace.tabs.length - 1) {
       workspace.activeTabIndex = workspace.tabs.length - 1;
+    }
+
+    if (workspace.activeTabIndex == -1) {
+      workspace.activeTabIndex = 0;
     }
 
     final openedTab = workspace.showWebView ? workspace.tabs[workspace.activeTabIndex!] : null;
@@ -250,6 +258,7 @@ class WorkspaceViewModel extends ChangeNotifier {
   refreshResources() {
 
     Map<String, Tag> tagMap = {};
+    Map<String, Domain> domainMap = {};
 
     allResources.sort(sortResources);
 
@@ -261,13 +270,24 @@ class WorkspaceViewModel extends ChangeNotifier {
         hasHighlights = true;
       }
 
-      // if (resource.rating != null && !hasFavorites) {
-      //   hasFavorites = true;
-      // }
+      if (resource.rating > 0 && !hasFavorites) {
+        hasFavorites = true;
+      }
 
       if (resource.isQueued == true && !hasQueue) {
         hasQueue = true;
       }
+
+      final uri = Uri.parse(resource.url!);
+      if (domainMap[uri.host] == null) domainMap[uri.host] = Domain(
+        title: uri.host,
+        url: 'https://' + uri.host
+      );
+      domainMap[uri.host]!.count += 1;
+      if (!hasDomains && domainMap[uri.host]!.count == 2) {
+        hasDomains = true;
+      }
+
 
       if (resource.tags.isNotEmpty) {
 
@@ -290,6 +310,11 @@ class WorkspaceViewModel extends ChangeNotifier {
         }
       }
     }
+
+    domains = domainMap.values.where((domain) {
+      return domain.count > 1;
+    }).toList();
+
 
     List<Tag> sortedTags = tagMap.entries.where((e) => e.value.valueCount > 1).map((e) => e.value).toList();
     sortedTags.sort((a, b) { 
@@ -344,6 +369,8 @@ class WorkspaceViewModel extends ChangeNotifier {
     selectedTags = [];
     updateVisibleResources();
   }
+
+  
 
   toggleTagSelection(Tag selectedTag) {
     final index = selectedTags.indexWhere((t) => t.name == selectedTag.name);
@@ -621,7 +648,8 @@ class WorkspaceViewModel extends ChangeNotifier {
   }
 
   updateTabFromUrlField(Resource resource, String url) async {
-    
+    print('updating tab');
+    print(url);
     TabView tab = tabs.firstWhere((t) => t.model.resource.id == resource.id);
     await tab.model.controller.loadUrl(urlRequest: URLRequest(url: Uri.parse(url)));
 
@@ -798,7 +826,7 @@ class WorkspaceViewModel extends ChangeNotifier {
     HapticFeedback.mediumImpact();
     tabPageController?.jumpToPage(max(0, workspace.activeTabIndex! - 1));
     setState(() {
-      tabs = tabs.where((t) => t.model.resource.id != resource.id).toList();
+      tabs.removeWhere((t) => t.model.resource.id == resource.id);
       if (workspace.activeTabIndex == tabs.length) {
         workspace.activeTabIndex == tabs.length - 1;
       }
@@ -955,7 +983,7 @@ class WorkspaceViewModel extends ChangeNotifier {
 
 
 
-  checkTabForSearch(TabViewModel model, InAppWebViewController controller, Uri? uri) {
+  checkTabForSearch(TabViewModel model, InAppWebViewController controller, Uri? uri) async {
 
     final now = DateTime.now().microsecondsSinceEpoch;
 
@@ -965,6 +993,10 @@ class WorkspaceViewModel extends ChangeNotifier {
     final matchingDomain = data.domains.firstWhereOrNull((d) => d.url == uri?.origin);
     
     if (matchingDomain != null) {
+
+      if (matchingDomain.favIconUrl == null) {
+        matchingDomain.favIconUrl = await model.getFaviconUrl(controller);
+      }
 
       bool isSearch = false;
       if (matchingDomain.searchTemplate != null) {

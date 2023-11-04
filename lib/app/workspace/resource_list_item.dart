@@ -15,6 +15,7 @@ import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:stashmobile/app/common_widgets/section_list_item.dart';
 import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark.dart';
 import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark_model.dart';
+import 'package:stashmobile/app/web/tab_preview_modal.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 import 'package:stashmobile/models/resource.dart';
 
@@ -58,16 +59,7 @@ class ResourceListItem extends StatelessWidget {
           HapticFeedback.mediumImpact();
           showCupertinoModalBottomSheet(
             context: context, 
-            builder: (context) => Material(
-              type: MaterialType.transparency,
-              child: Container(
-                height: MediaQuery.of(context).size.height * .66,
-                width: MediaQuery.of(context).size.width * .66,
-                child: InAppWebView(
-                  initialUrlRequest: URLRequest(url: Uri.parse(resource.url!)),
-                ),
-              ),
-            )
+            builder: (context) => TabPreviewModal(resource: resource,)
           );
         },
         child: Slidable(
@@ -145,6 +137,7 @@ class ResourceListItem extends StatelessWidget {
                                 fontSize: 16,  
                                 overflow: TextOverflow.ellipsis),
                               ),
+                            if (resource.url != null)
                             Row(
                               children: [
                                 Text(Uri.parse(resource.url!).host.replaceAll('www.', '') ?? '', 

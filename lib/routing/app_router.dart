@@ -99,7 +99,7 @@ class AppRouter {
           );
       case AppRoutes.history:
         return PageTransition<dynamic>(
-            type: PageTransitionType.leftToRight,
+            type: PageTransitionType.rightToLeft,
             alignment: Alignment.topCenter,
             curve: Curves.easeInExpo,
             child: ActivityHistoryView(),

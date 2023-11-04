@@ -33,7 +33,7 @@ class EditableTagChip extends StatelessWidget {
               ),
               Padding(
                 padding: const EdgeInsets.only(left: 3.0),
-                child: Icon(isSelected ? Icons.remove : Icons.add),
+                child: Icon(isSelected ? Icons.remove : Icons.add, size: 16,),
               )
             ],
           ),

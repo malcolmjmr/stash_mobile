@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:stashmobile/app/common_widgets/domain_icon.dart';
 import 'package:stashmobile/app/common_widgets/freeze_container.dart';
 import 'package:stashmobile/app/modals/create_new_tab/create_new_tab_modal.dart';
@@ -98,16 +99,73 @@ class _TabEditModalState extends State<TabEditModal> {
         //borderRadius: BorderRadius.circular(8),
         color: Colors.black,
       ),
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: model.visibleDomains.length,
-        itemBuilder: (context, index) {
-          final domain = model.visibleDomains[index];
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10.0),
-            child: Center(child: DomainIcon(domain: domain, onTap: () => model.createNewTab(context, domain: domain))),
-          );
-        },
+      child: Container(
+        
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    height: 35,
+                    decoration: BoxDecoration(
+                      //color: HexColor.fromHex('333333'),
+                      //borderRadius: BorderRadius.circular(8)
+                    ),
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: model.visibleDomains.length,
+                      itemBuilder: (context, index) {
+                        final domain = model.visibleDomains[index];
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                          child: Center(child: DomainIcon(domain: domain, 
+                            size: 26,
+                            onTap: () => model.createNewTab(context, domain: domain), 
+                            onLongPress: () => model.deleteDomain(domain),)),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: HexColor.fromHex('333333'),
+                  borderRadius: BorderRadius.circular(8)
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 2.0),
+                  child: Row(
+                    children: [
+                      CreateTabButton(
+                        icon: Symbols.add_box_rounded, 
+                        onTap: () => model.createNewTab(context)
+                      ),
+                      CreateTabButton(
+                        icon: Symbols.visibility_off,
+                        onTap: () => model.createNewTab(context, incognito: true),
+                      ),
+                      CreateTabButton(
+                        icon: Symbols.create_new_folder_rounded, 
+                        onTap: () => model.createNewSpace(context),
+                      ),
+
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            
+          ],
+        ),
       ),
     );
   }
@@ -180,6 +238,39 @@ class _TabEditModalState extends State<TabEditModal> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+
+class CreateTabButton extends StatelessWidget {
+  final Function() onTap;
+  final Function()? onLongPress;
+  final IconData icon;
+  final Color? color;
+
+  const CreateTabButton({
+    Key? key,
+    required this.icon,
+    required this.onTap,
+    this.onLongPress,
+    this.color,
+    }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      onLongPress: onLongPress,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 3.0),
+        child: Container(
+          child: Icon(icon,
+           color: color,
+           size: 30,
+          )
         ),
       ),
     );

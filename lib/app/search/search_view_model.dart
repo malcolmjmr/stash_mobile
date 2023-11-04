@@ -194,6 +194,9 @@ class SearchViewModel with ChangeNotifier {
     }
   }
 
+
+  ScrollController tagsScrollController  = ScrollController();
+
   toggleTagSelection(Tag tag) {
     final index = selectedTags.indexWhere((t) => t.name == tag.name);
     if (index > -1) {
@@ -201,6 +204,18 @@ class SearchViewModel with ChangeNotifier {
     } else {
       selectedTags.add(tag);
     }
+    tagsScrollController.animateTo(0, duration: Duration(milliseconds: 500), curve: Curves.bounceIn);
+    updateSearchResults(searchString);
+  }
+
+  replaceSelectedTags(Tag tag) {
+    final index = selectedTags.indexWhere((t) => t.name == tag.name);
+    if (index > -1) {
+      selectedTags.removeAt(index);
+    } else {
+      selectedTags = [tag];
+    }
+    tagsScrollController.animateTo(0, duration: Duration(milliseconds: 500), curve: Curves.bounceIn);
     updateSearchResults(searchString);
   }
 }

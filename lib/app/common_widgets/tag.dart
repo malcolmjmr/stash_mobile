@@ -6,16 +6,22 @@ class TagChip extends StatelessWidget {
   final Tag tag;
   final bool isSelected;
   final Function()? onTap;
+  final Function()? onLongPress;
+  final Function()? onDoubleTap;
   const TagChip({Key? key, 
     this.isSelected = false, 
     required this.tag,
-    this.onTap
+    this.onTap,
+    this.onLongPress,
+    this.onDoubleTap,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
+      onDoubleTap: onDoubleTap,
+      onLongPress: onLongPress,
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),

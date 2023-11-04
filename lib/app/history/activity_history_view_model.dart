@@ -28,7 +28,7 @@ class ActivityHistoryViewModel extends ChangeNotifier {
   List<Section> sections = [];
 
   getTimeSections() async {
-    spaces = data.workspaces.where((s) => s.isIncognito != true && s.updated != null).toList();
+    spaces = data.workspaces.where((s) => s.isIncognito != true && s.updated != null && s.deleted == null).toList();
     spaces.sort(sortSpaces);
     Map<String, Section> sectionMap = {};
     final now = DateTime.now();
@@ -41,6 +41,11 @@ class ActivityHistoryViewModel extends ChangeNotifier {
           sectionMap[TimeDeltaStrings.today] = Section(TimeDeltaStrings.today, date);
         }
         sectionMap[TimeDeltaStrings.today]!.spaces.add(space);
+      } else if (timeDelta.inDays < 2) {
+        if (sectionMap[TimeDeltaStrings.yesterday] == null) {
+          sectionMap[TimeDeltaStrings.yesterday] = Section(TimeDeltaStrings.yesterday, date);
+        }
+        sectionMap[TimeDeltaStrings.yesterday]!.spaces.add(space);
       } else if (timeDelta.inDays < 7) {
         if (sectionMap[TimeDeltaStrings.previous7Days] == null) {
           sectionMap[TimeDeltaStrings.previous7Days] = Section(TimeDeltaStrings.previous7Days, date);
@@ -101,6 +106,7 @@ class Section {
 
 class TimeDeltaStrings {
   static const today = 'Today';
+  static const yesterday = 'Yesterday';
   static const previous7Days = 'Previous 7 Days';
   static const previous30Days = 'Previous 30 Days';
 }

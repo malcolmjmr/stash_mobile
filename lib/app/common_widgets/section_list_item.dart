@@ -8,6 +8,7 @@ class SectionListItemContainer extends StatefulWidget {
     Key? key, 
     required this.isFirstListItem, 
     required this.isLastListItem,
+    this.isHighlighted = false,
     this.onTap,
     this.child
   }) : super(key: key);
@@ -16,6 +17,7 @@ class SectionListItemContainer extends StatefulWidget {
   final bool isLastListItem;
   final Widget? child;
   final VoidCallback? onTap;
+  final bool isHighlighted;
 
   @override
   State<SectionListItemContainer> createState() => _SectionListItemContainerState();
@@ -58,7 +60,7 @@ class _SectionListItemContainerState extends State<SectionListItemContainer> {
         ),
         child: Container(
             decoration: BoxDecoration(
-              color: isTapped ? HexColor.fromHex('333333') : HexColor.fromHex('222222'),
+              color: isTapped || widget.isHighlighted ? HexColor.fromHex('333333') : HexColor.fromHex('222222'),
             ),
           child: Container(
             child: widget.child,

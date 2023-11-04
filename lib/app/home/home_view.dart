@@ -2,10 +2,12 @@ import 'dart:math';
 import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:stashmobile/app/common_widgets/domain_icon.dart';
+import 'package:stashmobile/app/common_widgets/fav_icon.dart';
 import 'package:stashmobile/app/common_widgets/freeze_container.dart';
 import 'package:stashmobile/app/common_widgets/list_item.dart';
 import 'package:stashmobile/app/common_widgets/search_field.dart';
@@ -16,6 +18,7 @@ import 'package:stashmobile/app/home/workspace_listitem.dart';
 import 'package:flutter/material.dart';
 import 'package:stashmobile/app/modals/create_new_tab/create_new_tab_modal.dart';
 import 'package:stashmobile/app/search/search_view_model.dart';
+import 'package:stashmobile/app/web/tab_preview_modal.dart';
 import 'package:stashmobile/extensions/color.dart';
 import 'package:stashmobile/models/tag.dart';
 import 'package:stashmobile/routing/app_router.dart';
@@ -98,9 +101,8 @@ class HomeView extends ConsumerWidget {
                       );
                     }
                   ),
-
-                  //if (model.showFavoriteSpaces && model.favorites.isNotEmpty)
                   SliverPadding(padding: EdgeInsets.only(bottom: 10)),
+                  if (model.tags.isNotEmpty)
                   SliverToBoxAdapter(
                     child: SectionHeader(
                       title: 'Tags',
@@ -108,11 +110,23 @@ class HomeView extends ConsumerWidget {
                       onToggleCollapse: () => model.toggleShowTags(),
                     )
                   ),
-                  if (model.showTags)
+                  if (model.showTags && model.tags.isNotEmpty)
                   SliverToBoxAdapter(
                     child: _buildTags(context, model),
                   ),
 
+                  SliverPadding(padding: EdgeInsets.only(bottom: 10)),
+                  if (model.highlightedResources.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: SectionHeader(
+                      title: 'Highlights',
+                    )
+                  ),
+                  if (model.highlightedResources.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: _buildHighlights(context, model),
+                  ),
+                  
                   SliverToBoxAdapter(child: SizedBox(height: 100),)
                 ]
               ),
@@ -149,7 +163,7 @@ class HomeView extends ConsumerWidget {
                 padding: const EdgeInsets.only(right: 20.0),
                 child: DomainIcon(
                   domain: domain,
-                  onTap: () => model.createNewTab(context, url: domain.url),
+                  onTap: () => model.createNewTab(context, domain: domain),
                 ),
               ),
             );
@@ -183,6 +197,103 @@ class HomeView extends ConsumerWidget {
           ).toList(),
         ),
       ),
+    );
+  }
+
+  Widget _buildHighlights(BuildContext context, HomeViewModel model) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        color: HexColor.fromHex('222222')
+      ),
+      child: Container(
+          padding: EdgeInsets.symmetric(vertical: 10),
+          width: double.infinity,
+          child: Column(
+            children: [
+              ...model.highlightedResources.sublist(0, min(20, model.highlightedResources.length)).map((resource) {
+                final highlight = resource.highlights[Random().nextInt(resource.highlights.length)];
+                return Container(
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: Container(
+                          height:30,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: resource.tags.length,
+                            
+                            itemBuilder: (context, index) {
+                              final tagName = resource.tags[index];
+                              return Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.only(right: 5.0),
+                                  child: TagChip(
+                                    tag: Tag(name: tagName),
+                                    onTap: () => null,
+                                  ),
+                                ),
+                              );
+                            }
+                          ),
+                        ),
+                      ),
+                      Text(highlight.text,
+                        style: TextStyle(
+                          fontSize: 16,
+                        ),
+                      ),
+
+                      GestureDetector(
+                        onTap: () {
+                          HapticFeedback.mediumImpact();
+                          showCupertinoModalBottomSheet(
+                            context: context, 
+                            builder: (context) => TabPreviewModal(resource: resource,)
+                          );
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: Container(
+                            height: 30,
+                            child: Row(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 8.0),
+                                  child: FavIcon(resource: resource, size: 24,),
+                                ),
+                                Expanded(
+                                  child: ListView(
+                                    scrollDirection: Axis.horizontal,
+                                    children: [Center(
+                                      child: Text(resource.title!,
+                                        style: TextStyle(fontSize: 16),
+                                      ),
+                                    ),]
+                                  ),
+                                )
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 10.0),
+                        child: Divider(thickness: 1, ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+              Container(
+                padding: EdgeInsets.symmetric(vertical: 10),
+                child: Center(child: Text('Show All Highlights')),
+              )
+            ],
+          )
+        ),
     );
   }
 
@@ -252,7 +363,16 @@ class Footer extends StatelessWidget {
   final HomeViewModel model;
   @override
   Widget build(BuildContext context) {
-    return FreezeContainer(
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.black,
+        border: Border(
+          top: BorderSide(
+            color: HexColor.fromHex('555555'), 
+            width: 1
+          )
+        )
+      ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 5.0),
         child: Row(
@@ -288,7 +408,7 @@ class CreateFolderButton extends StatelessWidget {
       onTap: onTap,
       child: Padding(
         padding: EdgeInsets.all(5), 
-        child: Icon(Symbols.create_new_folder, size: 35.0, weight: 300, color: Colors.amber),
+        child: Icon(Symbols.create_new_folder, size: 35.0, weight: 300, color: HexColor.fromHex('888888'),),
       ),
     );
   }
@@ -307,7 +427,7 @@ class CreateTabButton extends StatelessWidget {
       onDoubleTap: onDoubleTap,
       child: Padding(
         padding: EdgeInsets.all(5), 
-        child: Icon(Symbols.add_box, size: 32.0, weight: 300.0, color: Colors.amber,),
+        child: Icon(Symbols.add_box, size: 32.0, weight: 300.0, color: HexColor.fromHex('888888')),
       ),
     );
   }

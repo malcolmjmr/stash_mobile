@@ -17,6 +17,7 @@ class Domain {
 
   late int created;
   int? lastVisited;
+  int count = 0;
 
   Domain({
     required this.url, 
@@ -60,6 +61,12 @@ class Domain {
     return json;
   }
 
+  @override
+  String toString() {
+    // TODO: implement toString
+    return toJson().toString();
+  }
+
   static const String searchPlaceholder = '<|search|>';
 
   checkIfUrlIsSearch(String url) {
@@ -73,6 +80,20 @@ class Domain {
       }
     } 
     return false;
+  }
+
+  getSearchQuery(String url) {
+    if (searchTemplate != null) {
+      final searchPrefix = searchTemplate!.split(searchPlaceholder)[0];
+      final matchesSearchTemplate = url.startsWith(searchPrefix);
+      if (matchesSearchTemplate) {
+          String searchText = url.split(searchPrefix)[1];
+          searchText = Uri.decodeComponent(searchText.split('&')[0])
+            .replaceAll('+', ' ');
+          return searchText;
+      }
+    } 
+    return null;
   }
 
 

@@ -8,6 +8,7 @@ import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:stashmobile/app/common_widgets/section_list_item.dart';
 import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark.dart';
 import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark_model.dart';
+import 'package:stashmobile/app/web/tab_preview_modal.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 import 'package:stashmobile/models/resource.dart';
 
@@ -36,6 +37,7 @@ class TabListItem extends StatelessWidget {
     return SectionListItemContainer(
       isFirstListItem: isFirstListItem,
       isLastListItem: isLastListItem,
+      isHighlighted: isLastActiveTab,
       onTap: onTap,
       child: GestureDetector(
         onLongPress: () {
@@ -43,16 +45,7 @@ class TabListItem extends StatelessWidget {
           HapticFeedback.mediumImpact();
           showCupertinoModalBottomSheet(
             context: context, 
-            builder: (context) => Material(
-              type: MaterialType.transparency,
-              child: Container(
-                height: MediaQuery.of(context).size.height * .66,
-                width: MediaQuery.of(context).size.width * .66,
-                child: InAppWebView(
-                  initialUrlRequest: URLRequest(url: Uri.parse(resource.url!)),
-                ),
-              ),
-            )
+            builder: (context) => TabPreviewModal(resource: resource,)
           );
         },
         child: Slidable(
@@ -131,7 +124,7 @@ class TabListItem extends StatelessWidget {
                   child: Text(resource.title ?? '', 
                     maxLines: 1,
                     style: TextStyle(
-                      color: isLastActiveTab ? Colors.amber : Colors.white,
+                      color: Colors.white,
                       fontWeight: FontWeight.w400,
                       letterSpacing: 0.5,
                       fontSize: 16,  

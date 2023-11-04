@@ -8,8 +8,14 @@ class CreateWorkspaceModal extends StatefulWidget {
 
   final Workspace? workspace;
   final String? initialTitle;
+  final String? initialColor;
   final Function(Workspace workspace) onDone;
-  const CreateWorkspaceModal({Key? key, required this.onDone, this.workspace, this.initialTitle}) : super(key: key);
+  const CreateWorkspaceModal({Key? key, 
+  required this.onDone, 
+  this.workspace, 
+  this.initialTitle,
+  this.initialColor,
+  }) : super(key: key);
 
 
   @override
@@ -29,6 +35,10 @@ class _CreateWorkspaceModalState extends State<CreateWorkspaceModal> {
       workspace = widget.workspace!;
     } else {
       workspace = Workspace();
+    }
+
+    if (widget.initialColor != null) {
+      workspace.color = widget.initialColor;
     }
 
     if (widget.initialTitle != null) {
@@ -83,10 +93,10 @@ class _CreateWorkspaceModalState extends State<CreateWorkspaceModal> {
                 ),
               ),
             ),
-            Text(workspace.title != null && workspace.title!.isNotEmpty ? workspace.title! : 'New Space',
+            Text('Create New Space',
               style: TextStyle(
                 fontSize: 20, 
-                color: HexColor.fromHex(colorMap[workspace.color ?? 'grey']!)
+                //color: HexColor.fromHex(colorMap[workspace.color ?? 'grey']!)
               ),
             ),
             GestureDetector(

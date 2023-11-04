@@ -6,10 +6,12 @@ class DomainIcon extends StatelessWidget {
   final Function() onTap;
   final Function()? onLongPress;
   final Domain domain;
+  final double size;
   const DomainIcon({Key? key,
     required this.domain, 
     required this.onTap, 
-    this.onLongPress
+    this.onLongPress,
+    this.size = 30,
   }) : super(key: key);
 
   @override
@@ -17,20 +19,17 @@ class DomainIcon extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       onLongPress: onLongPress,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Container(
-            color: HexColor.fromHex('333333'),
-            height: 30,
-            width: 30,
-            child: domain.favIconUrl != null 
-              ? Image.network(domain.favIconUrl!,
-                //loadingBuilder: (context, child, loadingProgress) => Icon(Icons.language, size: 30,),
-                errorBuilder: (context, child, loadingProgress) => Icon(Icons.public, size: 30,),
-              )
-              : Icon(Icons.public, size: 30,)
-            ),
-        ),
+        child: Container(
+          //color: HexColor.fromHex('333333'),
+          height: size,
+          width: size,
+          child: domain.favIconUrl != null 
+            ? Image.network(domain.favIconUrl!,
+              //loadingBuilder: (context, child, loadingProgress) => Icon(Icons.language, size: 30,),
+              errorBuilder: (context, child, loadingProgress) => Icon(Icons.public, size: size,),
+            )
+            : Icon(Icons.public, size: size,)
+          ),
       );
             
   }

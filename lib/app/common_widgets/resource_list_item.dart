@@ -34,6 +34,7 @@ class ResourceListItem extends StatelessWidget {
     
     required this.resource, 
     required this.onTap,
+    this.onTagClicked,
     this.workspace,
     this.isFirstListItem = false,
     this.isLastListItem = false,
@@ -44,6 +45,7 @@ class ResourceListItem extends StatelessWidget {
   final Resource resource;
   final Workspace? workspace;
   final VoidCallback onTap;
+  final Function(Tag)? onTagClicked;
   final bool isLastListItem;
   final bool isFirstListItem;
   final bool isLastActiveTab;
@@ -168,10 +170,10 @@ class ResourceListItem extends StatelessWidget {
                   padding: const EdgeInsets.only(left: 40),
                 );
               } else {
-                final tag = resource.tags[index - 1];
+                final tag = Tag(name: resource.tags[index - 1]);
                 return Padding(
                   padding: const EdgeInsets.only(top: 5, right: 8.0),
-                  child: TagChip(tag: Tag(name: tag)),
+                  child: TagChip(tag: tag, onTap: () => onTagClicked?.call(tag),),
                 );
               }
               

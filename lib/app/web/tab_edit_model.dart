@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:stashmobile/app/web/default_domains.dart';
 import 'package:stashmobile/app/workspace/workspace_view.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
+import 'package:stashmobile/app/workspace/workspace_view_params.dart';
 import 'package:stashmobile/models/domain.dart';
 import 'package:stashmobile/models/resource.dart';
+import 'package:stashmobile/routing/app_router.dart';
 
 class TabEditModel {
 
@@ -14,14 +17,29 @@ class TabEditModel {
     required this.tab, 
     required this.workspaceModel
   }) {
-    input = tab.url!;
+
+    getInputFromUrl();
     inputController.text = input;
     inputController.selection = TextSelection(baseOffset: 0, extentOffset: input.length);
-    visibleDomains = workspaceModel.data.domains;
+    visibleDomains = defaultDomains;
+    visibleDomains.shuffle();
+    
     setState(() {
       isLoaded = true;
     });
     
+  }
+
+  getInputFromUrl() { 
+    for (final domain in defaultDomains) {
+      final searchQuery = domain.getSearchQuery(tab.url!);
+      if (searchQuery != null ) {
+        input = searchQuery;
+
+        return;
+      }
+    }
+    return input = tab.url!;
   }
 
   bool isLoaded = false;
@@ -74,24 +92,42 @@ class TabEditModel {
   }
 
   List<Domain> visibleDomains = [];
-  createNewTab(BuildContext context, {Domain? domain}) {
+  createNewTab(BuildContext context, {Domain? domain, bool incognito = false}) {
     String? url;
     if (domain != null) {
       if (inputController.text.isNotEmpty) {
-        url = domain.createSearchUrlFromInput(inputController.text); 
+        if (input != workspaceModel.currentTab.model.resource.url ) {
+          url = domain.createSearchUrlFromInput(inputController.text); 
+        } else {
+          url = domain.url;
+        }
+        
       } else {
         url = domain.url;
       }
     } else {
       url = getUrlFromInput();
     }
-    workspaceModel.createNewTab(url: url);
+    workspaceModel.createNewTab(url: url, incognito: incognito);
     Navigator.pop(context);
+  }
+
+  createNewSpace(BuildContext context) {
+    Navigator.pushNamed(context, AppRoutes.workspace, 
+      arguments: WorkspaceViewParams(
+        resourceToOpen: input != workspaceModel.currentTab.model.resource.url 
+          ? Resource(
+            url: getUrlFromInput(),
+          )
+          : null
+      )
+    );
   }
 
   getUrlFromInput() {
     input = inputController.text;
     String url = input;
+
     if (input.contains('.')) {
       final missingProtocol = !input.contains('http://') && !input.contains('https://');
       if (missingProtocol) url = 'https://www.' + input;
@@ -99,6 +135,10 @@ class TabEditModel {
       url = 'https://www.google.com/search?q=' + Uri.encodeComponent(input);
     }
     return url;
+  }
+
+  deleteDomain(Domain domain) {
+    workspaceModel.data.deleteDomain(domain.url);
   }
 
 }

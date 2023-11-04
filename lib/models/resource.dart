@@ -39,6 +39,7 @@ class Resource {
   Workspace? primaryWorkspace;
   List<Tag> matchingTags = [];
   int? scrollPosition;
+  int rating = 0;
 
 
   Resource({ this.url, this.title, this.favIconUrl}) {
@@ -64,6 +65,8 @@ class Resource {
     updated = json['updated'];
     highlights = json['highlights'] != null ? List<Highlight>.from(json['highlights'].map((h) => Highlight.fromJson(h))) : [];//List<Highlight>.from()
     scrollPosition = json['scrollPos'];
+    rating = json['rating'] != null ? json['rating'] : 0;
+
   }
 
   Map<String, dynamic> toJson() {
@@ -85,8 +88,9 @@ class Resource {
       'updated': updated,
       'highlights': highlights.map((h) => h.toJson()),
       'scrollPos': scrollPosition,
+      'rating': rating,
     };
-    json.removeWhere((key, value) => value == null || value == []);
+    json.removeWhere((key, value) => value == null || value == [] || value == 0);
     return json;
   }
 

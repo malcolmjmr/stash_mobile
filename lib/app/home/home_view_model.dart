@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stashmobile/app/providers/data.dart';
 import 'package:stashmobile/app/providers/workspace.dart';
 import 'package:stashmobile/app/search/search_view_model.dart';
+import 'package:stashmobile/app/web/default_domains.dart';
 import 'package:stashmobile/app/workspace/workspace_view_params.dart';
 import 'package:stashmobile/models/domain.dart';
 import 'package:stashmobile/models/resource.dart';
@@ -42,20 +43,23 @@ class HomeViewModel with ChangeNotifier {
     workspaces.sort((a, b) => (b.updated ?? 0).compareTo(a.updated ?? 0));
     recentSpaces = workspaces.sublist(0, min(5, workspaces.length));
     favorites = workspaces.where((w) => w.isFavorite == true && w.contexts.isEmpty).toList();
-    topDomains = data.domains;
-    topDomains.sort(sorDomains);
+    topDomains = defaultDomains;
+    topDomains.shuffle();
     tags = data.tags.where((t) => t.valueCount > 1).toList();
+    highlightedResources = data.resources.where((r) => r.highlights.isNotEmpty).toList();
+    highlightedResources.shuffle();
     _setLoading(false);
   }
 
   List<Workspace> workspaces = [];
   List<Workspace> favorites = [];
   List<Workspace> recentSpaces = [];
+  List<Resource> highlightedResources = [];
 
   List<Domain> topDomains = [];
   List<Tag> tags = [];
 
-  int sorDomains(Domain a, Domain b) {
+  int sortDomains(Domain a, Domain b) {
     final countComp = b.searchCount - a.searchCount;
     if (countComp != 0) {
       return countComp;
@@ -94,14 +98,11 @@ class HomeViewModel with ChangeNotifier {
     notifyListeners();
   }
 
-  openSearchFromTag(BuildContext context, Tag tag) {
 
+  openSearchFromTag(BuildContext context, Tag tag) {
     context.read(searchViewProvider).initBeforeNavigation(tags: [tag]);
     Navigator.pushNamed(context, AppRoutes.search);
   }
-
-  
-
 
   createNewWorkspace (BuildContext buildContext, Workspace workspace) {
     //Workspace workspace = Workspace(title: newWorkspaceTitle, color: newWorkspaceColor);
@@ -111,13 +112,23 @@ class HomeViewModel with ChangeNotifier {
     Navigator.pushNamed(buildContext, AppRoutes.workspace);
   }
 
-  createNewTab(BuildContext buildContext, {url}) {
+  createNewTab(BuildContext buildContext, {String? url, Domain? domain, bool isIncognito = false}) {
+
+    if (domain != null) {
+      final uri = Uri.parse(domain.url);
+      if (!uri.hasScheme) {
+        domain.url = 'https://' + domain.url;
+        data.saveDomain(domain);
+      }
+    }
+
+
     Navigator.pushNamed(
       buildContext, 
       AppRoutes.workspace,
-      arguments: url != null
+      arguments: domain != null
         ? WorkspaceViewParams(
-          resourceToOpen: Resource(url: url)
+          resourceToOpen: Resource(url: domain.url),
         )
         : null
     );
