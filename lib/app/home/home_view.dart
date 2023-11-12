@@ -20,6 +20,7 @@ import 'package:stashmobile/app/modals/create_new_tab/create_new_tab_modal.dart'
 import 'package:stashmobile/app/search/search_view_model.dart';
 import 'package:stashmobile/app/web/tab_preview_modal.dart';
 import 'package:stashmobile/extensions/color.dart';
+import 'package:stashmobile/models/resource.dart';
 import 'package:stashmobile/models/tag.dart';
 import 'package:stashmobile/routing/app_router.dart';
 import '../common_widgets/section_header.dart';
@@ -39,10 +40,12 @@ class HomeView extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.only(left: 20.0, right: 20.0),
               child: CustomScrollView(
+                scrollBehavior: CupertinoScrollBehavior(),
+                //controller: ScrollController().,
                 shrinkWrap: true,
                 slivers: [
                   SliverToBoxAdapter(child: Header(model: model)),
-                  SliverToBoxAdapter(child: _buildTopSection(context, model)),
+                  
                   if (model.recentSpaces.isNotEmpty)
                   SliverToBoxAdapter(
                     child: SectionHeader(
@@ -120,6 +123,13 @@ class HomeView extends ConsumerWidget {
                   SliverToBoxAdapter(
                     child: SectionHeader(
                       title: 'Highlights',
+                      trailing: GestureDetector(
+                        onTap: () => model.shuffleHighlights(),
+                        child: Padding(
+                          padding: const EdgeInsets.all(3.0),
+                          child: Icon(Symbols.refresh, size: 23, weight: 500,),
+                        ),
+                      ),
                     )
                   ),
                   if (model.highlightedResources.isNotEmpty)
@@ -143,38 +153,10 @@ class HomeView extends ConsumerWidget {
     );
   }
 
-  Widget _buildTopSection(BuildContext context, HomeViewModel model) {
-    return Container(
-      height: 50,
-      color: Colors.transparent,
-      child: ListView.builder(
-        shrinkWrap: true,
-        scrollDirection: Axis.horizontal,
-        
-        itemCount: model.topDomains.length + 1,
-        itemBuilder: (context, index) {
-
-          if (index == 0) {
-            return SizedBox(width: 10,);
-          } else {
-            final domain = model.topDomains[index - 1];
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.only(right: 20.0),
-                child: DomainIcon(
-                  domain: domain,
-                  onTap: () => model.createNewTab(context, domain: domain),
-                ),
-              ),
-            );
-          }
-          
-        }
-      ),
-    );
-  }
+ 
 
   Widget _buildTags(BuildContext context, HomeViewModel model) {
+    model.tags.shuffle();
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
@@ -188,7 +170,7 @@ class HomeView extends ConsumerWidget {
             spacing: 10,
             runSpacing: 10,
             crossAxisAlignment: WrapCrossAlignment.start,
-            children: model.tags.map(
+            children: model.tags.sublist(0, 20).map(
               (tag) => TagChip(
                 onTap: () => model.openSearchFromTag(context, tag),
                 tag: tag, 
@@ -213,79 +195,8 @@ class HomeView extends ConsumerWidget {
           child: Column(
             children: [
               ...model.highlightedResources.sublist(0, min(20, model.highlightedResources.length)).map((resource) {
-                final highlight = resource.highlights[Random().nextInt(resource.highlights.length)];
-                return Container(
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8.0),
-                        child: Container(
-                          height:30,
-                          child: ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: resource.tags.length,
-                            
-                            itemBuilder: (context, index) {
-                              final tagName = resource.tags[index];
-                              return Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.only(right: 5.0),
-                                  child: TagChip(
-                                    tag: Tag(name: tagName),
-                                    onTap: () => null,
-                                  ),
-                                ),
-                              );
-                            }
-                          ),
-                        ),
-                      ),
-                      Text(highlight.text,
-                        style: TextStyle(
-                          fontSize: 16,
-                        ),
-                      ),
-
-                      GestureDetector(
-                        onTap: () {
-                          HapticFeedback.mediumImpact();
-                          showCupertinoModalBottomSheet(
-                            context: context, 
-                            builder: (context) => TabPreviewModal(resource: resource,)
-                          );
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8.0),
-                          child: Container(
-                            height: 30,
-                            child: Row(
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.only(right: 8.0),
-                                  child: FavIcon(resource: resource, size: 24,),
-                                ),
-                                Expanded(
-                                  child: ListView(
-                                    scrollDirection: Axis.horizontal,
-                                    children: [Center(
-                                      child: Text(resource.title!,
-                                        style: TextStyle(fontSize: 16),
-                                      ),
-                                    ),]
-                                  ),
-                                )
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 10.0),
-                        child: Divider(thickness: 1, ),
-                      ),
-                    ],
-                  ),
-                );
+                
+                return ResourceWithHighlights(resource: resource, key: Key(resource.id!),);
               }),
               Container(
                 padding: EdgeInsets.symmetric(vertical: 10),
@@ -357,6 +268,106 @@ class Header extends StatelessWidget {
   }
 }
 
+
+class ResourceWithHighlights extends StatefulWidget {
+
+  final Resource resource;
+  const ResourceWithHighlights({Key? key, required this.resource}) : super(key: key);
+
+  @override
+  State<ResourceWithHighlights> createState() => _ResourceWithHighlightsState();
+}
+
+class _ResourceWithHighlightsState extends State<ResourceWithHighlights> {
+
+  int highlightIndex = 0;
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8.0),
+            child: Container(
+              height:30,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: widget.resource.tags.length,
+                
+                itemBuilder: (context, index) {
+                  final tagName = widget.resource.tags[index];
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 5.0),
+                      child: TagChip(
+                        tag: Tag(name: tagName),
+                        onTap: () => null,
+                      ),
+                    ),
+                  );
+                }
+              ),
+            ),
+          ),
+          GestureDetector(
+            onTap: () => setState(() {
+              if (highlightIndex < widget.resource.highlights.length - 1) {
+                highlightIndex += 1;
+              } else {
+                highlightIndex = 0;
+              }
+              
+            }),
+            child: Text(widget.resource.highlights[highlightIndex].text,
+              style: TextStyle(
+                fontSize: 16,
+              ),
+            ),
+          ),
+
+          GestureDetector(
+            onTap: () {
+              HapticFeedback.mediumImpact();
+              showCupertinoModalBottomSheet(
+                context: context, 
+                builder: (context) => TabPreviewModal(resource: widget.resource)
+              );
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Container(
+                height: 30,
+                child: Row(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: FavIcon(resource: widget.resource, size: 24,),
+                    ),
+                    Expanded(
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        children: [Center(
+                          child: Text(widget.resource.title ?? 'Untitled',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                        ),]
+                      ),
+                    )
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10.0),
+            child: Divider(thickness: 1, ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class Footer extends StatelessWidget {
   const Footer({Key? key, required this.model}) : super(key: key);
 
@@ -368,7 +379,7 @@ class Footer extends StatelessWidget {
         color: Colors.black,
         border: Border(
           top: BorderSide(
-            color: HexColor.fromHex('555555'), 
+            color: HexColor.fromHex('333333'), 
             width: 1
           )
         )
@@ -379,19 +390,45 @@ class Footer extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            CreateFolderButton(onTap: () => {
-              showCupertinoModalBottomSheet(
-                context: context, 
-                builder: (context) => CreateWorkspaceModal(
-                  onDone: (workspace) => model.createNewWorkspace(context, workspace))
-                )
-            }),
-            CreateTabButton(
-              onDoubleTap: () => Navigator.pushNamed(context, AppRoutes.createNewTab),
-              onTap:() =>  model.createNewTab(context)
-            ),
+            Expanded(child: _buildCreateOptions(context, model)),
+            // CreateTabButton(
+            //   onDoubleTap: () => Navigator.pushNamed(context, AppRoutes.createNewTab),
+            //   onTap:() =>  model.createNewTab(context)
+            // ),
           ],
         ),
+      ),
+    );
+  }
+
+   Widget _buildCreateOptions(BuildContext context, HomeViewModel model) {
+    return Container(
+      height: 50,
+      color: Colors.transparent,
+      child: ListView.builder(
+        shrinkWrap: true,
+        scrollDirection: Axis.horizontal,
+        
+        itemCount: model.topDomains.length + 1,
+        itemBuilder: (context, index) {
+
+          if (index == 0) {
+            return SizedBox(width: 10,);
+          } else {
+            final domain = model.topDomains[index - 1];
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.only(right: 20.0),
+                child: DomainIcon(
+                  domain: domain,
+                  onTap: () => model.createNewTab(context, domain: domain),
+                  onLongPress: () => model.createNewTab(context, domain: domain, isIncognito: true),
+                ),
+              ),
+            );
+          }
+          
+        }
       ),
     );
   }
@@ -408,7 +445,7 @@ class CreateFolderButton extends StatelessWidget {
       onTap: onTap,
       child: Padding(
         padding: EdgeInsets.all(5), 
-        child: Icon(Symbols.create_new_folder, size: 35.0, weight: 300, color: HexColor.fromHex('888888'),),
+        child: Icon(Symbols.create_new_folder, size: 35.0, weight: 300, color: HexColor.fromHex('999999'),),
       ),
     );
   }
@@ -427,7 +464,7 @@ class CreateTabButton extends StatelessWidget {
       onDoubleTap: onDoubleTap,
       child: Padding(
         padding: EdgeInsets.all(5), 
-        child: Icon(Symbols.add_box, size: 32.0, weight: 300.0, color: HexColor.fromHex('888888')),
+        child: Icon(Symbols.add_box, size: 32.0, weight: 300.0, color: HexColor.fromHex('999999')),
       ),
     );
   }

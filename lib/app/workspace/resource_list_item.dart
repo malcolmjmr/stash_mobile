@@ -34,6 +34,7 @@ class ResourceListItem extends StatelessWidget {
     this.isLastListItem = false,
     this.isLastActiveTab = false,
     this.showHighlights = false,
+    this.showImages = false,
   }) : super(key: key);
 
   final WorkspaceViewModel model;
@@ -43,6 +44,7 @@ class ResourceListItem extends StatelessWidget {
   final bool isFirstListItem;
   final bool isLastActiveTab;
   final bool showHighlights;
+  final bool showImages;
 
   @override
   Widget build(BuildContext context) {
@@ -157,6 +159,11 @@ class ResourceListItem extends StatelessWidget {
                     ],
                   ),
                 ),
+                if (resource.images.isNotEmpty && showImages)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: _buildImages(context),
+                ),
                 if (resource.highlights.isNotEmpty && showHighlights)
                 Padding(
                   padding: const EdgeInsets.only(top: 8.0),
@@ -188,6 +195,22 @@ class ResourceListItem extends StatelessWidget {
             
             overflow: TextOverflow.ellipsis,
           );
+        }
+      ),
+    );
+  }
+
+  Widget _buildImages(BuildContext context) {
+    return Container(
+      width: MediaQuery.of(context).size.width,
+      height: 200,
+      child: PageView.builder(
+        //scrollDirection: Axis.,
+        itemCount: resource.images.length,
+        padEnds: true,
+        itemBuilder: (context, index) {
+          final imageUrl = resource.images[index];
+          return Image.network(imageUrl);
         }
       ),
     );

@@ -88,6 +88,12 @@ class _TabMenuState extends State<TabMenu> {
                   padding: const EdgeInsets.only(top: 10, bottom: 10),
                   child: _buildBookmarkActions(),
                 ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 10, bottom: 10),
+                  child: _buildAdditionalActions(),
+                ),
               )
             ],
           ),
@@ -137,7 +143,10 @@ class _TabMenuState extends State<TabMenu> {
           MenuItem(
             title: 'Reload', 
             icon: Symbols.replay,
-            onTap: () => widget.workspaceModel.reloadTab(widget.resource),
+            onTap: () {
+              Navigator.of(context).pop();
+              widget.workspaceModel.reloadTab(widget.resource);       
+            } ,
           ),
           
           MenuItem(
@@ -227,6 +236,26 @@ class _TabMenuState extends State<TabMenu> {
       )
     );
   }
+
+  Widget _buildAdditionalActions() {
+    return SectionContainer(
+      child: Column(
+        children: [
+          MenuItem(
+            title: 'Remove Elements', 
+            icon: Symbols.remove_selection_rounded,
+            onTap: () {
+              Navigator.of(context).pop();
+              widget.workspaceModel.setEditMode(true);
+            },
+            showBottomBorder: false,
+          ),
+        ],
+      )
+    );
+  }
+
+
 }
 
 class SectionContainer extends StatelessWidget {

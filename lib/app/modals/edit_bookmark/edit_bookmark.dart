@@ -81,6 +81,9 @@ class _EditBookmarkModalState extends State<EditBookmarkModal> {
               child: _buildTags(),
             ),
             SliverToBoxAdapter(
+              child: _buildImages(),
+            ),
+            SliverToBoxAdapter(
               child: _buildHighlights(),
             ),
             
@@ -435,5 +438,38 @@ class _EditBookmarkModalState extends State<EditBookmarkModal> {
         ),
       );
     }
+
+  Widget _buildImages() {
+    return model.resource!.images.isNotEmpty 
+      ? Container(
+        padding: const EdgeInsets.only(left: 20.0, right: 20, top: 15),
+        child: Container(
+          child: Column(
+            children: [
+              SectionHeader(title: 'Images'),
+              Container(
+                 decoration: BoxDecoration(
+                  color: HexColor.fromHex('222222'),
+                  borderRadius: BorderRadius.circular(8)
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 20.0),
+                  child: Container(
+                     height: 200,
+                    width: MediaQuery.of(context).size.width,
+                    child: PageView(
+                      children: model.resource!.images.map((imageUrl)  {
+                        return Image.network(imageUrl);
+                      }).toList(),
+                    ),
+                  ),
+                )
+              )
+            ],
+          ),
+        ),
+      )
+      : Container();
+  }
 }
 

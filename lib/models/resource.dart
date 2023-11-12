@@ -18,11 +18,13 @@ enum ResourceType {
 class Resource {
   String? url;
   String? favIconUrl;
+  String? imageUrl;
   String? title;
   String? id;
   List<String> contexts = [];
   List<String> tags = [];
   List<Highlight> highlights = [];
+  List<String> images = [];
   int? index;
   int? created;
   int? updated;
@@ -32,7 +34,7 @@ class Resource {
   String? parentId;
   bool? isQueued;
   bool? isFavorite;
-  bool get isSaved => contexts.isNotEmpty || tags.isNotEmpty;
+  bool get isSaved => contexts.isNotEmpty && (isQueued != true || tags.isNotEmpty || highlights.isNotEmpty || rating > 0);
   Uint8List? image;
   bool? isSearch;
   bool? isSelected;
@@ -51,6 +53,8 @@ class Resource {
     id = objectId;
     url = json['url'];
     favIconUrl = json['favIconUrl'];
+    imageUrl = json['imageUrl'];
+    images = json['images'] != null ? List<String>.from(json['images']) : [];
     title = json['title'];
     created = json['created'];
     lastVisited = json['lastVisited'];
@@ -74,6 +78,8 @@ class Resource {
       'id': id,
       'url': url,
       'favIconUrl': favIconUrl,
+      'imageUrl': imageUrl,
+      'images': images,
       'title': title,
       'created': created,
       'lastVisited': lastVisited,

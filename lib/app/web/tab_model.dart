@@ -49,6 +49,7 @@ class TabViewModel {
       controllerSet = true;
     }
     workspaceModel.onTabUpdated(this, controller, uri);
+    scrollX = 0;
     //updateTabData(context, controller);
   }
 
@@ -120,6 +121,7 @@ class TabViewModel {
           + JS.checkForList
           + JS.clickListener
           + JS.inputListener
+          + JS.imageSelectionListener
           
     );
   }
@@ -164,6 +166,10 @@ class TabViewModel {
       handlerName: 'onInputEntered',
       callback: onInputEntered,
     );
+    controller.addJavaScriptHandler(
+      handlerName: 'imageSelected',
+      callback: onImageSelected,
+    );
   }
 
   onInputEntered(args) {
@@ -190,6 +196,27 @@ class TabViewModel {
   
     if (workspaceModel.workspace.title == null)
     resource.image = await controller.takeScreenshot();
+
+  }
+
+  int scrollX = 0;
+  bool scrollingDown = false;
+  bool scrollingUp = false;
+  int scrollUpStart = 0;
+  onScrollChanged(controller, int xPos, int yPos) {
+    // scrollX = x;
+
+    // if (!scrollingDown && scrollX < xPos) {
+    //   scrollingDown = true;
+    // }
+
+    // if (scrollingDown && scrollX > xPos) {
+    //   scrollingUp = true;
+    // }
+
+    // if (scrollingUp) {
+    //   if (scrolling)
+    // }
 
   }
 
@@ -223,7 +250,13 @@ class TabViewModel {
   onPageClicked(args) {
     workspaceModel.onTabContentClicked();
     checkIfUrlOrTitleHaveChanged();
-    
+    if (workspaceModel.isInEditMode) {
+      removeLastClickedElement();
+    }
+  }
+
+  removeLastClickedElement() {
+    controller.evaluateJavascript(source: 'removeLastClickedElement();');
   }
 
   checkIfUrlOrTitleHaveChanged() async {
@@ -280,4 +313,27 @@ class TabViewModel {
       }),
     );
   }
+
+  onImageSelected(args) async {
+    final imageUrl = args[0];
+    final imageIndex = resource.images.indexWhere((i) => i == imageUrl);
+    if (imageIndex == -1) {
+      resource.images.add(imageUrl);
+    } 
+
+    workspaceModel.showNotification(
+      NotificationParams(title: 'Image saved')
+    );
+  }
+
+  getImageUrl() async {
+    final imageUrl = await controller.evaluateJavascript(source: 'getImageUrl();');
+    if (imageUrl == null) return;
+    final imageIndex = resource.images.indexWhere((i) => i == imageUrl);
+    if (imageIndex == -1) {
+      resource.images.add(imageUrl);
+    }
+  }
+
+  
 }

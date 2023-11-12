@@ -159,4 +159,12 @@ class HomeViewModel with ChangeNotifier {
   openPublicWorkspaces(BuildContext context) {
     
   }
+
+
+  shuffleHighlights() {
+    highlightedResources.shuffle();
+    _setLoading(false);
+  }
+
+  
 }

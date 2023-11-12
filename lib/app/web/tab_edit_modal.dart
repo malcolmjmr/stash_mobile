@@ -107,7 +107,7 @@ class _TabEditModalState extends State<TabEditModal> {
           children: [
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                padding: const EdgeInsets.only(left: 8.0),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(10),
                   child: Container(
@@ -118,6 +118,7 @@ class _TabEditModalState extends State<TabEditModal> {
                     ),
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
+                      //controller: ScrollController().,
                       itemCount: model.visibleDomains.length,
                       itemBuilder: (context, index) {
                         final domain = model.visibleDomains[index];
@@ -134,32 +135,30 @@ class _TabEditModalState extends State<TabEditModal> {
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.only(right: 8.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: HexColor.fromHex('333333'),
-                  borderRadius: BorderRadius.circular(8)
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 2.0),
-                  child: Row(
-                    children: [
-                      CreateTabButton(
-                        icon: Symbols.add_box_rounded, 
-                        onTap: () => model.createNewTab(context)
-                      ),
-                      CreateTabButton(
-                        icon: Symbols.visibility_off,
-                        onTap: () => model.createNewTab(context, incognito: true),
-                      ),
-                      CreateTabButton(
-                        icon: Symbols.create_new_folder_rounded, 
-                        onTap: () => model.createNewSpace(context),
-                      ),
+            Container(
+              decoration: BoxDecoration(
+                //color: HexColor.fromHex('333333'),
+                borderRadius: BorderRadius.circular(8)
+              ),
+              child: Padding(
+                padding: const EdgeInsets.only(right: 5.0, top: 1, bottom: 2, left: 3.0),
+                child: Row(
+                  children: [
+                    CreateTabButton(
+                      icon: Symbols.add_box_rounded, 
+                      onTap: () => model.createNewTab(context)
+                    ),
+                    CreateTabButton(
+                      icon: Symbols.visibility_off,
+                      onTap: () => model.createNewTab(context, incognito: true),
+                      size: 18,
+                    ),
+                    CreateTabButton(
+                      icon: Symbols.new_window, 
+                      onTap: () => model.createNewSpace(context),
+                    ),
 
-                    ],
-                  ),
+                  ],
                 ),
               ),
             ),
@@ -250,6 +249,7 @@ class CreateTabButton extends StatelessWidget {
   final Function()? onLongPress;
   final IconData icon;
   final Color? color;
+  final double? size;
 
   const CreateTabButton({
     Key? key,
@@ -257,6 +257,7 @@ class CreateTabButton extends StatelessWidget {
     required this.onTap,
     this.onLongPress,
     this.color,
+    this.size = 25,
     }) : super(key: key);
 
   @override
@@ -265,12 +266,23 @@ class CreateTabButton extends StatelessWidget {
       onTap: onTap,
       onLongPress: onLongPress,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 3.0),
+        padding: const EdgeInsets.only(left: 3.0, right: 3, bottom: 3),
         child: Container(
-          child: Icon(icon,
-           color: color,
-           size: 30,
-          )
+          height: 35,
+          width: 35,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            color: HexColor.fromHex('333333')
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 5.0),
+            child: Container(
+              child: Icon(icon,
+               color: color,
+               size: size,
+              )
+            ),
+          ),
         ),
       ),
     );

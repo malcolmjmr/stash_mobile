@@ -367,6 +367,76 @@ class JS {
   });
   """;
 
+  static String imageSelectionListener = """
+
+      var lastImageClick;
+
+      document.addEventListener('touchstart', (e) => {
+          if (e.target.tagName != 'IMG') return;
+
+          lastImageClick = Date.now();
+      });
+
+      document.addEventListener('touchend', (e) => {
+          if (e.target.tagName != 'IMG' || !lastImageClick) return;
+          const now = Date.now();
+          if (now - lastImageClick > 2000 && now - lastImageClick < 10000) {
+              lastImageClick = null;
+              window.flutter_inappwebview.callHandler("imageSelected", e.target.src);
+          }
+      });
+
+      function getImageUrl() {
+          // Todo: handle youtube videos
+
+          let imageUrl;
+
+          const uri = new URL(location.href);
+
+          if (uri.hostname == 'www.amazon.com') {
+
+
+              const imageContainer = document.querySelector('#main-image-container');
+              let images = Array.from(imageContainer.querySelectorAll('img'));
+
+              images.sort((a, b) => b.height - a.height);
+              imageUrl = images[0].src;
+
+          } else if (uri.hostname == 'youtube.com') {
+              // do nothing
+
+          } else if (uri.hostname.includes('wikipedia.org')) {
+              const imageContainer = document.querySelector('.infobox-image');
+              imageUrl = imageContainer.querySelector('img')?.src;
+
+          } else {
+              let images = Array.from(document.querySelectorAll('img'));
+
+              // const title = document.title.toLocaleLowerCase();
+              // images = images.map((img) => {
+              //     return {
+              //         relevance: img.alt?.toLocaleLowerCase().split(' ').filter((word) => title.includes(word)).length,
+              //         height: img.height,
+              //         src: img.src
+              //     }
+              // })
+              images.sort((a, b) => {
+                  const comp = b.relevance - a.relevance;
+                  if (comp == 0) return b.height - a.height;
+                  else return comp;
+
+              });
+
+              imageUrl = images[0].src;
+          }
+
+
+
+          return imageUrl;
+      }
+
+  """;
+
   static String clickListener = """
     // Listens for user click of hyperlink
       // Emits: onLinkClicked
@@ -382,14 +452,23 @@ class JS {
          parent = parent.parentElement;
        }
     }
+
+    function removeLastClickedElement() {
+      console.log('removing element');
+      console.log(lastClickedElement.toString());
+      lastClickedElement?.remove();
+    }
     
+    var lastClickedElement;
     let clickedLink;
     let waitingOnDoubleClick = false;
     let doubleClickedLink;
     let isDelayedClick = false;
     let clickTarget;
-    document.body.addEventListener('click', function (event) {
+    document.addEventListener('click', function (event) {
        let target = event.target || event.srcElement;
+       lastClickedElement = target;
+       console.log('clicked body');
        let targetIsHighlight = target.tagName != 'HYPOTHESIS-HIGHLIGHT';
        if (!targetIsHighlight) { return; }
        let linkElement = getLinkElement(target);

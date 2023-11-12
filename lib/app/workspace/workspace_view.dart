@@ -120,17 +120,49 @@ class _WorkspaceViewState extends State<WorkspaceView> {
             ),
             height: 70,
             width: MediaQuery.of(context).size.width,
-            child: model.notificationIsVisible
-              ?  _buildNotification()
-              : model.showTextSelectionMenu 
-                ? TextSelectionMenu(workspaceModel: model)
-                : model.showHorizontalTabs 
-                  ? HorizontalTabs(workspaceModel: model)
-                  : VeritcalTabs(workspaceModel: model),
+            child: 
+              model.isInEditMode
+              ? _buildEditModeMenu() 
+              : model.notificationIsVisible
+                ?  _buildNotification()
+                : model.showTextSelectionMenu 
+                  ? TextSelectionMenu(workspaceModel: model)
+                  : model.showHorizontalTabs 
+                    ? HorizontalTabs(workspaceModel: model)
+                    : VeritcalTabs(workspaceModel: model),
           )
         ],
       ),
     );
+  }
+
+  Widget _buildEditModeMenu() {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: GestureDetector(
+        onTap: () => model.setEditMode(false),
+        child: Container(
+          decoration: BoxDecoration(
+            color: HexColor.fromHex('222222'),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Center(
+              child: Text('Exit Edit Mode',
+                //overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.amber,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
   }
 
   Widget _buildNotification() {
@@ -403,8 +435,6 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                   onTap: () => model.clearTabs(),
                   child: Icon(Symbols.tab_close,),
                 ),
-
-
               ],
               isCollapsed: model.showTabs,
               onToggleCollapse: () => model.toggleShowTabs(),
@@ -425,6 +455,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                 key: Key(tab.model.resource.id!),
                 isFirstListItem: index == 0,
                 isLastListItem: index == model.tabs.length - 1,
+                isLastActiveTab: model.workspace.activeTabIndex == index,
                 resource: tab.model.resource,
                 model: model,
                 onTap: () {
@@ -512,25 +543,46 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                   onTap: () => model.setResourceView(ResourceView.important),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 5.0),
-                    child: Icon(Symbols.star, fill: model.resourceView == ResourceView.important ? 1 : 0,),
+                    child: Opacity(
+                      opacity: model.resourceView == ResourceView.important ? 1 : 0.5,
+                      child: Icon(Symbols.priority_high_rounded, 
+                        fill: model.resourceView == ResourceView.important ? 1 : 0, ),
+                    ),
                   ),
                 ),
 
                 if (model.hasHighlights)
                 GestureDetector(
                   onTap: () => model.setResourceView(ResourceView.highlights),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 5.0),
-                    child: Icon(Symbols.ink_highlighter, fill: model.resourceView == ResourceView.highlights ? 1 : 0,),
+                  child: Opacity(
+                    opacity: model.resourceView == ResourceView.highlights ? 1 : 0.5,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                      child: Icon(Symbols.ink_highlighter, fill: model.resourceView == ResourceView.highlights ? 1 : 0,),
+                    ),
                   ),
                 ),
 
                 if (model.hasQueue)
                 GestureDetector(
                   onTap: () => model.setResourceView(ResourceView.queue),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 5.0),
-                    child: Icon(Symbols.inbox, fill: model.resourceView == ResourceView.queue ? 1 : 0,),
+                  child: Opacity(
+                    opacity: model.resourceView == ResourceView.queue ? 1 : 0.5,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                      child: Icon(Symbols.inbox, fill: model.resourceView == ResourceView.queue ? 1 : 0,),
+                    ),
+                  ),
+                ),
+                if (model.hasImages)
+                GestureDetector(
+                  onTap: () => model.setResourceView(ResourceView.images),
+                  child: Opacity(
+                    opacity: model.resourceView == ResourceView.images ? 1 : 0.5,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                      child: Icon(Symbols.image, fill: model.resourceView == ResourceView.images ? 1 : 0,),
+                    ),
                   ),
                 ),
 
@@ -569,13 +621,14 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                 model: model,
                 onTap: () => model.openResource(context, resource),
                 showHighlights: model.resourceView == ResourceView.highlights,
+                showImages: model.resourceView == ResourceView.images,
                 
               ),
             );
           })
         ),
         SliverToBoxAdapter(
-          child: SizedBox(height: 50),
+          child: SizedBox(height: 70),
         )
     
       ],
@@ -728,7 +781,10 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     final text = model.parentWorkspace != null ? model.parentWorkspace!.title! : 'Back';
     final color = model.parentWorkspace != null ? HexColor.fromHex(colorMap[model.parentWorkspace?.color ?? 'grey']!) : null;
     return GestureDetector(
-      onTap: () => Navigator.pop(context),
+      onTap: () {
+         Navigator.pop(context);
+         context.read(homeViewProvider).refreshData();
+      },
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -807,7 +863,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     
     return Container(
       height: 50,
-      padding: EdgeInsets.symmetric(horizontal: 10),
+      //padding: EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
         //border: Border(top: BorderSide(color: HexColor.fromHex(model.workspaceHexColor), width: 1)),
         color: Colors.black, //HexColor.fromHex(model.workspaceHexColor)
@@ -825,47 +881,50 @@ class _WorkspaceViewState extends State<WorkspaceView> {
         color: Colors.black,
         border: Border(
           top: BorderSide(
-            color: HexColor.fromHex('555555'), 
+            color: HexColor.fromHex('333333'), 
             width: 1
           )
         )
       ),
-      child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // FooterIcon(icon: Icons.dynamic_feed_outlined, color: color,),
-            // FooterIcon(icon: Icons.history_outlined, color: color),
-            // FooterIcon(icon: Icons.folder_outlined, color: color),
-            // FooterIcon(icon: Icons.inbox_outlined, color: color),
-            model.workspace.title == null 
-            ?  FooterIcon(
-                onTap: () => model.clearTabs(createNewTab: true),
-                icon: Symbols.tab_close,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10.0),
+        child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // FooterIcon(icon: Icons.dynamic_feed_outlined, color: color,),
+              // FooterIcon(icon: Icons.history_outlined, color: color),
+              // FooterIcon(icon: Icons.folder_outlined, color: color),
+              // FooterIcon(icon: Icons.inbox_outlined, color: color),
+              model.workspace.title == null 
+              ?  FooterIcon(
+                  onTap: () => model.clearTabs(createNewTab: true),
+                  icon: Symbols.tab_close,
+                  color: color, 
+                  size: 30,
+                )
+              : FooterIcon(
+                onTap: () {
+                  // showCupertinoModalBottomSheet(
+                  //   context: context, 
+                  //   builder: (context) => CreateWorkspaceModal(
+                  //     onDone: (workspace) => model.createNewFolder(context, workspace.title!))
+                  //   );
+                },
+                icon: Symbols.filter_list_alt_rounded, 
                 color: color, 
-                size: 30,
-              )
-            : FooterIcon(
-              onTap: () {
-                showCupertinoModalBottomSheet(
-                  context: context, 
-                  builder: (context) => CreateWorkspaceModal(
-                    onDone: (workspace) => model.createNewFolder(context, workspace.title!))
-                  );
-              },
-              icon: Symbols.create_new_folder_rounded, 
-              color: color, 
-              size: 30
-            ),
-            _buildResourceCounts(context, model),
-            FooterIcon(
-              onTap: model.createNewTab,
-              icon: Symbols.add_box, 
-              color: color, 
-              size: 30
-            ),
-          ],
-        ),
+                size: 30
+              ),
+              _buildResourceCounts(context, model),
+              FooterIcon(
+                onTap: model.createNewTab,
+                icon: Symbols.add_box, 
+                color: color, 
+                size: 30
+              ),
+            ],
+          ),
+      ),
     );
   }
 

@@ -52,6 +52,7 @@ class WorkspaceViewModel extends ChangeNotifier {
   bool hasFavorites = false;
   bool hasDomains = false;
   bool hasTags = false;
+  bool hasImages = false;
 
   ResourceView? resourceView;
   //List<Resource> folders = [];
@@ -74,6 +75,7 @@ class WorkspaceViewModel extends ChangeNotifier {
   Function(Function()) setState;
   bool showWebView = false;
   bool showHorizontalTabs = false;
+
 
   WorkspaceViewParams? params;
 
@@ -230,7 +232,6 @@ class WorkspaceViewModel extends ChangeNotifier {
     folders = data.workspaces
       .where((w) => w.contexts.contains(workspace.id))
       .toList();
-
       for (final w in subWorkspaces) {
       final mainContext = w.contexts.lastOrNull;
       if (mainContext == workspace.id) {
@@ -242,14 +243,14 @@ class WorkspaceViewModel extends ChangeNotifier {
 
   int sortResources(Resource a, Resource b) {
 
+    
 
     int comp = (b.lastVisited ?? 0).compareTo(a.lastVisited ?? 0);
-    if (comp == 0) {
-      comp = (b.updated ?? 0).compareTo(a.lastVisited ?? 0);
+    if (resourceView == ResourceView.important) {
+      comp = b.rating.compareTo(a.rating);
     }
-
     if (comp == 0) {
-      comp = (b.created ?? 0).compareTo(a.created ?? 0);
+      comp = (b.updated ?? b.created ?? 0).compareTo(a.updated ?? a.created ?? 0);
     }
 
     return comp;
@@ -265,6 +266,7 @@ class WorkspaceViewModel extends ChangeNotifier {
 
     
     for (final resource in allResources) {
+      if (resource.url == null) continue;
 
       if (resource.highlights.isNotEmpty && !hasHighlights) {
         hasHighlights = true;
@@ -286,6 +288,10 @@ class WorkspaceViewModel extends ChangeNotifier {
       domainMap[uri.host]!.count += 1;
       if (!hasDomains && domainMap[uri.host]!.count == 2) {
         hasDomains = true;
+      }
+
+      if (resource.images.isNotEmpty && !hasImages) {
+        hasImages = true;
       }
 
 
@@ -389,14 +395,25 @@ class WorkspaceViewModel extends ChangeNotifier {
 
       for (final resource in allResources) {
         bool matchesFilter = true;
-        if (resourceView == ResourceView.queue && resource.isQueued != true) {
-          matchesFilter = false;
+        if (resourceView == ResourceView.queue) {
+
+          if (resource.isQueued != true || resource.isSaved)
+            matchesFilter = false;
+          
         }
         if (resourceView == ResourceView.highlights && resource.highlights.isEmpty) {
           matchesFilter = false;
         }
 
         if (resourceView == null && resource.isQueued == true) {
+          matchesFilter = false;
+        }
+
+        if (resourceView == ResourceView.important && resource.rating < 1) {
+          matchesFilter = false;
+        }
+
+        if (resourceView == ResourceView.images && resource.images.isEmpty) {
           matchesFilter = false;
         }
 
@@ -482,9 +499,7 @@ class WorkspaceViewModel extends ChangeNotifier {
       }
 
       if (resource.isQueued == true) {
-        resource.contexts = [];
-        allResources.removeWhere((r) => r.id == resource.id);
-        data.deleteResource(resource, permanent: true);
+        deleteResource(resource);
       }
 
       workspace.showWebView = true;
@@ -558,7 +573,10 @@ class WorkspaceViewModel extends ChangeNotifier {
         title: newTitle != model.resource.title ? newTitle : null,
       );
 
-     
+      if (model.resource.isQueued == true) {
+        deleteResource(model.resource);
+       
+      }
 
     } else {
       // update resource if favicon != null || title != null 
@@ -704,6 +722,8 @@ class WorkspaceViewModel extends ChangeNotifier {
       // final index = tabs.indexWhere((tab) => tab.model.resource.id == resource.id);
       // tabs.removeAt(index);
 
+      
+
       tabs = tabs.where((tab) => tab.model.resource.id != resource.id).toList();
       final currentIndex = workspace.activeTabIndex!;
       workspace.activeTabIndex = currentIndex > 0 ? currentIndex - 1 : currentIndex;
@@ -717,6 +737,9 @@ class WorkspaceViewModel extends ChangeNotifier {
       data.saveResource(resource);
       
     });
+
+    if (!hasQueue) hasQueue = true;
+    updateVisibleResources();
     
   }
 
@@ -736,8 +759,17 @@ class WorkspaceViewModel extends ChangeNotifier {
     }
   }
 
-  saveTab(Resource resource) {
+  saveTab(Resource resource) async {
     HapticFeedback.mediumImpact();
+
+    if (resource.imageUrl == null) {
+      final tab = tabs.firstWhereOrNull((tab) => tab.model.resource.id == resource.id);
+      if (tab != null) {
+        await tab.model.getImageUrl();
+      }
+    }
+    
+
     setState(() {
       if (resource.contexts.isEmpty) {
         resource.contexts.add(workspace.id);
@@ -745,6 +777,10 @@ class WorkspaceViewModel extends ChangeNotifier {
       allResources.add(resource);
       data.saveResource(resource);
     });
+
+    if (resource.images.isNotEmpty && !hasImages) hasImages = true;
+
+    updateVisibleResources();
 
   }
 
@@ -796,14 +832,16 @@ class WorkspaceViewModel extends ChangeNotifier {
   }
 
   deleteResource(Resource resource) {
-    setState(() {
+    
       bool deletePermanently = false;
       if (resource.isQueued == true) {
         deletePermanently = true;
       } 
       allResources.removeWhere((r) => r.id == resource.id);
       data.deleteResource(resource, permanent: deletePermanently);
-    });
+
+      updateVisibleResources();
+    
   }
 
   clearTabs({bool createNewTab = false}) {
@@ -941,6 +979,9 @@ class WorkspaceViewModel extends ChangeNotifier {
     setState(() {
       resource.highlights.add(highlight);
       resource.updated = now;
+      if (workspace.title != null && !resource.contexts.contains(workspace.id)) {
+        resource.contexts.add(workspace.id);
+      }
       data.saveResource(resource);
       currentTab.model.controller.clearFocus();
       showTextSelectionMenu = false;
@@ -951,6 +992,9 @@ class WorkspaceViewModel extends ChangeNotifier {
       action: () => editBookmarkAction(resource: resource), 
       actionLabel: 'Edit')
     );
+
+    if (!hasHighlights) hasHighlights = true;
+    updateVisibleResources();
   }
 
   onTabContentClicked() {
@@ -1100,6 +1144,9 @@ class WorkspaceViewModel extends ChangeNotifier {
     ));
 
     HapticFeedback.mediumImpact();
+
+    if (!hasQueue) hasQueue = true;
+    updateVisibleResources();
   }
 
   goBackToWorkspaceView() async {
@@ -1133,6 +1180,15 @@ class WorkspaceViewModel extends ChangeNotifier {
     updateVisibleResources();
     
   }
+
+
+  bool isInEditMode = false;
+  setEditMode(value) {
+    setState(() {
+      isInEditMode = value;
+    });
+  }
+
 }
 
 class InputData {
@@ -1162,4 +1218,5 @@ enum ResourceView {
   queue,
   highlights,
   important,
+  images,
 }

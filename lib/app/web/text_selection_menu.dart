@@ -31,7 +31,7 @@ class TextSelectionMenu extends StatelessWidget {
               text: 'Tag',
               onTap: () => workspaceModel.tagTabWithSelectedText(),
             ),
-            if (workspaceModel.selectedText!.contains('.'))
+            if (workspaceModel.selectedText!.contains('.') || workspaceModel.selectedText!.contains('?') || workspaceModel.selectedText!.length > 20)
             TextSelectionOption(
               icon: Symbols.ink_highlighter, 
               text: 'Highlight',

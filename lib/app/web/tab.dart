@@ -55,9 +55,17 @@ class _TabViewState extends State<TabView> {
       onConsoleMessage: (controller, msg) {
         print('JS console:\n$msg');
       },
+      //onScrollChanged: (controller, x, y) => widget.model.onScrollChanged,
       onCloseWindow: (controller) => widget.model.onCloseWindow(context, controller),
       onCreateWindow:(controller, createWindowAction) => widget.model.onCreateWindow(context, controller, createWindowAction),
       shouldOverrideUrlLoading: (controller, navigationAction) => widget.model.checkNavigation(context, navigationAction),
+      // contextMenu: ContextMenu(
+      //   menuItems: [
+      //     ContextMenuItem(title: 'Add Vocab', iosId: 'add-vocab', ),
+      //   ],
+      //   //options: ContextMenuOptions(hideDefaultSystemContextMenuItems: true)
+      // ),
+
       initialOptions: InAppWebViewGroupOptions(
       
         crossPlatform: InAppWebViewOptions(
@@ -67,7 +75,8 @@ class _TabViewState extends State<TabView> {
           // javaScriptEnabled: true,
           userAgent: 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36',
           // javaScriptCanOpenWindowsAutomatically: true,
-        
+          //disableContextMenu: true
+          
         ),
         ios: IOSInAppWebViewOptions(
           allowsBackForwardNavigationGestures: true,
@@ -76,7 +85,8 @@ class _TabViewState extends State<TabView> {
           disallowOverScroll: true,
           // sharedCookiesEnabled: true,
           // applePayAPIEnabled: true,
-          
+          //applePayAPIEnabled: true,
+
         
         ),
       ),

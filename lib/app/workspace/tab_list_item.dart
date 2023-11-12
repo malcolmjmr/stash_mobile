@@ -44,6 +44,7 @@ class TabListItem extends StatelessWidget {
     return SectionListItemContainer(
       isFirstListItem: isFirstListItem,
       isLastListItem: isLastListItem,
+      isHighlighted: isLastActiveTab,
       onTap: onTap,
       child: GestureDetector(
         onLongPress: () {
@@ -144,7 +145,7 @@ class TabListItem extends StatelessWidget {
                       Text(resource.title ?? '', 
                         maxLines: 1,
                         style: TextStyle(
-                          color: isLastActiveTab ? Colors.amber : Colors.white,
+                          //color: isLastActiveTab ? Colors.amber : Colors.white,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 0.5,
                           fontSize: 16,  
@@ -155,7 +156,7 @@ class TabListItem extends StatelessWidget {
                           Text(Uri.parse(resource.url ?? '').host.replaceAll('www.', '') ?? '', 
                             maxLines: 1,
                             style: TextStyle(
-                              color: isLastActiveTab ? Colors.amber : Colors.white,
+                              //color: isLastActiveTab ? Colors.amber : Colors.white,
                               fontWeight: FontWeight.w300,
                               letterSpacing: 0.5,
                               fontSize: 14,  

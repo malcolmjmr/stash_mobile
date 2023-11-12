@@ -14,14 +14,19 @@ import 'package:stashmobile/app/authentication/firebase_providers.dart';
 /*
 
   Todo: 
+  - move favorite domains to bottom bar
+    - add incognito 
+  - filter view
+  - remove webview header and footers on scroll
+  - search within space
+  - workspace menu/details
   - bookmark edit modal
-    - update title
     - edit spaces 
     - edit tags
-    - set rating/importance/priority
     - highlights (set preview)
     - images (set preview item)
   - reconcile mobile and desktop urls
+
 
 
 */
