@@ -41,11 +41,12 @@ class Workspace {
 
   List<String> contexts = [];
 
-  Workspace({this.title, this.color}) {
+  Workspace({this.title, this.color, this.isIncognito}) {
     id = Uuid().v4().split('-').last;
     created = DateTime.now().millisecondsSinceEpoch;
     updated = created;
     lastActive = created;
+    
   }
 
   Workspace.miscellaneous() {

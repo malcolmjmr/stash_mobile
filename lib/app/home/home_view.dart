@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:stashmobile/app/common_widgets/domain_icon.dart';
@@ -384,19 +385,65 @@ class Footer extends StatelessWidget {
           )
         )
       ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 5.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(child: _buildCreateOptions(context, model)),
-            // CreateTabButton(
-            //   onDoubleTap: () => Navigator.pushNamed(context, AppRoutes.createNewTab),
-            //   onTap:() =>  model.createNewTab(context)
-            // ),
-          ],
-        ),
+      child: PageView(
+        scrollDirection: Axis.vertical,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 5.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                CreateButton(onTap: () => null, onDoubleTap: () => null, icon: Symbols.chat_add_on),
+                _buildCounts(context, model),
+                CreateButton(
+                  icon: Symbols.library_add_rounded,
+                  onDoubleTap: () => Navigator.pushNamed(context, AppRoutes.createNewTab),
+                  onTap:() =>  model.createNewTab(context)
+                ),
+                //CreateButton(onTap: () => null, onDoubleTap: () => null, icon: Symbols.edit_square, padding: EdgeInsets.only(top: 0, left: 5, right: 5, bottom: 10),),
+
+              ],
+            ),
+          ),
+          Expanded(child: _buildCreateOptions(context, model)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCounts(BuildContext context, HomeViewModel model) {
+    final color = HexColor.fromHex('999999');
+    final textStyle = TextStyle(
+      fontSize: 14,
+      color: color
+    );
+
+    var f = NumberFormat("###,###", "en_US");
+    return Container(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Text(f.format(model.workspaceCount) + ' Spaces',
+          //   style: textStyle,
+          // ),
+          // Padding(
+          //   padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          //   child: Container(
+          //     height: 5,
+          //     width: 5,
+          //     decoration: BoxDecoration(
+          //       borderRadius: BorderRadius.circular(100),
+          //       color: color,
+          //     ),
+          //   ),
+          // ),
+          // Text(
+          //   f.format(model.tabCount) + ' Tabs',
+          //   style: textStyle,
+          // )
+        ],
       ),
     );
   }
@@ -451,11 +498,13 @@ class CreateFolderButton extends StatelessWidget {
   }
 }
 
-class CreateTabButton extends StatelessWidget {
-  const CreateTabButton({Key? key, required this.onTap, required this.onDoubleTap}) : super(key: key);
+class CreateButton extends StatelessWidget {
+  const CreateButton({Key? key, required this.onTap, required this.onDoubleTap, required this.icon, this.padding = const EdgeInsets.all(5)}) : super(key: key);
   
   final VoidCallback onTap;
   final VoidCallback onDoubleTap;
+  final IconData icon;
+  final EdgeInsets padding;
 
   @override
   Widget build(BuildContext context) {
@@ -463,8 +512,8 @@ class CreateTabButton extends StatelessWidget {
       onTap: onTap,
       onDoubleTap: onDoubleTap,
       child: Padding(
-        padding: EdgeInsets.all(5), 
-        child: Icon(Symbols.add_box, size: 32.0, weight: 300.0, color: HexColor.fromHex('999999')),
+        padding: padding, 
+        child: Icon(icon, size: 32.0, weight: 300.0, color: HexColor.fromHex('999999')),
       ),
     );
   }

@@ -41,6 +41,9 @@ class HomeViewModel with ChangeNotifier {
     workspaces = data.workspaces
       .where((Workspace c) => c.isIncognito != true  && c.deleted == null).toList();
     workspaces.sort((a, b) => (b.updated ?? 0).compareTo(a.updated ?? 0));
+    tabCount = workspaces.fold(0, (total, space) => total + space.tabs.length);
+    workspaceCount = workspaces.length;
+    
     recentSpaces = workspaces.sublist(0, min(5, workspaces.length));
     favorites = workspaces.where((w) => w.isFavorite == true && w.contexts.isEmpty).toList();
     topDomains = defaultDomains;
@@ -55,6 +58,9 @@ class HomeViewModel with ChangeNotifier {
   List<Workspace> favorites = [];
   List<Workspace> recentSpaces = [];
   List<Resource> highlightedResources = [];
+
+  int workspaceCount = 0;
+  int tabCount = 0;
 
   List<Domain> topDomains = [];
   List<Tag> tags = [];
@@ -129,6 +135,7 @@ class HomeViewModel with ChangeNotifier {
       arguments: domain != null
         ? WorkspaceViewParams(
           resourceToOpen: Resource(url: domain.url),
+          isIncognito: isIncognito,
         )
         : null
     );

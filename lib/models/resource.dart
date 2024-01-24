@@ -1,6 +1,7 @@
 
 
 import 'package:flutter/foundation.dart';
+import 'package:stashmobile/models/note.dart';
 import 'package:stashmobile/models/tag.dart';
 import 'package:uuid/uuid.dart';
 
@@ -42,6 +43,7 @@ class Resource {
   List<Tag> matchingTags = [];
   int? scrollPosition;
   int rating = 0;
+  List<Note> notes = [];
 
 
   Resource({ this.url, this.title, this.favIconUrl}) {

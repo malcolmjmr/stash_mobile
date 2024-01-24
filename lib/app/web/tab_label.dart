@@ -231,7 +231,7 @@ class OpenTabLabel extends StatelessWidget {
                           ),
                         ),
                       ),
-                      if (isIncognito) 
+                      if (isIncognito && !(model.workspace.isIncognito == true)) 
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 5),
                         child: Icon(Icons.visibility_off),

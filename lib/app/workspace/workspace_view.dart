@@ -343,6 +343,13 @@ class _WorkspaceViewState extends State<WorkspaceView> {
               ],
             ),
           ),
+          Expanded(child: Container(),),
+          if (model.workspace.isIncognito == true)
+              Padding(
+                padding: const EdgeInsets.only(right: 15.0),
+                child: _buildIncognitoIcon(),
+              ),
+
           GestureDetector(
             onTap: () => showCupertinoModalBottomSheet(
               context: context, 
@@ -535,66 +542,20 @@ class _WorkspaceViewState extends State<WorkspaceView> {
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.only(top: 10, left: 15.0, right: 15, bottom: 5),
-            child: SectionHeader(
-              title: 'Resources',
-              actions: [
-                if (model.hasFavorites)
-                GestureDetector(
-                  onTap: () => model.setResourceView(ResourceView.important),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 5.0),
-                    child: Opacity(
-                      opacity: model.resourceView == ResourceView.important ? 1 : 0.5,
-                      child: Icon(Symbols.priority_high_rounded, 
-                        fill: model.resourceView == ResourceView.important ? 1 : 0, ),
-                    ),
-                  ),
-                ),
-
-                if (model.hasHighlights)
-                GestureDetector(
-                  onTap: () => model.setResourceView(ResourceView.highlights),
-                  child: Opacity(
-                    opacity: model.resourceView == ResourceView.highlights ? 1 : 0.5,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 5.0),
-                      child: Icon(Symbols.ink_highlighter, fill: model.resourceView == ResourceView.highlights ? 1 : 0,),
-                    ),
-                  ),
-                ),
-
-                if (model.hasQueue)
-                GestureDetector(
-                  onTap: () => model.setResourceView(ResourceView.queue),
-                  child: Opacity(
-                    opacity: model.resourceView == ResourceView.queue ? 1 : 0.5,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 5.0),
-                      child: Icon(Symbols.inbox, fill: model.resourceView == ResourceView.queue ? 1 : 0,),
-                    ),
-                  ),
-                ),
-                if (model.hasImages)
-                GestureDetector(
-                  onTap: () => model.setResourceView(ResourceView.images),
-                  child: Opacity(
-                    opacity: model.resourceView == ResourceView.images ? 1 : 0.5,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 5.0),
-                      child: Icon(Symbols.image, fill: model.resourceView == ResourceView.images ? 1 : 0,),
-                    ),
-                  ),
-                ),
-
-              ],
+            child: Container(
+              height: 50,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: _buildListOptions(),
+              ),
             ),
           ),
         ),
 
-        if (model.visibleTags.isNotEmpty) 
-        SliverToBoxAdapter(
-          child: _buildTags(),
-        ),
+        // if (model.visibleTags.isNotEmpty) 
+        // SliverToBoxAdapter(
+        //   child: _buildTags(),
+        // ),
 
         // if (model.showDomains)
         // SliverToBoxAdapter(
@@ -615,7 +576,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                 right: 15, 
               ),
               child: ResourceListItem(
-                isFirstListItem: model.visibleTags.isEmpty && index == 0,
+                isFirstListItem: index == 0,
                 isLastListItem: index == model.visibleResources.length - 1,
                 resource: resource,
                 model: model,
@@ -634,6 +595,52 @@ class _WorkspaceViewState extends State<WorkspaceView> {
       ],
     );
 
+  }
+
+
+  List<Widget> _buildListOptions() {
+  
+    return [
+      _buildListOption(text: 'Recent'),
+      if (model.hasFavorites)
+      _buildListOption(text: 'Favorites', view: ResourceView.important),
+      if (model.hasHighlights)
+      _buildListOption(text: 'Highlights', view: ResourceView.highlights),
+      if (model.hasQueue)
+      _buildListOption(text: 'To Visit', view: ResourceView.queue),
+      if (model.hasImages)
+      _buildListOption(text: 'Images', view: ResourceView.images)
+    ];
+  }
+
+  Widget _buildListOption({ResourceView? view, required String text}) {
+    final isSelected = model.resourceView == view;
+    return Center(
+        child: Padding(
+          padding: const EdgeInsets.only(right: 8.0),
+          child: GestureDetector(
+            onTap: () => model.setResourceView(view),
+            child: Opacity(
+              opacity: isSelected ? 1 : 0.5,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isSelected ? HexColor.fromHex(colorMap[model.workspace.color ?? 'grey']!): HexColor.fromHex('444444'),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 8.0),
+                  child: Text(text, 
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: isSelected ? Colors.black : Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
   }
 
   // Widget _buildDomains() {
@@ -752,6 +759,15 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   }
 
 
+  Widget _buildIncognitoIcon() {
+    return Icon(
+      Icons.visibility_off,
+
+      color: HexColor.fromHex('444444'),
+    );
+  }
+
+
 
   Widget _buildSelectionHeader() {
     return Row(
@@ -811,6 +827,8 @@ class _WorkspaceViewState extends State<WorkspaceView> {
 
 
   Widget _buildMoreButton() {
+
+    final color = HexColor.fromHex(colorMap[model.workspace.color ?? 'grey']!);
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -829,10 +847,10 @@ class _WorkspaceViewState extends State<WorkspaceView> {
         padding: EdgeInsets.all(8.0),
         child: Container(
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.white, width: 1),
+            border: Border.all(color: color, width: 1),
             borderRadius: BorderRadius.circular(100),
           ),
-          child: Icon(Icons.more_horiz_outlined, color: Colors.white, size: 20,)
+          child: Icon(Icons.more_horiz_outlined, color: color, size: 20,)
         ),
       ),
     );

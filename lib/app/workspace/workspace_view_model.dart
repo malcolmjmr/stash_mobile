@@ -95,7 +95,10 @@ class WorkspaceViewModel extends ChangeNotifier {
     } else {
       workspace = params?.workspaceId != null 
         ? await data.getWorkspace(params!.workspaceId!) 
-        : Workspace(color: colorMap.keys.toList()[(new Random()).nextInt(9)]); 
+        : Workspace(
+            color: colorMap.keys.toList()[(new Random()).nextInt(9)], 
+            isIncognito: params?.isIncognito
+          ); 
     }
 
     //context.read(workspaceProvider).state = workspace.id;
@@ -169,6 +172,7 @@ class WorkspaceViewModel extends ChangeNotifier {
           initialResource: tab,
         ), 
         lazyLoad: isOpenedTab ? false : lazyLoad,
+        incognito: workspace.isIncognito ?? false,
       );
     }).toList();
 
@@ -460,6 +464,7 @@ class WorkspaceViewModel extends ChangeNotifier {
           workspaceModel: this,
           initialResource: resource,
         ),
+        incognito: workspace.isIncognito ?? false,
         lazyLoad: false));
       workspace.activeTabIndex = workspace.tabs.length;
     }
@@ -489,9 +494,11 @@ class WorkspaceViewModel extends ChangeNotifier {
         tabs.add(
           TabView(
             lazyLoad: false,
+            incognito: workspace.isIncognito ?? false,
             model: TabViewModel(
               workspaceModel: this,
               initialResource: resource,
+
             ),
           )
         );
@@ -683,7 +690,9 @@ class WorkspaceViewModel extends ChangeNotifier {
     if (tabs.length == index) {
       tabs.add(TabView(
         model: TabViewModel(workspaceModel: this),
-        lazyLoad: false)
+        lazyLoad: false,
+        incognito: workspace.isIncognito ?? false,
+        )
       );
       newTabCreated = true;
     }
@@ -808,7 +817,7 @@ class WorkspaceViewModel extends ChangeNotifier {
 
   createNewTab({String? url, bool lazyload = false, bool incognito = false}) {
     TabView tab = TabView(
-      incognito: incognito,
+      incognito: workspace.isIncognito ?? incognito,
       model: TabViewModel(
         workspaceModel: this,
         initialResource: url != null ? Resource(url: url) : null,
@@ -850,7 +859,7 @@ class WorkspaceViewModel extends ChangeNotifier {
       tabs = [];  
       updateWorkspaceTabs();
       if (createNewTab) {
-        tabs.add(TabView(model: TabViewModel(workspaceModel: this), lazyLoad: false,));
+        tabs.add(TabView(model: TabViewModel(workspaceModel: this), lazyLoad: false, incognito: workspace.isIncognito ?? false,));
         workspace.showWebView = true;
       }
 

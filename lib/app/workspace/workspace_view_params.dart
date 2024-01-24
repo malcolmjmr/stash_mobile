@@ -4,5 +4,6 @@ class WorkspaceViewParams {
   String? workspaceId;
   String? parentId;
   Resource? resourceToOpen;
-  WorkspaceViewParams({this.workspaceId, this.parentId, this.resourceToOpen});
+  bool? isIncognito;
+  WorkspaceViewParams({this.workspaceId, this.parentId, this.resourceToOpen, this.isIncognito});
 }
