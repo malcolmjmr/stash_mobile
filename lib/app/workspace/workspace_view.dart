@@ -31,6 +31,8 @@ import 'package:stashmobile/app/modals/move_tabs/move_tabs_modal.dart';
 import 'package:stashmobile/app/providers/workspace.dart';
 import 'package:stashmobile/app/search/search_view_model.dart';
 import 'package:stashmobile/app/web/horizontal_tabs.dart';
+import 'package:stashmobile/app/web/tab_actions.dart';
+import 'package:stashmobile/app/web/tab_bottom_bar.dart';
 import 'package:stashmobile/app/web/tab_edit_modal.dart';
 import 'package:stashmobile/app/web/tab_label.dart';
 import 'package:stashmobile/app/web/tab_menu.dart';
@@ -108,29 +110,13 @@ class _WorkspaceViewState extends State<WorkspaceView> {
         children: [
           _buildWebViewHeader(),
           Container(
-            height: MediaQuery.of(context).size.height - 130,
+            height: MediaQuery.of(context).size.height - 160,
             child: IndexedStack(
               index: model.workspace.activeTabIndex,
               children: model.tabs
             )
           ),
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.black
-            ),
-            height: 70,
-            width: MediaQuery.of(context).size.width,
-            child: 
-              model.isInEditMode
-              ? _buildEditModeMenu() 
-              : model.notificationIsVisible
-                ?  _buildNotification()
-                : model.showTextSelectionMenu 
-                  ? TextSelectionMenu(workspaceModel: model)
-                  : model.showHorizontalTabs 
-                    ? HorizontalTabs(workspaceModel: model)
-                    : VeritcalTabs(workspaceModel: model),
-          )
+          TabBottomBar(model: model),
         ],
       ),
     );
@@ -242,63 +228,6 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     );
   }
 
-  Widget _buildVerticalTabs() {
-    model.tabPageController = PageController(initialPage: model.workspace.activeTabIndex!);
-    return Column(
-        children: [
-          //Icon(Icons.arrow_drop_up),
-          Expanded(
-            child: PageView(
-              scrollDirection: Axis.vertical,
-              children: [
-                ...model.tabs.map((tab) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 10.0),
-                    child: OpenTabLabel(
-                      key: Key(tab.model.resource.id!),
-                      isFirstListItem: true,
-                      isLastListItem: true,
-                      model: model, 
-                      resource: tab.model.resource, 
-                      onTap: () {
-                        Navigator.push(context, 
-                          PageTransition<dynamic>(
-                            type: PageTransitionType.bottomToTop,
-                            curve: Curves.easeInExpo,
-                            child: TabEditModal(
-                              tab: tab.model.resource,
-                              workspaceModel: model,
-                            ),
-                            fullscreenDialog: true,
-                          )
-                        );
-                        
-                        
-                      }
-                    ),
-                  );
-                }).toList(),
-                Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 10.0),
-                    child: OpenTabLabel(
-                      isFirstListItem: true,
-                      isLastListItem: true,
-                      model: model, 
-                      resource: Resource(url: 'https://google.com', title: 'New Tab'), 
-                      onTap: () => null
-                    ),
-                  ),
-              ],
-              onPageChanged: (index) {
-                model.onPageChanged(index);
-              },
-              controller: model.tabPageController,
-            ),
-          ),
-          //Icon(Icons.arrow_drop_down),
-        ],
-      );
-  }
 
   Widget _buildWebViewHeader() {
     final workspaceColor = HexColor.fromHex(model.workspaceHexColor);
@@ -324,9 +253,9 @@ class _WorkspaceViewState extends State<WorkspaceView> {
             onTap: () => model.goBackToWorkspaceView(),
             child: Row(
               children: [
-                Icon(Icons.arrow_back_ios,
-                  color: workspaceColor,
-                ),
+                // Icon(Icons.arrow_back_ios,
+                //   color: workspaceColor,
+                // ),
                 Material(
                   type: MaterialType.transparency,
                   child: Hero(

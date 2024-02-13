@@ -815,6 +815,13 @@ class WorkspaceViewModel extends ChangeNotifier {
     );
   }
 
+  bool showCreateOptions = false;
+  setShowCreateOptions(bool value) {
+    setState(() {
+      showCreateOptions = value;
+    });
+  }
+
   createNewTab({String? url, bool lazyload = false, bool incognito = false}) {
     TabView tab = TabView(
       incognito: workspace.isIncognito ?? incognito,
@@ -837,6 +844,7 @@ class WorkspaceViewModel extends ChangeNotifier {
     });
 
     tabPageController?.jumpToPage(workspace.activeTabIndex!);
+  
     
   }
 
@@ -862,8 +870,6 @@ class WorkspaceViewModel extends ChangeNotifier {
         tabs.add(TabView(model: TabViewModel(workspaceModel: this), lazyLoad: false, incognito: workspace.isIncognito ?? false,));
         workspace.showWebView = true;
       }
-
-      print(workspace.tabs);
 
     });
   }
@@ -1197,6 +1203,14 @@ class WorkspaceViewModel extends ChangeNotifier {
       isInEditMode = value;
     });
   }
+
+  bool showQuickActions = false;
+  setShowQuickActions(bool value) {
+    setState(() {
+      showQuickActions = value;
+    });
+  }
+
 
 }
 

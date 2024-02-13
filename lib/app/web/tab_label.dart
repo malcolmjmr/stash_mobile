@@ -70,65 +70,79 @@ class OpenTabLabel extends StatelessWidget {
               if (model.workspace.title != null && !resource.isSaved)
               SlidableAction(
                 icon: Symbols.move_to_inbox_rounded,
-                foregroundColor: Colors.white,
-                backgroundColor: Colors.orange,
+                foregroundColor: Colors.black,
+                backgroundColor: HexColor.fromHex(model.workspaceHexColor),
                 onPressed: (context) => model.stashTab(resource),
+                padding: EdgeInsets.only(right: 1),
               ),
-              if (resource.isSaved)
+
               SlidableAction(
-                icon: Icons.bookmark_rounded,
-                backgroundColor: Colors.green,
+                icon: Symbols.drive_file_move_rounded,
+                foregroundColor: Colors.black,
+                backgroundColor: HexColor.fromHex(model.workspaceHexColor),
                 onPressed: (context) => showCupertinoModalBottomSheet(
-                  context: context, 
-                  builder: (context) {
-                    return EditBookmarkModal(resource: resource, workspaceViewModel: model,);
-                    //return MoveToFolderModal(resource: resource, onFolderSelected: (_) => null,);
-                  }
-                )
-              )
-              else 
-              SlidableAction(
-                icon: Symbols.bookmark_add_rounded,
-                backgroundColor: Colors.green,
-                onPressed: (context) => model.workspace.title != null 
-                  ? model.saveTab(resource) 
-                  : showCupertinoModalBottomSheet(
                       context: context, 
                       builder: (context) {
                         return EditBookmarkModal(resource: resource, workspaceViewModel: model,);
-                        //return MoveToFolderModal(resource: resource, onFolderSelected: (_) => null,);
+                        //return MoveToFolderModa(resource: resource, onFolderSelected: (_) => null,);
                       }
                     )
               ),
-              if (resource.isSaved)
-              SlidableAction(
-                icon: Symbols.priority_high_rounded,
-                backgroundColor: Colors.green.withOpacity(0.8),
-                onPressed: (context) => showCupertinoModalBottomSheet(
-                  context: context, 
-                  builder: (context) {
-                    return EditBookmarkModal(resource: resource, workspaceViewModel: model,);
-                    //return MoveToFolderModal(resource: resource, onFolderSelected: (_) => null,);
-                  }
-                )
-              ),
-              if (resource.isSaved)
-              SlidableAction(
-                icon: Symbols.tag_rounded,
-                backgroundColor: Colors.green.withOpacity(0.6),
-                onPressed: (context) => showCupertinoModalBottomSheet(
-                  context: context, 
-                  builder: (context) {
-                    return EditBookmarkModal(resource: resource, workspaceViewModel: model,);
-                    //return MoveToFolderModal(resource: resource, onFolderSelected: (_) => null,);
-                  }
-                )
-              ),
-              SlidableAction(
-                icon: Symbols.ios_share_rounded,
-                backgroundColor: Colors.blue.withOpacity(0.6),
-                onPressed: (context) => model.onShare(resource),
-              ),
+              // if (resource.isSaved)
+              // SlidableAction(
+              //   icon: Icons.bookmark_rounded,
+              //   backgroundColor: Colors.green,
+              //   onPressed: (context) => showCupertinoModalBottomSheet(
+              //     context: context, 
+              //     builder: (context) {
+              //       return EditBookmarkModal(resource: resource, workspaceViewModel: model,);
+              //       //return MoveToFolderModal(resource: resource, onFolderSelected: (_) => null,);
+              //     }
+              //   )
+              // )
+              // else 
+              // SlidableAction(
+              //   icon: Symbols.bookmark_add_rounded,
+              //   backgroundColor: Colors.green,
+              //   onPressed: (context) => model.workspace.title != null 
+              //     ? model.saveTab(resource) 
+              //     : showCupertinoModalBottomSheet(
+              //         context: context, 
+              //         builder: (context) {
+              //           return EditBookmarkModal(resource: resource, workspaceViewModel: model,);
+              //           //return MoveToFolderModal(resource: resource, onFolderSelected: (_) => null,);
+              //         }
+              //       )
+              // ),
+              // if (resource.isSaved)
+              // SlidableAction(
+              //   icon: Symbols.priority_high_rounded,
+              //   backgroundColor: Colors.green.withOpacity(0.8),
+              //   onPressed: (context) => showCupertinoModalBottomSheet(
+              //     context: context, 
+              //     builder: (context) {
+              //       return EditBookmarkModal(resource: resource, workspaceViewModel: model,);
+              //       //return MoveToFolderModal(resource: resource, onFolderSelected: (_) => null,);
+              //     }
+              //   )
+              // ),
+              // if (resource.isSaved)
+              // SlidableAction(
+              //   icon: Symbols.tag_rounded,
+              //   backgroundColor: Colors.green.withOpacity(0.6),
+              //   onPressed: (context) => showCupertinoModalBottomSheet(
+              //     context: context, 
+              //     builder: (context) {
+              //       return EditBookmarkModal(resource: resource, workspaceViewModel: model,);
+              //       //return MoveToFolderModal(resource: resource, onFolderSelected: (_) => null,);
+              //     }
+              //   )
+              // ),
+              // SlidableAction(
+              //   icon: Symbols.ios_share_rounded,
+              //   backgroundColor: Colors.blue.withOpacity(0.6),
+              //   onPressed: (context) => model.onShare(resource),
+              // ),
             ],
             motion: const ScrollMotion(),
             dismissible: DismissiblePane(onDismissed: () => model.workspace.title != null && !resource.isSaved
@@ -145,20 +159,20 @@ class OpenTabLabel extends StatelessWidget {
             extentRatio: resource.isSaved ? 0.75 : 0.5,
           ),
           endActionPane: ActionPane(
-            children: [
-              SlidableAction(
-                icon: Icons.more_horiz,
-                backgroundColor: Colors.blue,
-                onPressed: (context) => showCupertinoModalBottomSheet(
-                  context: context, 
-                  builder: (context) {
-                    return TabMenu(
-                      resource: resource,
-                      workspaceModel: model,
-                    );
-                  }
-                ),
-              ),
+           children: [
+            //   SlidableAction(
+            //     icon: Icons.more_horiz,
+            //     backgroundColor: Colors.blue,
+            //     onPressed: (context) => showCupertinoModalBottomSheet(
+            //       context: context, 
+            //       builder: (context) {
+            //         return TabMenu(
+            //           resource: resource,
+            //           workspaceModel: model,
+            //         );
+            //       }
+            //     ),
+            //   ),
               // SlidableAction(
               //   icon: Icons.ios_share,
               //   backgroundColor: Colors.blue,
@@ -170,17 +184,30 @@ class OpenTabLabel extends StatelessWidget {
               //   foregroundColor: Colors.white,
               //   onPressed: (context) => model.reloadTab(resource)
               // ),
+              // SlidableAction(
+              //   icon: Icons.add_box_rounded,
+              //   backgroundColor: Colors.green,
+              //   onPressed: (context) => model.createNewTab(),
+              // ),
+              // SlidableAction(
+              //   icon: Symbols.new_window_rounded,
+              //   backgroundColor: Colors.orange,
+              //   foregroundColor: Colors.white,
+              //   onPressed: (context) => Navigator.of(context).pushNamed(AppRoutes.workspace),
+              // )
+
               SlidableAction(
-                icon: Icons.add_box_rounded,
-                backgroundColor: Colors.green,
-                onPressed: (context) => model.createNewTab(),
+                icon: Symbols.tab_move_rounded,
+                foregroundColor: Colors.black,
+                backgroundColor: HexColor.fromHex(model.workspaceHexColor),
+                onPressed: (context) => showCupertinoModalBottomSheet(
+                      context: context, 
+                      builder: (context) {
+                        return EditBookmarkModal(resource: resource, workspaceViewModel: model,);
+                        //return MoveToFolderModa(resource: resource, onFolderSelected: (_) => null,);
+                      }
+                    )
               ),
-              SlidableAction(
-                icon: Symbols.new_window_rounded,
-                backgroundColor: Colors.orange,
-                foregroundColor: Colors.white,
-                onPressed: (context) => Navigator.of(context).pushNamed(AppRoutes.workspace),
-              )
             ],
             motion: const StretchMotion(),
             // A pane can dismiss the Slidable.
@@ -196,7 +223,7 @@ class OpenTabLabel extends StatelessWidget {
             extentRatio: 0.50,
           ),
           child: Padding(
-            padding: const EdgeInsets.all(10.0),
+            padding: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -218,7 +245,7 @@ class OpenTabLabel extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
-                        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * (resource.isSaved == true || isIncognito ? .65 : .75)),
+                        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * ( isIncognito ? .65 : .75)),
                         child: Text(resource.title ?? '', 
                           overflow: TextOverflow.ellipsis,
                           maxLines: 1,
@@ -236,11 +263,11 @@ class OpenTabLabel extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 5),
                         child: Icon(Icons.visibility_off),
                       ),
-                      if (resource.isSaved == true) 
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 5),
-                        child: Icon(Icons.star_rounded, color: HexColor.fromHex(colorMap[model.workspace.color ?? 'grey']!)),
-                      ),
+                      // if (resource.isSaved == true) 
+                      // Padding(
+                      //   padding: const EdgeInsets.symmetric(horizontal: 5),
+                      //   child: Icon(Icons.star_rounded, color: HexColor.fromHex(colorMap[model.workspace.color ?? 'grey']!)),
+                      // ),
                     ],
                   ),
                 ),

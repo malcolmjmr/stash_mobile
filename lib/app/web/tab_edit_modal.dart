@@ -136,17 +136,14 @@ class _TabEditModalState extends State<TabEditModal> {
               ),
             ),
             Container(
-              decoration: BoxDecoration(
-                //color: HexColor.fromHex('333333'),
-                borderRadius: BorderRadius.circular(8)
-              ),
               child: Padding(
                 padding: const EdgeInsets.only(right: 5.0, top: 1, bottom: 2, left: 3.0),
                 child: Row(
                   children: [
                     CreateTabButton(
                       icon: Symbols.add_box_rounded, 
-                      onTap: () => model.createNewTab(context)
+                      onTap: () => model.createNewTab(context),
+                      color: HexColor.fromHex('999999'),
                     ),
                     CreateTabButton(
                       icon: Symbols.visibility_off,
@@ -266,14 +263,14 @@ class CreateTabButton extends StatelessWidget {
       onTap: onTap,
       onLongPress: onLongPress,
       child: Padding(
-        padding: const EdgeInsets.only(left: 3.0, right: 3, bottom: 3),
+        padding: const EdgeInsets.all(3),
         child: Container(
           height: 35,
           width: 35,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            color: HexColor.fromHex('333333')
-          ),
+          // decoration: BoxDecoration(
+          //   borderRadius: BorderRadius.circular(8),
+          //   border: Border.all(color: HexColor.fromHex('333333')),
+          // ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 5.0),
             child: Container(

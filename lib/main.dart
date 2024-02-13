@@ -37,7 +37,7 @@ Future<void> main() async {
     overrides: [
       sharedPreferencesServiceProvider.overrideWithValue(
         SharedPreferencesService(sharedPreferences),
-      ),
+       ),
     ],
     child: MyApp(),
   ));
