@@ -41,9 +41,7 @@ class _TabActionsState extends State<TabActions> {
   
   @override
   Widget build(BuildContext context) {
-      return model.workspaceModel.showCreateOptions 
-        ? _buildQuickActions()
-        : _buildDefaultActions();
+      return _buildDefaultActions();
   }
 
   Widget _buildDefaultActions() {
@@ -80,17 +78,24 @@ class _TabActionsState extends State<TabActions> {
               icon: Symbols.add_box_rounded,
               name: 'New Tab',
               onTap: model.onCreateTapped,
-              onLongPress: model.onCreateLongPressed
+              onLongPress: model.onCreateLongPressed,
+              iconFillFunction: (model) {
+                return model.showCreateOptions ? 1 : 0;
+              }
             ), 
             color: model.workspaceColor,
+            size: 30,
             workspaceModel: model.workspaceModel,
           ),
 
           ActionIcon(
             action: TabCommand(
-              icon: Symbols.expand_circle_up_rounded,
+              icon: model.workspaceModel.showQuickActions ? Symbols.expand_circle_down_rounded : Symbols.expand_circle_up_rounded,
               name: 'Show Actions',
-              onTap: model.onShowActionsTapped
+              onTap: model.onQuickActionsTapped,
+              iconFillFunction: (model) {
+                return model.showQuickActions ? 1 : 0;
+              }
             ), 
             color: model.workspaceColor,
             workspaceModel: model.workspaceModel,
@@ -138,7 +143,8 @@ class ActionIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: action.onTap,
-      onDoubleTap: action.onDoubleTap,
+      onDoubleTap: action.onLongPress,
+      onLongPress: action.onLongPress,
       child: Container(
         child: Icon(
           action.icon,
@@ -169,3 +175,57 @@ class ActionListItem extends StatelessWidget {
     );
   }
 }
+
+List<TabCommand> quickActions = [
+    TabCommand(
+      icon: Symbols.arrow_left_alt_rounded, 
+      name: 'Back', 
+      onTap: () => null,
+    ),
+    TabCommand(
+      icon: Symbols.arrow_right_alt_rounded, 
+      name: 'Forward', 
+      onTap: () => null,
+    ),
+    TabCommand(
+      icon: Symbols.refresh, 
+      name: 'Reload', 
+      onTap: () => null,
+    ),
+    TabCommand(
+      icon: Symbols.text_to_speech, 
+      name: 'Listen', 
+      onTap: () => null,
+    ),
+    TabCommand(
+      icon: Symbols.subscriptions_rounded, 
+      name: 'Create Playlist', 
+      onTap: () => null,
+    ),
+    TabCommand(
+      icon: Symbols.chrome_reader_mode_rounded, 
+      name: 'TOC', 
+      onTap: () => null,
+    ),
+    TabCommand(
+      icon: Symbols.find_in_page_rounded, 
+      name: 'Find in Page', 
+      onTap: () => null,
+    ),
+    TabCommand(
+      icon: Symbols.ios_share_rounded, 
+      name: 'Share', 
+      onTap: () => null,
+    ),
+    TabCommand(
+      icon: Symbols.move_up_rounded, 
+      name: 'Move to Top', 
+      onTap: () => null,
+    ),
+    TabCommand(
+      icon: Symbols.move_down_rounded, 
+      name: 'Move to Bottom', 
+      onTap: () => null,
+    ),
+
+  ];

@@ -67,9 +67,20 @@ class _TabEditModalState extends State<TabEditModal> {
             children: [
               _buildBackground(),
              
-              _buildUrlField(),
-              if (model.visibleDomains.isNotEmpty)
-              _buildCreateOptions(),
+              Container(
+                padding: EdgeInsets.symmetric(vertical: 5.0),
+                color: Colors.black,
+                child: Column(
+                  children: [
+                    _buildUrlField(),
+                    if (model.visibleDomains.isNotEmpty)
+                    _buildDomainOptions(),
+                  ],
+                ),
+              ),
+               
+            // _build
+             
             ],
           ),
         )
@@ -92,74 +103,62 @@ class _TabEditModalState extends State<TabEditModal> {
     return Container();
   }
 
-  Widget _buildCreateOptions() {
+  Widget _buildDomainOptions() {
     return Container(
       height: 40,
       decoration: BoxDecoration(
         //borderRadius: BorderRadius.circular(8),
         color: Colors.black,
       ),
-      child: Container(
-        
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(left: 8.0),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: Container(
-                    height: 35,
-                    decoration: BoxDecoration(
-                      //color: HexColor.fromHex('333333'),
-                      //borderRadius: BorderRadius.circular(8)
-                    ),
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      //controller: ScrollController().,
-                      itemCount: model.visibleDomains.length,
-                      itemBuilder: (context, index) {
-                        final domain = model.visibleDomains[index];
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 5.0),
-                          child: Center(child: DomainIcon(domain: domain, 
-                            size: 26,
-                            onTap: () => model.createNewTab(context, domain: domain), 
-                            onLongPress: () => model.deleteDomain(domain),)),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            Container(
-              child: Padding(
-                padding: const EdgeInsets.only(right: 5.0, top: 1, bottom: 2, left: 3.0),
-                child: Row(
-                  children: [
-                    CreateTabButton(
-                      icon: Symbols.add_box_rounded, 
-                      onTap: () => model.createNewTab(context),
-                      color: HexColor.fromHex('999999'),
-                    ),
-                    CreateTabButton(
-                      icon: Symbols.visibility_off,
-                      onTap: () => model.createNewTab(context, incognito: true),
-                      size: 18,
-                    ),
-                    CreateTabButton(
-                      icon: Symbols.new_window, 
-                      onTap: () => model.createNewSpace(context),
-                    ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          height: 35,
+          decoration: BoxDecoration(
+            //color: HexColor.fromHex('333333'),
+            //borderRadius: BorderRadius.circular(8)
+          ),
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            //controller: ScrollController().,
+            itemCount: model.visibleDomains.length,
+            itemBuilder: (context, index) {
+              final domain = model.visibleDomains[index];
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Center(child: DomainIcon(domain: domain, 
+                  size: 26,
+                  onTap: () => model.createNewTab(context, domain: domain), 
+                  onLongPress: () => model.deleteDomain(domain),)),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
 
-                  ],
-                ),
-              ),
+  Widget _buildCreateOptions() {
+    return Container(
+      child: Padding(
+        padding: const EdgeInsets.only(right: 5.0, top: 1, bottom: 2, left: 3.0),
+        child: Row(
+          children: [
+            CreateTabButton(
+              icon: Symbols.add_box_rounded, 
+              onTap: () => model.createNewTab(context),
+              color: HexColor.fromHex('999999'),
             ),
-            
+            CreateTabButton(
+              icon: Symbols.visibility_off,
+              onTap: () => model.createNewTab(context, incognito: true),
+              size: 18,
+            ),
+            CreateTabButton(
+              icon: Symbols.new_window, 
+              onTap: () => model.createNewSpace(context),
+            ),
+
           ],
         ),
       ),

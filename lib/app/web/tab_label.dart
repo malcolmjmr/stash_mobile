@@ -15,6 +15,7 @@ import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark_model.dart';
 import 'package:stashmobile/app/web/tab_menu.dart';
 import 'package:stashmobile/app/web/vertical_tabs_modal.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
+import 'package:stashmobile/app/workspace/workspace_view_params.dart';
 import 'package:stashmobile/constants/color_map.dart';
 import 'package:stashmobile/extensions/color.dart';
 import 'package:stashmobile/models/resource.dart';
@@ -83,7 +84,11 @@ class OpenTabLabel extends StatelessWidget {
                 onPressed: (context) => showCupertinoModalBottomSheet(
                       context: context, 
                       builder: (context) {
-                        return EditBookmarkModal(resource: resource, workspaceViewModel: model,);
+                        return MoveToSpaceModal(
+                          resource: model.currentTab.model.resource,
+                          workspaceViewModel: model,
+                          onSpaceSelected: (folder) => model.removeTab(model.currentTab.model.resource)
+                        );
                         //return MoveToFolderModa(resource: resource, onFolderSelected: (_) => null,);
                       }
                     )
@@ -155,8 +160,8 @@ class OpenTabLabel extends StatelessWidget {
                   }
                 )
             ),
-            openThreshold: 0.25,
-            extentRatio: resource.isSaved ? 0.75 : 0.5,
+            openThreshold: 0.3,
+            extentRatio: .4,
           ),
           endActionPane: ActionPane(
            children: [
@@ -200,27 +205,19 @@ class OpenTabLabel extends StatelessWidget {
                 icon: Symbols.tab_move_rounded,
                 foregroundColor: Colors.black,
                 backgroundColor: HexColor.fromHex(model.workspaceHexColor),
-                onPressed: (context) => showCupertinoModalBottomSheet(
-                      context: context, 
-                      builder: (context) {
-                        return EditBookmarkModal(resource: resource, workspaceViewModel: model,);
-                        //return MoveToFolderModa(resource: resource, onFolderSelected: (_) => null,);
-                      }
-                    )
+                onPressed: (context) => model.moveTabToNewSpace(context)
               ),
             ],
             motion: const StretchMotion(),
             // A pane can dismiss the Slidable.
             dismissible: DismissiblePane(
-              onDismissed: () {
-                Navigator.of(context).pushNamed(AppRoutes.workspace);
-              },
+              onDismissed: () => model.moveTabToNewSpace(context)
               //closeOnCancel: true,
               //confirmDismiss: () => Future.value(false),
             ),
             
             openThreshold: 0.25,
-            extentRatio: 0.50,
+            extentRatio: 0.40,
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),

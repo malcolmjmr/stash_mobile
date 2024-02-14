@@ -45,6 +45,8 @@ class Resource {
   int rating = 0;
   List<Note> notes = [];
 
+  bool annotationsLoaded = false;
+
 
   Resource({ this.url, this.title, this.favIconUrl}) {
     id = Uuid().v4().split('-').last;
@@ -113,6 +115,9 @@ class Resource {
 class Highlight {
   late String text;
   String? id;
+
+  Map<String, dynamic>? target;
+  
   Highlight({
     this.id,
     required this.text, 

@@ -61,8 +61,8 @@ class TabActionsModel {
     workspaceModel.setShowCreateOptions(true);
   }
 
-  onShowActionsTapped() {
-    workspaceModel.setShowQuickActions(true);
+  onQuickActionsTapped() {
+    workspaceModel.setShowQuickActions(!workspaceModel.showQuickActions);
   }
 
   onNewSessionTapped(BuildContext context) {

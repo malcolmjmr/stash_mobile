@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:stashmobile/app/web/js.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
+import 'package:stashmobile/constants/color_map.dart';
 import 'package:stashmobile/models/resource.dart';
 import 'package:stashmobile/services/hypothesis.dart';
 
@@ -67,6 +68,50 @@ class TabViewModel {
     await addJsListeners();
     await addEventHandlers(context);
     await addAnnotationFunctions();
+    await getAnnotations();
+  }
+
+  getAnnotations() async {
+    List annotations = [];
+    if (resource.annotationsLoaded) {
+      annotations = resource.highlights.map((h) {
+        return {
+          'id': h.id,
+          'target': h.target,
+          'color': colorMap[workspaceModel.workspace.color ?? 'grey']
+        };
+      }).toList();
+    } else if (resource.highlights.length > 0) {
+      final searchResults = await Hypothesis().search(params: {
+        'url': resource.url,
+        'user': 'acct:malcolmjmr@hypothes.is'
+      });
+
+      Map<String, dynamic> annotationMap = {};
+      for (final annotation in searchResults) {
+        annotationMap[annotation['id']] = annotation;
+      }
+      for (int i = 0; i < resource.highlights.length; i++) {
+        final annotation = annotationMap[resource.highlights[i].id];
+        if (annotation != null) {
+            final target = annotation['target'][0];
+            resource.highlights[i].target = target;
+            annotations.add({
+              'id': annotation['id'],
+              'target': target,
+              'color': colorMap[workspaceModel.workspace.color ?? 'grey']
+            });
+        }
+      }
+    }
+
+    controller.evaluateJavascript(
+      source: JS.createRootDocument(
+        sectionCount: 1,
+        links: [],
+        annotations: annotations,
+      ),
+    );
   }
 
   onCloseWindow(BuildContext context, InAppWebViewController controller) {
@@ -169,6 +214,10 @@ class TabViewModel {
     controller.addJavaScriptHandler(
       handlerName: 'imageSelected',
       callback: onImageSelected,
+    );
+    controller.addJavaScriptHandler(
+      handlerName: 'onHighlightClicked',
+      callback: onHighlightClicked,
     );
   }
 
@@ -333,6 +382,10 @@ class TabViewModel {
     if (imageIndex == -1) {
       resource.images.add(imageUrl);
     }
+  }
+
+  onHighlightClicked(args) async {
+    workspaceModel.setSelectedHighlight(args[0]);
   }
 
   

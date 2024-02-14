@@ -47,6 +47,7 @@ class WorkspaceViewModel extends ChangeNotifier {
   List<Workspace> subWorkspaces = [];
   List<Resource> allResources = [];
 
+  bool hasSavedResources = false;
   bool hasQueue = false;
   bool hasHighlights = false;
   bool hasFavorites = false;
@@ -272,6 +273,10 @@ class WorkspaceViewModel extends ChangeNotifier {
     for (final resource in allResources) {
       if (resource.url == null) continue;
 
+      if (resource.isQueued != true && !hasSavedResources) {
+        hasSavedResources = true;
+      }
+
       if (resource.highlights.isNotEmpty && !hasHighlights) {
         hasHighlights = true;
       }
@@ -342,6 +347,11 @@ class WorkspaceViewModel extends ChangeNotifier {
       }
 
     });
+
+    if (hasQueue && !hasSavedResources) {
+      resourceView = ResourceView.queue;
+    }
+
     tags = sortedTags;
     visibleTags = tags;
     
@@ -822,9 +832,9 @@ class WorkspaceViewModel extends ChangeNotifier {
     });
   }
 
-  createNewTab({String? url, bool lazyload = false, bool incognito = false}) {
+  createNewTab({String? url, bool lazyload = false, bool? incognito}) {
     TabView tab = TabView(
-      incognito: workspace.isIncognito ?? incognito,
+      incognito: incognito ?? workspace.isIncognito ?? false,
       model: TabViewModel(
         workspaceModel: this,
         initialResource: url != null ? Resource(url: url) : null,
@@ -940,7 +950,16 @@ class WorkspaceViewModel extends ChangeNotifier {
     setState(() {
       showTextSelectionMenu = false;
     });
-    createNewTab(url: 'https://www.google.com/search?q=' + Uri.encodeComponent(selectedText!));
+
+    String url = '';
+    if (selectedText!.length  > 30 || selectedText!.split('.').length > 1) {
+      url = 'https://exa.ai/search?q=' + Uri.encodeComponent(
+        'Articles related to the following excerpt: "' + selectedText! + '"'
+      ) + '&filters=%7B%22domainFilterType%22%3A%22include%22%2C%22timeFilterOption%22%3A%22any_time%22%2C%22activeTabFilter%22%3A%22all%22%7D';
+    } else {
+      url = 'https://www.google.com/search?q=' + Uri.encodeComponent(selectedText!);
+    }
+    createNewTab(url: url);
   }
 
   tagTabWithSelectedText() {
@@ -1017,6 +1036,20 @@ class WorkspaceViewModel extends ChangeNotifier {
       setState(() {
         showTextSelectionMenu = false;
       });
+    } 
+
+    if (selectedHighlight != null) {
+      setState(() {
+        selectedHighlight = null;
+      });
+    }
+
+    if (showCreateOptions) {
+      setShowCreateOptions(false);
+    }
+
+    if (showQuickActions) {
+      setShowQuickActions(false);
     }
   }
 
@@ -1209,6 +1242,57 @@ class WorkspaceViewModel extends ChangeNotifier {
     setState(() {
       showQuickActions = value;
     });
+  }
+
+
+  moveTabToNewSpace(BuildContext context) {              
+    Navigator.pushNamed(context,
+      AppRoutes.workspace,
+      arguments: WorkspaceViewParams(
+        resourceToOpen: currentTab.model.resource
+      )
+    );
+
+    removeTab(currentTab.model.resource);
+  }
+
+  goForward() {
+    // open exa in the background
+    //
+  }
+
+  bool showFindInPage = false;
+  setShowFindInPage(bool value) {
+    setState(() {
+      showFindInPage = value;
+    });
+  }
+
+  moveTabToBottom() {
+    final index = tabs.indexWhere((t) => t.model.resource.id == currentTab.model.resource.id);
+    final tab = tabs.removeAt(index);
+    setState(() {
+      tabs = [...tabs, tab];
+      workspace.activeTabIndex = tabs.length - 1;
+    });
+  }
+
+  moveTabToTop() {
+    final index = tabs.indexWhere((t) => t.model.resource.id == currentTab.model.resource.id);
+    final tab = tabs.removeAt(index);
+    setState(() {
+      tabs = [tab, ...tabs];
+      workspace.activeTabIndex = 0;
+    }); 
+  }
+
+  String? selectedHighlight;
+  setSelectedHighlight(String? value) {
+
+    setState(() {
+      selectedHighlight = value;
+    });
+  
   }
 
 

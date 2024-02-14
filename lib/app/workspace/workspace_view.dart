@@ -30,6 +30,7 @@ import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark.dart' hide Se
 import 'package:stashmobile/app/modals/move_tabs/move_tabs_modal.dart';
 import 'package:stashmobile/app/providers/workspace.dart';
 import 'package:stashmobile/app/search/search_view_model.dart';
+import 'package:stashmobile/app/web/find_in_page.dart';
 import 'package:stashmobile/app/web/horizontal_tabs.dart';
 import 'package:stashmobile/app/web/tab_actions.dart';
 import 'package:stashmobile/app/web/tab_bottom_bar.dart';
@@ -106,17 +107,23 @@ class _WorkspaceViewState extends State<WorkspaceView> {
 
   Widget _buildWebview() {
     return Scaffold(
-      body: Column(
+      body: Stack(
         children: [
-          _buildWebViewHeader(),
-          Container(
-            height: MediaQuery.of(context).size.height - 160,
-            child: IndexedStack(
-              index: model.workspace.activeTabIndex,
-              children: model.tabs
-            )
+          Column(
+            children: [
+              _buildWebViewHeader(),
+              Container(
+                height: MediaQuery.of(context).size.height - 160,
+                child: IndexedStack(
+                  index: model.workspace.activeTabIndex,
+                  children: model.tabs
+                )
+              ),
+              TabBottomBar(model: model),
+            ],
           ),
-          TabBottomBar(model: model),
+          if (model.showFindInPage)
+          FindInPage(model: model)
         ],
       ),
     );
@@ -530,6 +537,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   List<Widget> _buildListOptions() {
   
     return [
+      if (model.hasSavedResources)
       _buildListOption(text: 'Recent'),
       if (model.hasFavorites)
       _buildListOption(text: 'Favorites', view: ResourceView.important),

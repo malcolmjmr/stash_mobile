@@ -7,8 +7,8 @@ class TextSelectionMenu extends StatelessWidget {
 
   final WorkspaceViewModel workspaceModel;
   const TextSelectionMenu({Key? key, 
-
-    required this.workspaceModel
+    required this.workspaceModel,
+    
   }) : super(key: key);
 
   @override

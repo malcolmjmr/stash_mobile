@@ -65,7 +65,7 @@ class _TabMenuState extends State<TabMenu> {
       type: MaterialType.transparency,
       child: Container(
         height: MediaQuery.of(context).size.height * .50,
-        color: HexColor.fromHex('222222'),
+        color: HexColor.fromHex('111111'),
         // decoration: BoxDecoration(
         //   color: Colors.black,
         // ),

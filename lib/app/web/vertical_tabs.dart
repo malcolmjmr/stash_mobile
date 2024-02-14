@@ -14,70 +14,62 @@ class VeritcalTabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     workspaceModel.tabPageController = PageController(initialPage: workspaceModel.workspace.activeTabIndex!);
-    final borderColor = HexColor.fromHex('222222');
+  
     
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: borderColor),
-          top: BorderSide(color: borderColor, width: 2)
-        )
-      ),
-      child: Column(
-          children: [
-            //Icon(Icons.arrow_drop_up),
-            Expanded(
-              child: PageView(
-                scrollDirection: Axis.vertical,
-                children: [
-                  ...workspaceModel.tabs.map((tab) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 8),
-                      child: OpenTabLabel(
-                        key: Key(tab.model.resource.id!),
-                        isFirstListItem: true,
-                        isLastListItem: true,
-                        model: workspaceModel, 
-                        resource: tab.model.resource, 
-                        onTap: () {
-                          Navigator.push(context, 
-                            PageTransition<dynamic>(
-                              type: PageTransitionType.bottomToTop,
-                              curve: Curves.easeInExpo,
-                              child: TabEditModal(
-                                tab: tab.model.resource,
-                                workspaceModel: workspaceModel,
-                              ),
-                              fullscreenDialog: true,
-                            )
-                          );
-                          
-                          
-                        }
-                      ),
-                    );
-                  }).toList(),
-                  Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 10.0),
-                      child: OpenTabLabel(
-                        isFirstListItem: true,
-                        isLastListItem: true,
-                        model: workspaceModel, 
-                        resource: Resource(url: 'https://google.com', title: 'New Tab'), 
-                        onTap: () => null
-                      ),
+    return Column(
+        children: [
+          //Icon(Icons.arrow_drop_up),
+          Expanded(
+            child: PageView(
+              scrollDirection: Axis.vertical,
+              children: [
+                ...workspaceModel.tabs.map((tab) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 8),
+                    child: OpenTabLabel(
+                      key: Key(tab.model.resource.id!),
+                      isFirstListItem: true,
+                      isLastListItem: true,
+                      model: workspaceModel, 
+                      resource: tab.model.resource, 
+                      onTap: () {
+                        Navigator.push(context, 
+                          PageTransition<dynamic>(
+                            type: PageTransitionType.bottomToTop,
+                            curve: Curves.easeInExpo,
+                            child: TabEditModal(
+                              tab: tab.model.resource,
+                              workspaceModel: workspaceModel,
+                            ),
+                            fullscreenDialog: true,
+                          )
+                        );
+                        
+                        
+                      }
                     ),
-                ],
-                onPageChanged: (index) {
-                  workspaceModel.onPageChanged(index);
-                },
-                controller: workspaceModel.tabPageController,
-              ),
+                  );
+                }).toList(),
+                Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 10.0),
+                    child: OpenTabLabel(
+                      isFirstListItem: true,
+                      isLastListItem: true,
+                      model: workspaceModel, 
+                      resource: Resource(url: 'https://google.com', title: 'New Tab'), 
+                      onTap: () => null
+                    ),
+                  ),
+              ],
+              onPageChanged: (index) {
+                workspaceModel.onPageChanged(index);
+              },
+              controller: workspaceModel.tabPageController,
             ),
-            //Icon(Icons.arrow_drop_down),
-          ],
-        ),
-    );
+          ),
+          //Icon(Icons.arrow_drop_down),
+        ],
+      );
   }
 }
 

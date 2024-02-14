@@ -8,15 +8,17 @@ class JS {
   }) {
     final jsLinks = convert.jsonEncode(links);
     final jsAnnotations = convert.jsonEncode(annotations);
-
+    print('creating document');
     return """
 
     class RootDocument {
       constructor(links, annotations) {
+
         this.getInfo();
         this.setLinks(links);
         this.setAnnotations(annotations);
         this.getSections();
+  
       }
 
       getInfo() {
@@ -174,6 +176,7 @@ class JS {
       }
 
       async setAnnotations(annotations) {
+        console.log('setting annotations');
         this.loadingAnnotations = true;
         this.annotations = {};
         Promise.all(annotations.map(async a => { 
@@ -193,11 +196,14 @@ class JS {
         });
         let notify = !this.annotations.hasOwnProperty(annotation.id) && !this.loadingAnnotations;
         
+        
         this.annotations[annotation.id] = {
           'target': annotation.target,
           'anchor': _anchor,
           'highlights': _highlights
         };
+        
+
         
         if (notify) window.flutter_inappwebview.callHandler("onHighlightClicked", annotation.id);
       }

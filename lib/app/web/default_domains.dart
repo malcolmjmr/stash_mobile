@@ -4,23 +4,29 @@ import 'package:stashmobile/models/domain.dart';
 
 List<Domain> defaultDomains = [
   Domain(
-      url: 'www.google.com',
+      url: 'https://www.google.com',
       searchTemplate: 'https://www.google.com/search?q=<|search|>',
       title: 'Google',
       favIconUrl: 'https://www.google.com/images/branding/product/1x/gsa_android_144dp.png'
     ),
     Domain(
-      title: 'Bing',
-      url: 'https://www.bing.com',
-      favIconUrl: 'https://www.bing.com/sa/simg/favicon-trans-bg-blue-mg.ico',
-      searchTemplate: "https://www.bing.com/search?q=<|search|>",
+      url: 'https://www.exa.ai',
+      searchTemplate: 'https://exa.ai/search?q=<|search|>',
+      title: 'Exa',
+      favIconUrl: 'https://exa.ai/favicon.png'
     ),
-    Domain(
-      title: 'DuckDuckGo',
-      url: 'https://duckduckgo.com',
-      favIconUrl: 'https://duckduckgo.com/favicon.ico',
-      searchTemplate: 'https://duckduckgo.com/?q=<|search|>',
-    ),
+    // Domain(
+    //   title: 'Bing',
+    //   url: 'https://www.bing.com',
+    //   favIconUrl: 'https://www.bing.com/sa/simg/favicon-trans-bg-blue-mg.ico',
+    //   searchTemplate: "https://www.bing.com/search?q=<|search|>",
+    // ),
+    // Domain(
+    //   title: 'DuckDuckGo',
+    //   url: 'https://duckduckgo.com',
+    //   favIconUrl: 'https://duckduckgo.com/favicon.ico',
+    //   searchTemplate: 'https://duckduckgo.com/?q=<|search|>',
+    // ),
     Domain(
       title: 'Sublime',
       url: 'https://sublime.app',
@@ -57,23 +63,23 @@ List<Domain> defaultDomains = [
       favIconUrl: 'https://www.amazon.com/favicon.ico',
       searchTemplate: 'https://www.amazon.com/s?k=<|search|>'
     ),
-    Domain(
-      title: 'Substack',
-      url: 'https://substack.com',
-      searchTemplate: 'https://substack.com/search/<|search|>',
-      favIconUrl: 'https://substackcdn.com/icons/substack/favicon.ico',
-    ),
+    // Domain(
+    //   title: 'Substack',
+    //   url: 'https://substack.com',
+    //   searchTemplate: 'https://substack.com/search/<|search|>',
+    //   favIconUrl: 'https://substackcdn.com/icons/substack/favicon.ico',
+    // ),
     Domain(
       title: 'New York Public Library',
       url: 'https://www.nypl.org',
       favIconUrl: 'https://ux-static.nypl.org/images/favicon.ico',
       searchTemplate: 'https://nypl.na2.iiivega.com/search?query=<|search|>&searchType=everything&pageSize=10'
     ),
-    Domain(
-      title: 'Notion',
-      url: 'https://www.notion.so',
-      favIconUrl: 'https://www.notion.so/images/favicon.ico'
-    ),
+    // Domain(
+    //   title: 'Notion',
+    //   url: 'https://www.notion.so',
+    //   favIconUrl: 'https://www.notion.so/images/favicon.ico'
+    // ),
     Domain(
       title: 'Quora',
       url: 'https://www.quora.com',
@@ -86,9 +92,10 @@ List<Domain> defaultDomains = [
       searchTemplate: 'https://hn.algolia.com/?q=<|search|>',
       favIconUrl: 'https://news.ycombinator.com/favicon.ico'
     ),
-    Domain(
-      title: 'Sci Hub',
-      favIconUrl: 'https://sci-hub.hkvisa.net/favicon.ico',
-      url: 'https://sci-hub.hkvisa.net'
-    )
+    
+    // Domain(
+    //   title: 'Sci Hub',
+    //   favIconUrl: 'https://sci-hub.hkvisa.net/favicon.ico',
+    //   url: 'https://sci-hub.hkvisa.net'
+    // )
   ];
