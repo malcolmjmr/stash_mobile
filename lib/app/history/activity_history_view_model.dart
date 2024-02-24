@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stashmobile/app/providers/data.dart';
 import 'package:stashmobile/app/providers/workspace.dart';
+import 'package:stashmobile/app/windows/windows_view_model.dart';
+import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 import 'package:stashmobile/app/workspace/workspace_view_params.dart';
 import 'package:stashmobile/extensions/dates.dart';
 import 'package:stashmobile/models/workspace.dart';
@@ -70,7 +72,7 @@ class ActivityHistoryViewModel extends ChangeNotifier {
 
   openWorkspace(BuildContext buildContext, Workspace workspace) {
     buildContext.read(workspaceProvider).state = workspace.id;
-    Navigator.pushNamed(buildContext, AppRoutes.workspace, arguments: WorkspaceViewParams(workspaceId: workspace.id));
+    buildContext.read(windowsProvider).openWorkspace(workspace);
   }
 
 }

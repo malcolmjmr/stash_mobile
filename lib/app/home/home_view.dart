@@ -399,7 +399,7 @@ class Footer extends StatelessWidget {
                 CreateButton(
                   icon: Symbols.library_add_rounded,
                   onDoubleTap: () => Navigator.pushNamed(context, AppRoutes.createNewTab),
-                  onTap:() =>  model.createNewTab(context)
+                  onTap:() =>  model.createWindow(context)
                 ),
                 //CreateButton(onTap: () => null, onDoubleTap: () => null, icon: Symbols.edit_square, padding: EdgeInsets.only(top: 0, left: 5, right: 5, bottom: 10),),
 
@@ -468,8 +468,8 @@ class Footer extends StatelessWidget {
                 padding: const EdgeInsets.only(right: 20.0),
                 child: DomainIcon(
                   domain: domain,
-                  onTap: () => model.createNewTab(context, domain: domain),
-                  onLongPress: () => model.createNewTab(context, domain: domain, isIncognito: true),
+                  onTap: () => model.createWindow(context, domain: domain),
+                  onLongPress: () => model.createWindow(context, domain: domain, isIncognito: true),
                 ),
               ),
             );

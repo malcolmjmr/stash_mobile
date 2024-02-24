@@ -1,10 +1,12 @@
 import 'dart:ffi';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:stashmobile/app/common_widgets/fav_icon.dart';
 import 'package:stashmobile/app/web/tab_actions_model.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
+import 'package:stashmobile/main.dart';
 import 'package:stashmobile/models/tab_commands.dart';
 
 class TabActions extends StatefulWidget {
@@ -57,6 +59,7 @@ class _TabActionsState extends State<TabActions> {
               icon: Symbols.folder_open_rounded,
               name: 'Open Space',
               onTap: model.onOpenSpaceTapped,
+              onLongPress: () => context.read(showHomeProvider).state = true,
             ), 
             color: model.workspaceColor,
             workspaceModel: model.workspaceModel,

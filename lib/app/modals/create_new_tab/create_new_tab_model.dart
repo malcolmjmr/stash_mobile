@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stashmobile/app/providers/data.dart';
+import 'package:stashmobile/app/windows/windows_view_model.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 import 'package:stashmobile/app/workspace/workspace_view_params.dart';
 import 'package:stashmobile/models/domain.dart';
@@ -49,11 +50,9 @@ class CreateNewTabModel {
     if (workspaceModel != null) {
       workspaceModel!.createNewTab(url: url);
     } else {
-      Navigator.pushNamed(context, AppRoutes.workspace, 
-        arguments: WorkspaceViewParams(
-          resourceToOpen: Resource(url: url)
-        )
-      );
+
+      context.read(windowsProvider).openWorkspace(null, resource: Resource(url: url));
+      
     }
   }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
@@ -6,6 +7,7 @@ import 'package:stashmobile/app/common_widgets/fav_icon.dart';
 import 'package:stashmobile/app/common_widgets/freeze_container.dart';
 import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark.dart';
 import 'package:stashmobile/app/modals/move_tabs/move_tabs_modal.dart';
+import 'package:stashmobile/app/windows/windows_view_model.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 import 'package:stashmobile/app/workspace/workspace_view_params.dart';
 import 'package:stashmobile/extensions/color.dart';
@@ -162,11 +164,7 @@ class _TabMenuState extends State<TabMenu> {
            MenuItem(
             title: 'New Space', 
             icon: Symbols.new_window,
-            onTap: () => Navigator.pushNamed(context, AppRoutes.workspace, 
-              arguments: WorkspaceViewParams(
-                parentId: widget.workspaceModel.workspace.id
-              )
-            ),
+            onTap: () => context.read(windowsProvider).openWorkspace(null),
             showBottomBorder: false,
           )
         ],

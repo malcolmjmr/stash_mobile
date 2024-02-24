@@ -55,9 +55,10 @@ import '../../models/resource.dart';
 
 class WorkspaceView extends StatefulWidget {
 
-  final WorkspaceViewParams? params;
+  //final WorkspaceViewParams? params;
   final bool  showWebView;
-  WorkspaceView({this.params, this.showWebView = false});
+  WorkspaceView({required this.model, this.showWebView = false});
+  final WorkspaceViewModel model; 
 
   @override
   State<WorkspaceView> createState() => _WorkspaceViewState();
@@ -76,10 +77,11 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    model = WorkspaceViewModel(
-      context: context, 
-      params: widget.params,
-      setState: setState,
+
+    model = widget.model;
+    model.init(
+      context,
+      setState,
     );
   }
 

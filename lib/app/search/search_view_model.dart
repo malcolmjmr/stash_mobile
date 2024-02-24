@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:stashmobile/app/providers/data.dart';
 import 'package:stashmobile/app/providers/workspace.dart';
+import 'package:stashmobile/app/windows/windows_view_model.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 import 'package:stashmobile/app/workspace/workspace_view_params.dart';
 import 'package:stashmobile/models/tag.dart';
@@ -184,13 +185,8 @@ class SearchViewModel with ChangeNotifier {
 
       context.read(workspaceProvider).state = workspace?.id;
 
-
-      Navigator.pushNamed(context, AppRoutes.workspace, 
-          arguments: WorkspaceViewParams(
-          workspaceId: workspace?.id, 
-          resourceToOpen: resource
-        )
-      );
+      context.read(windowsProvider).openWorkspace(workspace, resource: resource);
+      // Navigator.pop(context);
     }
   }
 

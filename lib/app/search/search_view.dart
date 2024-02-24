@@ -9,6 +9,8 @@ import 'package:stashmobile/app/home/workspace_listitem.dart';
 import 'package:stashmobile/app/providers/workspace.dart';
 import 'package:stashmobile/app/search/search_view_model.dart';
 import 'package:stashmobile/app/search/search_view_params.dart';
+import 'package:stashmobile/app/windows/windows_view_model.dart';
+import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 import 'package:stashmobile/app/workspace/workspace_view_params.dart';
 import 'package:stashmobile/routing/app_router.dart';
 
@@ -84,12 +86,7 @@ class SearchView extends ConsumerWidget {
                         workspace: workspace, 
                         togglePin: (context) => context.read(homeViewProvider).toggleWorkspacePinned(workspace),
                         onTap: () {
-                          Navigator.pushReplacementNamed(context, AppRoutes.workspace, 
-                            arguments: WorkspaceViewParams(
-                              workspaceId: workspace.id,
-                              parentId: context.read(workspaceProvider).state,
-                            )
-                          );
+                         context.read(windowsProvider).openWorkspace(workspace);
                         }
                       ),
                     );

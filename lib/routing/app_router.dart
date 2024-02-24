@@ -87,16 +87,16 @@ class AppRouter {
             settings: settings,
             fullscreenDialog: true,
           );
-      case AppRoutes.workspace:
-        return PageTransition<dynamic>(
-            type: PageTransitionType.rightToLeft,
-            curve: Curves.easeInExpo,
-            child: WorkspaceView(
-              params: args as WorkspaceViewParams?, 
-            ),
-            settings: settings,
-            fullscreenDialog: true,
-          );
+      // case AppRoutes.workspace:
+      //   return PageTransition<dynamic>(
+      //       type: PageTransitionType.rightToLeft,
+      //       curve: Curves.easeInExpo,
+      //       child: WorkspaceView(
+      //         params: args as WorkspaceViewParams?, 
+      //       ),
+      //       settings: settings,
+      //       fullscreenDialog: true,
+      //     );
       case AppRoutes.history:
         return PageTransition<dynamic>(
             type: PageTransitionType.rightToLeft,
@@ -121,16 +121,6 @@ class AppRouter {
           type: PageTransitionType.rightToLeft,
           curve: Curves.easeInExpo,
           child: TagSelectionModal(resource: args as Resource, ),
-          settings: settings,
-          fullscreenDialog: true,
-        );
-      case AppRoutes.spaceSelection:
-        return PageTransition<dynamic>(
-          type: PageTransitionType.rightToLeft,
-          curve: Curves.easeInExpo,
-          child: WorkspaceView(
-            params: args as WorkspaceViewParams?, 
-          ),
           settings: settings,
           fullscreenDialog: true,
         );

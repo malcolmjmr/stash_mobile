@@ -2,8 +2,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark.dart';
+import 'package:stashmobile/app/windows/windows_view_model.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 import 'package:stashmobile/app/workspace/workspace_view_params.dart';
 import 'package:stashmobile/constants/color_map.dart';
@@ -66,17 +68,13 @@ class TabActionsModel {
   }
 
   onNewSessionTapped(BuildContext context) {
-    Navigator.pushNamed(context, AppRoutes.workspace);
+    context.read(windowsProvider).openWorkspace(null);
     HapticFeedback.mediumImpact();
   }
 
   onNewSessionLongPressed(BuildContext context) {
-    Navigator.pushNamed(context, 
-      AppRoutes.workspace, 
-      arguments: WorkspaceViewParams(
-        isIncognito: true
-      )
-    );
+
+    context.read(windowsProvider).openWorkspace(null, isIncognito: true);
   }
 
 

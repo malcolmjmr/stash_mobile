@@ -8,6 +8,8 @@ import 'package:stashmobile/app/providers/data.dart';
 import 'package:stashmobile/app/providers/workspace.dart';
 import 'package:stashmobile/app/search/search_view_model.dart';
 import 'package:stashmobile/app/web/default_domains.dart';
+import 'package:stashmobile/app/windows/windows_view_model.dart';
+import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 import 'package:stashmobile/app/workspace/workspace_view_params.dart';
 import 'package:stashmobile/models/domain.dart';
 import 'package:stashmobile/models/resource.dart';
@@ -115,10 +117,10 @@ class HomeViewModel with ChangeNotifier {
     if (workspace.title == null || workspace.title!.isEmpty) return; // need to show error screen
     data.saveWorkspace(workspace);
     read(workspaceProvider).state = workspace.id;
-    Navigator.pushNamed(buildContext, AppRoutes.workspace);
+    read(windowsProvider).openWorkspace(workspace);
   }
 
-  createNewTab(BuildContext buildContext, {String? url, Domain? domain, bool isIncognito = false}) {
+  createWindow(BuildContext buildContext, {String? url, Domain? domain, bool isIncognito = false}) {
 
     if (domain != null) {
       final uri = Uri.parse(domain.url);
@@ -128,22 +130,17 @@ class HomeViewModel with ChangeNotifier {
       }
     }
 
-
-    Navigator.pushNamed(
-      buildContext, 
-      AppRoutes.workspace,
-      arguments: domain != null
-        ? WorkspaceViewParams(
-          resourceToOpen: Resource(url: domain.url),
-          isIncognito: isIncognito,
-        )
-        : null
+    buildContext.read(windowsProvider).openWorkspace(null, 
+      resource: url != null ? Resource(url: url) : null, 
+      isIncognito: isIncognito
     );
+
   }
 
   openWorkspace(BuildContext buildContext, Workspace workspace) {
     buildContext.read(workspaceProvider).state = workspace.id;
-    Navigator.pushNamed(buildContext, AppRoutes.workspace, arguments: WorkspaceViewParams(workspaceId: workspace.id));
+    buildContext.read(windowsProvider).openWorkspace(workspace);
+
   }
 
   toggleWorkspacePinned(Workspace workspace) async {

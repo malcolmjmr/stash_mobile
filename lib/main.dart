@@ -4,6 +4,7 @@ import 'package:stashmobile/app/home/home_view.dart';
 import 'package:stashmobile/app/providers/provider_observer.dart';
 import 'package:stashmobile/app/sign_in/email_password_sign_in_page.dart';
 import 'package:stashmobile/app/splash_screen.dart';
+import 'package:stashmobile/app/windows/windows_view.dart';
 import 'package:stashmobile/routing/app_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -43,10 +44,12 @@ Future<void> main() async {
   ));
 }
 
-class MyApp extends StatelessWidget {
+final showHomeProvider = StateProvider<bool>((ref) => true);
+
+class MyApp extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
-    final firebaseAuth = context.read(firebaseAuthProvider);
+  Widget build(BuildContext context, ScopedReader watch) {
+    final firebaseAuth = watch(firebaseAuthProvider);
     return MaterialApp(
       theme: ThemeData.dark(),
       debugShowCheckedModeBanner: false,
@@ -54,7 +57,13 @@ class MyApp extends StatelessWidget {
         child: AuthWidget(
           spalshScreenBuilder: (_) => SplashScreen(),
           nonSignedInBuilder: (_) => EmailPasswordSignInPage.withFirebaseAuth(firebaseAuth),
-          signedInBuilder: (_) => HomeView(),
+          signedInBuilder: (_) => IndexedStack(
+            index: watch(showHomeProvider).state ? 0 : 1,
+            children: [
+              HomeView(),
+              WindowsView(),
+            ],
+          ),
         ),
       ),
       onGenerateRoute: (settings) =>

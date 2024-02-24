@@ -18,6 +18,8 @@ import 'package:stashmobile/app/providers/workspace.dart';
 import 'package:stashmobile/app/web/tab.dart';
 import 'package:stashmobile/app/web/tab_model.dart';
 import 'package:stashmobile/app/web/text_selection_menu.dart';
+import 'package:stashmobile/app/windows/windows_view_model.dart';
+import 'package:stashmobile/app/workspace/workspace_view.dart';
 import 'package:stashmobile/app/workspace/workspace_view_params.dart';
 import 'package:stashmobile/models/domain.dart';
 import 'package:stashmobile/models/tag.dart';
@@ -71,9 +73,9 @@ class WorkspaceViewModel extends ChangeNotifier {
   String view = Views.tabs;
   PageController? tabPageController;
 
-  BuildContext context;
+  late BuildContext context;
 
-  Function(Function()) setState;
+  late Function(Function()) setState;
   bool showWebView = false;
   bool showHorizontalTabs = false;
 
@@ -81,10 +83,12 @@ class WorkspaceViewModel extends ChangeNotifier {
   WorkspaceViewParams? params;
 
   WorkspaceViewModel({
-    required this.context, 
     this.params,
-    required this.setState,
-  }) {
+  });
+
+  init(BuildContext buildContext, Function(Function()) setStateFunction) {
+    context = buildContext;
+    setState = setStateFunction;
     data = context.read(dataProvider);
     user = context.read(userProvider).state!; 
     loadWorkspace();
@@ -817,12 +821,8 @@ class WorkspaceViewModel extends ChangeNotifier {
     data.saveWorkspace(newFolder);
     //workspace = newFolder;
     refreshResources();
-    Navigator.pushNamed(context, AppRoutes.workspace, 
-      arguments: WorkspaceViewParams(
-        workspaceId: newFolder.id, 
-        parentId: workspace.id
-      )
-    );
+
+
   }
 
   bool showCreateOptions = false;
@@ -1245,13 +1245,8 @@ class WorkspaceViewModel extends ChangeNotifier {
   }
 
 
-  moveTabToNewSpace(BuildContext context) {              
-    Navigator.pushNamed(context,
-      AppRoutes.workspace,
-      arguments: WorkspaceViewParams(
-        resourceToOpen: currentTab.model.resource
-      )
-    );
+  moveTabToNewSpace(BuildContext context) { 
+    context.read(windowsProvider).openWorkspace(null, resource: currentTab.model.resource);            
 
     removeTab(currentTab.model.resource);
   }

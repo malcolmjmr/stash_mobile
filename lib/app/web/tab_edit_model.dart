@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stashmobile/app/web/default_domains.dart';
+import 'package:stashmobile/app/windows/windows_view_model.dart';
 import 'package:stashmobile/app/workspace/workspace_view.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 import 'package:stashmobile/app/workspace/workspace_view_params.dart';
@@ -113,15 +115,15 @@ class TabEditModel {
   }
 
   createNewSpace(BuildContext context) {
-    Navigator.pushNamed(context, AppRoutes.workspace, 
-      arguments: WorkspaceViewParams(
-        resourceToOpen: input != workspaceModel.currentTab.model.resource.url 
-          ? Resource(
-            url: getUrlFromInput(),
-          )
-          : null
-      )
+
+    context.read(windowsProvider).openWorkspace(null, 
+      resource: input != workspaceModel.currentTab.model.resource.url 
+        ? Resource(
+          url: getUrlFromInput(),
+        )
+        : null
     );
+    
   }
 
   getUrlFromInput() {
