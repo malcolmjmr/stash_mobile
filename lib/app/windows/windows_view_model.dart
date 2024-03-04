@@ -8,7 +8,9 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:stashmobile/app/authentication/session_provider.dart';
+import 'package:stashmobile/app/home/home_view_model.dart';
 import 'package:stashmobile/app/providers/data.dart';
 import 'package:stashmobile/app/workspace/workspace_view.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
@@ -39,33 +41,64 @@ class WindowsViewModel extends ChangeNotifier {
     required this.data,
     required this.read,
   }) {
-
+    workspaces = [ 
+      WorkspaceView(
+        model: WorkspaceViewModel(dataManager: data)
+      )
+    ];
   }
+
+  WorkspaceView get activeWindow  => workspaces[activeWindowIndex];
 
   openWorkspace(Workspace? workspace, {Resource? resource, Domain? domain, bool isIncognito = false}) {
     final showHome = read(showHomeProvider);
     print('opening workspace');
-    print(showHome.state);
+
     if (showHome.state) {
       read(showHomeProvider).state = false;
     }
 
-    final index = workspaces.indexWhere((wv) => wv.model.workspace.id == workspace?.id);
+    bool creatingWorkspace = false;
+    if (workspace == null) {
+      workspace = workspaces
+        .firstWhereOrNull((w) => w.model.isNewSpace)?.model.workspace;
+      creatingWorkspace = true;
+    }
+
+
+    final index = workspaces.indexWhere((wv) => wv.model.workspaceIsSet && wv.model.workspace.id == workspace?.id);
     if (index > -1) {
       activeWindowIndex = index;
+      if (creatingWorkspace) {
+        workspaces.add(
+          WorkspaceView(model: WorkspaceViewModel(dataManager: data))
+        );
+      }
+      
     } else {
-       workspaces = [...workspaces,
-        WorkspaceView(
-          model: WorkspaceViewModel(
-            params: WorkspaceViewParams(
-              workspaceId: workspace?.id,
-              isIncognito: isIncognito,
-              resourceToOpen: resource
-            )
-          ),
-        )
+      print('opening existing space');
+      final index = activeWindowIndex > 1 
+        ? workspaces.length > activeWindowIndex 
+          ? activeWindowIndex + 1
+          : activeWindowIndex
+        : 0;
+      final wv = WorkspaceView(
+        model: WorkspaceViewModel(
+
+          params: WorkspaceViewParams(
+            workspaceId: workspace?.id,
+            isIncognito: isIncognito,
+            resourceToOpen: resource
+          )
+        ),
+      );
+      workspaces = [
+        ...workspaces.sublist(0, index),
+        wv,
+        ...workspaces.sublist(index, workspaces.length)
       ];
-      activeWindowIndex = workspaces.length - 1;
+      
+      activeWindowIndex = index;
     }
    
     pageController.jumpToPage(activeWindowIndex);
@@ -78,6 +111,26 @@ class WindowsViewModel extends ChangeNotifier {
     workspaces.removeWhere((wv) => wv.model.workspace.id == workspace.id );
     activeWindowIndex = workspaces.length - 1;
     notifyListeners();
+  }
+
+  closeAll() {
+    HapticFeedback.mediumImpact();
+    workspaces = [ 
+        WorkspaceView(model: WorkspaceViewModel(dataManager: data))
+      ];
+    final showHome = read(showHomeProvider);
+    if (showHome.state) {
+      read(showHomeProvider).state = true;
+    }
+    notifyListeners();
+  }
+
+  onPageChanged(index) {
+    activeWindowIndex = index;
+    final activeTab = activeWindow.model.currentTab;
+    // if(activeTab.model.isNewTab) {
+    //   activeWindow.model.openTabEditModal();
+    // }
   }
 }
   

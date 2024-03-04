@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
+import 'package:stashmobile/app/note/note_view.dart';
 
 import 'package:stashmobile/app/web/tab_model.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
@@ -35,7 +36,21 @@ class TabView extends StatefulWidget {
 class _TabViewState extends State<TabView> {
 
   Widget build(BuildContext context) {
+    final resource = widget.model.resource;
+    if (resource.url != null) {
+      return _buildWebView();
+    } else if (resource.note != null) {
+      return NoteView(
+        resource: resource, 
+        workspaceModel: widget.model.workspaceModel
+      );
+    } else {
+      return Container();
+    }
     
+  }
+
+  Widget _buildWebView() {
     return InAppWebView(
       windowId: widget.windowId,
       initialUrlRequest: widget.lazyLoad || widget.windowId != null ? null : URLRequest(url: Uri.parse(widget.model.resource.url!)),
@@ -93,3 +108,5 @@ class _TabViewState extends State<TabView> {
     );
   }
 }
+
+

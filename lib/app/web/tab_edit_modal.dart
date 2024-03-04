@@ -166,74 +166,71 @@ class _TabEditModalState extends State<TabEditModal> {
   }
 
   Widget _buildUrlField() {
-    return Hero(
-      tag: 'activetab' + model.tab.url!,
-      child: Container(
-        color: Colors.black,
-        height: 50,
-        width: MediaQuery.of(context).size.width,
-        child: Row(
-          children: [
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: HexColor.fromHex('333333'),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 8.0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: model.inputController,
-                            autocorrect: false,
-                            maxLines: 1,
-                            keyboardType: TextInputType.visiblePassword,
-                            textInputAction: TextInputAction.go,
-                            onChanged: (value) => model.onInputChanged(),
-                            onSubmitted: (value) {
-                              model.updateTab(context);
-                            },
-                            autofocus: true,
-                            decoration: InputDecoration(
-                              contentPadding: EdgeInsets.only(bottom: 8),
-                              border: InputBorder.none,
-                              hintStyle: TextStyle(
-                                color: Colors.white.withOpacity(0.8)
-                              )
-                            ),
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16
-                            ),
+    return Container(
+      color: Colors.black,
+      height: 50,
+      width: MediaQuery.of(context).size.width,
+      child: Row(
+        children: [
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: HexColor.fromHex('333333'),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 8.0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: model.inputController,
+                          autocorrect: false,
+                          maxLines: 1,
+                          keyboardType: TextInputType.visiblePassword,
+                          textInputAction: TextInputAction.go,
+                          onChanged: (value) => model.onInputChanged(),
+                          onSubmitted: (value) {
+                            model.updateTab(context);
+                          },
+                          autofocus: true,
+                          decoration: InputDecoration(
+                            contentPadding: EdgeInsets.only(bottom: 8),
+                            border: InputBorder.none,
+                            hintStyle: TextStyle(
+                              color: Colors.white.withOpacity(0.8)
+                            )
+                          ),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16
                           ),
                         ),
-                        if (model.input.isNotEmpty)
-                        GestureDetector(
-                          onTap: () => model.clearInput(),
-                          child: Padding(
-                            padding: const EdgeInsets.all(5),
-                            child: Container(
-                              height: 20, 
-                              width: 20,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(100),
-                                color: HexColor.fromHex('555555'),
-                              ),
-                              child: Center(child: Icon(Icons.close_outlined, size: 18,))),
-                          ),
-                        )
-                      ],
-                    ),
+                      ),
+                      if (model.input.isNotEmpty)
+                      GestureDetector(
+                        onTap: () => model.clearInput(),
+                        child: Padding(
+                          padding: const EdgeInsets.all(5),
+                          child: Container(
+                            height: 20, 
+                            width: 20,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(100),
+                              color: HexColor.fromHex('555555'),
+                            ),
+                            child: Center(child: Icon(Icons.close_outlined, size: 18,))),
+                        ),
+                      )
+                    ],
                   ),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

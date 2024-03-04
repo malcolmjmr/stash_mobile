@@ -13,6 +13,7 @@ class TabCommand {
   Function()? onLongPress;
   
   double Function(WorkspaceViewModel workspaceModel)? iconFillFunction;
+  double opacity;
 
   TabCommand({
     required this.icon,
@@ -20,7 +21,8 @@ class TabCommand {
     required this.onTap,
     this.onLongPress,
     this.onDoubleTap,
-    this.iconFillFunction
+    this.iconFillFunction,
+    this.opacity = 1,
   });
 
 }

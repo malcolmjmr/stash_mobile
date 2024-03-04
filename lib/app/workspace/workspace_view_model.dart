@@ -6,9 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
+import 'package:page_transition/page_transition.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark.dart';
 import 'package:stashmobile/app/providers/data.dart';
@@ -16,15 +18,19 @@ import 'package:stashmobile/app/providers/user.dart';
 import 'package:stashmobile/app/providers/workspace.dart';
 
 import 'package:stashmobile/app/web/tab.dart';
+import 'package:stashmobile/app/web/tab_edit_modal.dart';
 import 'package:stashmobile/app/web/tab_model.dart';
 import 'package:stashmobile/app/web/text_selection_menu.dart';
 import 'package:stashmobile/app/windows/windows_view_model.dart';
 import 'package:stashmobile/app/workspace/workspace_view.dart';
 import 'package:stashmobile/app/workspace/workspace_view_params.dart';
+import 'package:stashmobile/main.dart';
 import 'package:stashmobile/models/domain.dart';
+import 'package:stashmobile/models/note.dart';
 import 'package:stashmobile/models/tag.dart';
 import 'package:stashmobile/models/workspace.dart';
 import 'package:stashmobile/routing/app_router.dart';
+import 'package:stashmobile/services/llm.dart';
 
 import '../../constants/color_map.dart';
 import '../../models/resource.dart';
@@ -42,7 +48,6 @@ class Views {
 class WorkspaceViewModel extends ChangeNotifier {
   late DataManager data;
 
-  late User user;
 
   late Workspace workspace;
   Workspace? parentWorkspace;
@@ -57,7 +62,7 @@ class WorkspaceViewModel extends ChangeNotifier {
   bool hasTags = false;
   bool hasImages = false;
 
-  ResourceView? resourceView;
+  ResourceView? resourceView = ResourceView.history;
   //List<Resource> folders = [];
   List<Workspace> folders = [];
   List<Resource> favorites = [];
@@ -80,31 +85,95 @@ class WorkspaceViewModel extends ChangeNotifier {
   bool showHorizontalTabs = false;
 
 
+  ScrollController scrollController = ScrollController();
+
+
   WorkspaceViewParams? params;
 
   WorkspaceViewModel({
     this.params,
-  });
-
-  init(BuildContext buildContext, Function(Function()) setStateFunction) {
-    context = buildContext;
-    setState = setStateFunction;
-    data = context.read(dataProvider);
-    user = context.read(userProvider).state!; 
-    loadWorkspace();
+    DataManager? dataManager,
+  }) {
+    if (dataManager != null) {
+      data = dataManager;
+      setWorkspace();
+    }
   }
 
-  loadWorkspace() async {
+  bool workspaceLoaded = false;
+
+
+  init(BuildContext buildContext, Function(Function()) setStateFunction) async {
+    
+    context = buildContext;
+    setState = setStateFunction;
+    scrollController.addListener(scrollListener);
+    data = context.read(dataProvider);
+ 
+    await loadWorkspace();
+
+    
+  }
+
+  @override
+  dispose() {
+    keyboardSubscription.cancel();
+    scrollController.removeListener(scrollListener);
+    scrollController.dispose();
+    super.dispose();
+  }
+
+  bool showCollapsedHeader = false;
+ 
+
+  scrollListener() {
+
+    final threshold = 50;
+    if (scrollController.offset > threshold && !showCollapsedHeader) {
+      setState(() {
+        showCollapsedHeader = true;
+      });
+
+    } else if (scrollController.offset < threshold && showCollapsedHeader) {
+      setState(() {
+        showCollapsedHeader = false;
+      });
+    }
+    // if (scrollController.offset >= scrollController.position.maxScrollExtent &&
+    //     !scrollController.position.outOfRange) {
+    //   // You've reached the bottom of the scroll view
+    //   print("Reached the bottom");
+    // } else if (scrollController.offset <= scrollController.position.minScrollExtent &&
+    //            !scrollController.position.outOfRange) {
+    //   // You've reached the top of the scroll view
+    //   if ()
+    // }
+  }
+
+  bool isNewSpace = true;
+
+  bool workspaceIsSet = false;
+  setWorkspace() async {
+    //addKeyboardListener();
+    if (workspaceIsSet) return;
     if (params?.workspaceId == Workspace.all().id) {
       workspace = Workspace.all();
+      isNewSpace = false;
+    } else if (params?.workspaceId != null) {
+      workspace = await data.getWorkspace(params!.workspaceId!);
+      isNewSpace = false;
     } else {
-      workspace = params?.workspaceId != null 
-        ? await data.getWorkspace(params!.workspaceId!) 
-        : Workspace(
-            color: colorMap.keys.toList()[(new Random()).nextInt(9)], 
-            isIncognito: params?.isIncognito
-          ); 
+      workspace = Workspace(
+          //color: colorMap.keys.toList()[(new Random()).nextInt(9)], 
+          isIncognito: params?.isIncognito
+        ); 
+      workspace.showWebView = true;
     }
+    workspaceIsSet = true;
+  }
+  loadWorkspace() async {
+    if (workspaceLoaded) return;
+    await setWorkspace();
 
     //context.read(workspaceProvider).state = workspace.id;
     if (params?.parentId != null) parentWorkspace = await data.getWorkspace(params!.parentId!);
@@ -118,8 +187,28 @@ class WorkspaceViewModel extends ChangeNotifier {
     await refreshResources();
     await updateVisibleResources();
 
+    workspaceLoaded = true;
+
     setState(() {
       isLoading = false;
+    });
+    
+  }
+
+
+  late StreamSubscription<bool> keyboardSubscription;
+  KeyboardVisibilityController keyboardVisibility = KeyboardVisibilityController();
+  bool keyboardIsVisible = false;
+
+  addKeyboardListener() {
+    keyboardIsVisible = keyboardVisibility.isVisible;
+    keyboardSubscription = keyboardVisibility.onChange.listen((bool visible) {
+      keyboardIsVisible = visible;
+      print('keyboard visibility updated' );
+      print(visible);
+      if (visible && showToolbar) {
+        setShowToolbar(false);
+      }
     });
   }
 
@@ -255,7 +344,7 @@ class WorkspaceViewModel extends ChangeNotifier {
     
 
     int comp = (b.lastVisited ?? 0).compareTo(a.lastVisited ?? 0);
-    if (resourceView == ResourceView.important) {
+    if (resourceView == ResourceView.favorites) {
       comp = b.rating.compareTo(a.rating);
     }
     if (comp == 0) {
@@ -357,7 +446,7 @@ class WorkspaceViewModel extends ChangeNotifier {
     }
 
     tags = sortedTags;
-    visibleTags = tags;
+    visibleTags = tags.sublist(0, min(20, tags.length)).toList();
     
   }
 
@@ -375,8 +464,6 @@ class WorkspaceViewModel extends ChangeNotifier {
     setState(() {
       showTabs = !showTabs;
     });
-    
-    
   }
 
   bool showFolders = true;
@@ -427,7 +514,7 @@ class WorkspaceViewModel extends ChangeNotifier {
           matchesFilter = false;
         }
 
-        if (resourceView == ResourceView.important && resource.rating < 1) {
+        if (resourceView == ResourceView.favorites && resource.rating < 1) {
           matchesFilter = false;
         }
 
@@ -436,13 +523,17 @@ class WorkspaceViewModel extends ChangeNotifier {
         }
 
 
-        final tagFound = selectedTags.isEmpty || (selectedTags.firstWhereOrNull((t) => resource.tags.contains(t.name)) != null);
+        final tagFound = resourceView != ResourceView.tagged || selectedTags.isEmpty || (selectedTags.every((t) => resource.tags.contains(t.name)));
         if (tagFound && matchesFilter) {
           tempResources.add(resource);
           for (final tagName in resource.tags) {
             Tag? tag = tempTags[tagName];
             if (tag == null) {
-              tag = Tag(name: tagName, lastViewed: resource.lastVisited ?? resource.updated ?? resource.created ?? 0);
+              tag = Tag(
+                name: tagName, 
+                lastViewed: resource.lastVisited ?? resource.updated ?? resource.created ?? 0,
+                isSelected: selectedTags.firstWhereOrNull((selectedTag) => selectedTag.name == tagName) != null
+              );
             }
             tag.valueCount += 1;
             tempTags[tagName] = tag;
@@ -452,8 +543,15 @@ class WorkspaceViewModel extends ChangeNotifier {
       tempResources.sort(sortResources);
       visibleResources = tempResources;
       List<Tag> sortedTags = tempTags.values.toList();
-      sortedTags.sort((a, b) => b.valueCount.compareTo(a.valueCount));
-      visibleTags = sortedTags;
+      sortedTags.sort((a, b) {
+        final isSelectedComp = (b.isSelected ? 1 : 0).compareTo(a.isSelected ? 1 : 0);
+        if (isSelectedComp != 0) return isSelectedComp;
+        
+        return b.valueCount.compareTo(a.valueCount);
+      });
+      visibleTags = selectedTags.isEmpty
+        ? sortedTags.sublist(0, min(20, tags.length)).toList()
+        : sortedTags;
     });
   }
 
@@ -569,6 +667,7 @@ class WorkspaceViewModel extends ChangeNotifier {
     } else {
       print ('tab is loading');
     }
+
     if (!model.loaded) model.loaded = true;
     // final int resourceIndex = tabs.indexWhere((tab) => tab.model.resource.id == model.resource.id);
     // Resource resource;
@@ -596,8 +695,11 @@ class WorkspaceViewModel extends ChangeNotifier {
 
       if (model.resource.isQueued == true) {
         deleteResource(model.resource);
-       
       }
+
+      model.canGoForward = model.resource.queue.isNotEmpty || (await controller.canGoForward());
+      model.canGoBack = await controller.canGoBack();
+
 
     } else {
       // update resource if favicon != null || title != null 
@@ -821,8 +923,6 @@ class WorkspaceViewModel extends ChangeNotifier {
     data.saveWorkspace(newFolder);
     //workspace = newFolder;
     refreshResources();
-
-
   }
 
   bool showCreateOptions = false;
@@ -832,12 +932,16 @@ class WorkspaceViewModel extends ChangeNotifier {
     });
   }
 
-  createNewTab({String? url, bool lazyload = false, bool? incognito}) {
+  createNewTab({Resource? resource, String? url, bool lazyload = false, bool? incognito}) {
     TabView tab = TabView(
       incognito: incognito ?? workspace.isIncognito ?? false,
       model: TabViewModel(
         workspaceModel: this,
-        initialResource: url != null ? Resource(url: url) : null,
+        initialResource: resource != null 
+          ? resource
+          : url != null 
+            ? Resource(url: url) 
+            : null,
       ),
       lazyLoad: lazyload,
     );
@@ -852,6 +956,10 @@ class WorkspaceViewModel extends ChangeNotifier {
       
       if (!showWebView) workspace.showWebView = true;
     });
+
+    if (resource == null && url == null) {
+      openTabEditModal();
+    }
 
     tabPageController?.jumpToPage(workspace.activeTabIndex!);
   
@@ -875,7 +983,12 @@ class WorkspaceViewModel extends ChangeNotifier {
     
     setState(() {
       tabs = [];  
+
+
       updateWorkspaceTabs();
+      if (workspace.title == null) {
+        context.read(windowsProvider).closeWorkspace(workspace);
+      }
       if (createNewTab) {
         tabs.add(TabView(model: TabViewModel(workspaceModel: this), lazyLoad: false, incognito: workspace.isIncognito ?? false,));
         workspace.showWebView = true;
@@ -949,6 +1062,7 @@ class WorkspaceViewModel extends ChangeNotifier {
     currentTab.model.controller.clearFocus();
     setState(() {
       showTextSelectionMenu = false;
+      selectedHighlight = null;
     });
 
     String url = '';
@@ -959,7 +1073,10 @@ class WorkspaceViewModel extends ChangeNotifier {
     } else {
       url = 'https://www.google.com/search?q=' + Uri.encodeComponent(selectedText!);
     }
-    createNewTab(url: url);
+    currentTab.model.controller.loadUrl(urlRequest: URLRequest(url: Uri.tryParse(url)));
+    
+    
+    //createNewTab(url: url);
   }
 
   tagTabWithSelectedText() {
@@ -1031,7 +1148,7 @@ class WorkspaceViewModel extends ChangeNotifier {
     updateVisibleResources();
   }
 
-  onTabContentClicked() {
+  onTabContentClicked() async {
     if (showTextSelectionMenu) {
       setState(() {
         showTextSelectionMenu = false;
@@ -1050,6 +1167,15 @@ class WorkspaceViewModel extends ChangeNotifier {
 
     if (showQuickActions) {
       setShowQuickActions(false);
+    }
+
+    if (selectedText != null) {
+      final currentSelection = await currentTab.model.controller.getSelectedText();
+      if (currentSelection == null || currentSelection.isEmpty) {
+        setState(() {
+          selectedText = null;
+        });
+      }
     }
   }
 
@@ -1185,6 +1311,20 @@ class WorkspaceViewModel extends ChangeNotifier {
 
     resource.isQueued = true;
     saveResource(resource);
+
+    final queueIndex = currentTab.model.queue.indexWhere((i) => i == resource.url);
+    if (queueIndex > -1) {
+      currentTab.model.queue.removeAt(queueIndex);
+      currentTab.model.queue.insert(0, resource.url!);
+    } else {
+      currentTab.model.queue.insert(0, resource.url!);
+    }
+
+    if (!currentTab.model.canGoForward) {
+      currentTab.model.canGoForward = true;
+    }
+
+
     showNotification(NotificationParams(
       title: 'Link saved for later',
       action: () => editBookmarkAction(resource: resource),
@@ -1225,7 +1365,9 @@ class WorkspaceViewModel extends ChangeNotifier {
       }
     });
 
-    updateVisibleResources();
+    if  (resourceView != ResourceView.folders) {
+      updateVisibleResources();
+    }
     
   }
 
@@ -1249,11 +1391,6 @@ class WorkspaceViewModel extends ChangeNotifier {
     context.read(windowsProvider).openWorkspace(null, resource: currentTab.model.resource);            
 
     removeTab(currentTab.model.resource);
-  }
-
-  goForward() {
-    // open exa in the background
-    //
   }
 
   bool showFindInPage = false;
@@ -1290,6 +1427,147 @@ class WorkspaceViewModel extends ChangeNotifier {
   
   }
 
+  bool canGoBack = false;
+
+  goBack() {
+    if (!currentTab.model.canGoBack) return;
+    HapticFeedback.mediumImpact();
+    currentTab.model.controller.goBack();
+    
+  }
+
+  goToStart() async {
+    if (!currentTab.model.canGoBack) return;
+    HapticFeedback.mediumImpact();
+    final controller = currentTab.model.controller;
+    final history = await controller.getCopyBackForwardList();
+    final historyItem = history?.list?[0];
+    if (historyItem != null) {
+      controller.goTo(historyItem: historyItem);
+    }
+  }
+
+
+  showBackHistory(BuildContext context) {
+    //  Navigator.push(context, 
+    //   PageTransition<dynamic>(
+    //     type: PageTransitionType.bottomToTop,
+    //     curve: Curves.easeInExpo,
+    //     child: TabHistoryModal()
+    //   )
+    // );
+  }
+
+  goForward() async {
+    if (!currentTab.model.canGoForward) return;
+    HapticFeedback.mediumImpact();
+    final controller = currentTab.model.controller;
+    final queue = currentTab.model.queue;
+    final hasForwardHistoryItem = await controller.canGoForward();
+    if (hasForwardHistoryItem) {
+      await controller.goForward();
+    } else if (queue.isNotEmpty) {
+      final nextItemString = queue.removeAt(0);
+      print('getting next item in queue');
+      print(nextItemString);
+      if (nextItemString.contains('http')) {
+        await currentTab.model.controller.loadUrl(
+          urlRequest: URLRequest(
+            url: Uri.parse(nextItemString)
+          )
+        );
+      } else {
+        final resource = allResources.firstWhereOrNull((r) => r.id == nextItemString);
+        if (resource != null) {
+          await currentTab.model.controller.loadUrl(
+            urlRequest: URLRequest(
+              url: Uri.parse(resource.url!)
+            )
+          );
+        }
+      }
+    } else {
+
+      /*
+        Options
+        - prompt
+          - current url
+          - recent highlights and keywords
+
+        - view
+        - show exa serp
+        - scrape exa serp
+          - add all items to queue
+      */
+        String url = 'https://exa.ai/search?q=' + Uri.encodeComponent(currentTab.model.resource.url!);
+        currentTab.model.controller.loadUrl(urlRequest: URLRequest(url: Uri.tryParse(url)));
+    
+    }
+  }
+
+  
+
+  showForwardQueue(BuildContext context) {
+
+  }
+
+
+  bool showToolbar = true;
+  setShowToolbar(bool value) {
+
+    setState(() {
+      showToolbar = value;
+    });
+  }
+
+  createNote() {
+    createNewTab(resource: Resource(note: Note()));
+  }
+
+  createChat() {
+
+  }
+
+  openTabEditModal() {
+    Navigator.push(context, 
+      PageTransition<dynamic>(
+        type: PageTransitionType.bottomToTop,
+        curve: Curves.easeInExpo,
+        child: TabEditModal(
+          tab: currentTab.model.resource,
+          workspaceModel: this,
+        ),
+        fullscreenDialog: true,
+      )
+    );
+  }
+
+  generateTerms() async {
+    
+    String prompt = '''
+      Generate a list of related terms given a list of very important terms
+      and less importnat terms. 
+      
+      Important: ${selectedTags.map((t) => t.name).join(', ')}
+
+      Less important: ${visibleTags.where((t) => !t.isSelected).map((t) => t.name).join(', ')}
+
+      
+    ''';
+
+    print(prompt);
+
+    // String response = await LLM().getCompletion(prompt);
+
+    // print(response);
+  }
+
+  openRelatedContent() {
+    String url = 'https://exa.ai/search?q=' + Uri.encodeComponent(
+        'Articles related to the following topics: ${selectedTags.map((t) => t.name).join(', ')}, ${visibleTags.where((t)=> t.isSelected != true).map((t) => t.name).join(', ')}'
+      );
+    createNewTab(url: url);
+  }
 
 }
 
@@ -1319,6 +1597,10 @@ enum ResourceView {
   saved,
   queue,
   highlights,
-  important,
+  favorites,
+  history,
   images,
+  folders,
+  tagged,
+
 }

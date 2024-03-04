@@ -14,13 +14,12 @@ import 'package:stashmobile/routing/app_router.dart';
 
 class TabActionsModel {
 
-  Function(Function()) setState;
 
   WorkspaceViewModel workspaceModel;
 
   TabActionsModel({
     required this.workspaceModel, 
-    required this.setState
+
   }){
 
   }

@@ -44,11 +44,13 @@ class Resource {
   int? scrollPosition;
   int rating = 0;
   List<Note> notes = [];
+  List<String> queue = [];
+  Note? note;
 
   bool annotationsLoaded = false;
 
 
-  Resource({ this.url, this.title, this.favIconUrl}) {
+  Resource({ this.url, this.title, this.favIconUrl, this.note}) {
     id = Uuid().v4().split('-').last;
     created = DateTime.now().millisecondsSinceEpoch;
   }
@@ -74,6 +76,8 @@ class Resource {
     highlights = json['highlights'] != null ? List<Highlight>.from(json['highlights'].map((h) => Highlight.fromJson(h))) : [];//List<Highlight>.from()
     scrollPosition = json['scrollPos'];
     rating = json['rating'] != null ? json['rating'] : 0;
+    note = json['note'];
+    notes = json['notes'] != null ? List<Note>.from(json['notes'].map((n) => Note.fromJson(n))) : [];
 
   }
 
@@ -99,6 +103,8 @@ class Resource {
       'highlights': highlights.map((h) => h.toJson()),
       'scrollPos': scrollPosition,
       'rating': rating,
+      'note': note,
+      'notes': notes.map((n) => n.toJson()),
     };
     json.removeWhere((key, value) => value == null || value == [] || value == 0);
     return json;

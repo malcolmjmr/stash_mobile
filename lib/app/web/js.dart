@@ -244,7 +244,7 @@ class JS {
   }
 
   static String touchEndListener = """ 
-  console.log('injected');
+
   // Listens for swipe of hyperlink to add link to tree
     // Emits: onLinkSelected
     // Returns:
@@ -260,6 +260,14 @@ class JS {
   var lastTouchId;
   var lastTouchMinX = 1000;
   var lastTouchMaxX = 0; 
+  var lastTouchTime;
+  var lastTouchedElement;
+
+  document.addEventListener('touchstart', (e) => {
+    var element = e.target || e.srcElement;
+    lastTouchedElement = element;
+    lastTouchTime = Date.now();
+  });
   
   document.addEventListener('touchmove', function(e) {
       e = e || window.event;
@@ -362,32 +370,139 @@ class JS {
     // Returns:
       // int scrollPosition
   var timer = null;
-  document.addEventListener('scroll', function(e) {
+  let lastScrollPosition = 0;
+  let scrollDirection;
+
+  document.addEventListener('scroll', onScroll);
+
+  function onScroll(e) {
     if(timer !== null) {
         clearTimeout(timer);        
     }
+    const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+      
+    // Check if scrolling down
+    const isScrollingDown = currentScrollPosition > lastScrollPosition;
+
+    // Update lastScrollPosition for the next scroll event
+    lastScrollPosition = currentScrollPosition;
+
+    if (isScrollingDown && scrollDirection != 'down') {
+      scrollDirection = 'down';
+      window.flutter_inappwebview.callHandler("scrollDirectionChanged", scrollDirection);
+      hideFixedElements();
+    } else if (!isScrollingDown && scrollDirection != 'up') {
+      scrollDirection = 'up';
+      window.flutter_inappwebview.callHandler("scrollDirectionChanged", scrollDirection);
+      showFixedElements();
+
+    }
+    
     timer = setTimeout(function() {
       // Once scrolling has stopped
       window.flutter_inappwebview.callHandler("onScrollEnd", window.scrollY);
     }, 150);
-  });
+  }
+
+  function throttle(func, limit) {
+    let inThrottle;
+    return function() {
+      const args = arguments;
+      const context = this;
+      if (!inThrottle) {
+        func.apply(context, args);
+        inThrottle = true;
+        setTimeout(() => inThrottle = false, limit);
+      }
+    };
+  }
+
+  function hideFixedElements() {
+    if (hiddenElements.length == 0)  {
+      const scrollingElement = lastTouchedElement;
+      // Traverse up the DOM tree from the scrolling element
+      let currentElement = scrollingElement;
+      while (currentElement.parentElement) {
+        const parent = currentElement.parentElement;
+
+        // Determine if the parent or any of its siblings should be hidden
+        // based on your specific criteria, such as position or other CSS properties
+        checkAndHideElements(parent);
+
+        // Move to the next ancestor
+        currentElement = parent;
+      }
+    } else {
+      for (let {element} of hiddenElements) {
+        element.style.display = 'none';
+      }
+    }
+    
+  }
+
+  function checkAndHideElements(element) {
+
+
+   
+    let sibling = element.previousElementSibling;
+    while (sibling) {
+      hideElement(sibling);
+      sibling = sibling.previousElementSibling;
+    }
+
+    sibling = element.nextElementSibling;
+    while (sibling) {
+      hideElement(sibling);
+      sibling = sibling.nextElementSibling;
+    }
+  }
+
+  
+
+  // Function to check if an element is in the viewport
+  function isInViewport(element) {
+      const rect = element.getBoundingClientRect();
+      return (
+          rect.top >= 0 &&
+          rect.left >= 0 &&
+          rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+          rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+      );
+  }
+
+  let hiddenElements = [];
+  function hideFixedOrSticky(element) {
+      const style = window.getComputedStyle(element);
+
+      if (style.position === 'fixed' || style.position === 'sticky') {
+        
+        hiddenElements.push({
+          element,
+          dipslay: element.style.display,
+        });
+        element.style.display = 'none';
+      } 
+  }
+
+  // Function to determine if the element should be hidden
+  function hideElement(element) {
+    hideFixedOrSticky(element);
+  }
+
+  function showFixedElements() {
+    for (let {element, display} of hiddenElements) {
+      element.style.display = display;
+    }
+  }
+
   """;
 
   static String imageSelectionListener = """
 
-      var lastImageClick;
-
-      document.addEventListener('touchstart', (e) => {
-          if (e.target.tagName != 'IMG') return;
-
-          lastImageClick = Date.now();
-      });
-
       document.addEventListener('touchend', (e) => {
-          if (e.target.tagName != 'IMG' || !lastImageClick) return;
+          if (e.target.tagName != 'IMG' || !lastTouchTime) return;
           const now = Date.now();
-          if (now - lastImageClick > 2000 && now - lastImageClick < 10000) {
-              lastImageClick = null;
+          if (lastTouchedElement?.tagName == 'IMG' && now - lastTouchTime > 2000 && now - lastTouchTime < 10000) {
               window.flutter_inappwebview.callHandler("imageSelected", e.target.src);
           }
       });
@@ -471,10 +586,19 @@ class JS {
     let doubleClickedLink;
     let isDelayedClick = false;
     let clickTarget;
+
+    document.addEventListener('dblclick', function (event) {
+       let target = event.target || event.srcElement;
+       let linkElement = getLinkElement(target);
+       
+       if (linkElement == null) { 
+        window.flutter_inappwebview.callHandler("onDocumentBodyDoubleClicked");
+       }
+    });
+    
     document.addEventListener('click', function (event) {
        let target = event.target || event.srcElement;
        lastClickedElement = target;
-       console.log('clicked body');
        let targetIsHighlight = target.tagName != 'HYPOTHESIS-HIGHLIGHT';
        if (!targetIsHighlight) { return; }
        let linkElement = getLinkElement(target);

@@ -5,9 +5,11 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:stashmobile/app/web/horizontal_tabs.dart';
 import 'package:stashmobile/app/web/tab_actions.dart';
+import 'package:stashmobile/app/web/tab_actions_model.dart';
 import 'package:stashmobile/app/web/text_selection_menu.dart';
 import 'package:stashmobile/app/web/vertical_tabs.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
+import 'package:stashmobile/constants/color_map.dart';
 import 'package:stashmobile/extensions/color.dart';
 import 'package:stashmobile/models/resource.dart';
 import 'package:stashmobile/models/tab_commands.dart';
@@ -20,23 +22,33 @@ class TabBottomBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
-    
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.black
-      ),
-      width: MediaQuery.of(context).size.width,
-      height: 100,
-      child: Column(
-        children: [
-          Expanded(
-            child: _buildTopSection(context)
-          ),
-          Container(
-            height: 40,
-            child: TabActions(workspaceModel: model)
-          ),
-        ],
+    final showTopBar = (model.selectedHighlight != null || model.notificationIsVisible || model.selectedText != null);
+    return AnimatedSize(
+      alignment: showTopBar ? Alignment.bottomCenter : Alignment.topCenter,
+      duration: Duration(milliseconds: 300),
+      reverseDuration: Duration(milliseconds: 2000),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.black
+        ),
+        width: MediaQuery.of(context).size.width,
+        height: showTopBar
+          ? 60
+          : model.showToolbar 
+            ? 110 
+            : 0,
+        child: Column(
+          children: [
+            Expanded(
+              child: _buildTopSection(context)
+            ),
+            if (!showTopBar)
+            Container(
+              height: 50,
+              child: TabActions(model: TabActionsModel(workspaceModel: model),)
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -90,30 +102,13 @@ class TabBottomBar extends StatelessWidget {
     }
   }
 
-  Widget _buildBottomSection() {
-    return  Container(
-      height: 40,
-      child: TabActions(workspaceModel: model)
-    );
-  }
+
 
   
 
   Widget _buildQuickActions(BuildContext context) {
 
     List<TabCommand> quickActions = [
-    TabCommand(
-      icon: Symbols.arrow_left_alt_rounded, 
-      name: 'Back', 
-      onTap: () {
-        model.currentTab.model.controller.goBack();
-      },
-    ),
-    TabCommand(
-      icon: Symbols.arrow_right_alt_rounded, 
-      name: 'Forward', 
-      onTap: () => model.goForward(),
-    ),
     TabCommand(
       icon: Symbols.refresh, 
       name: 'Reload', 
@@ -356,6 +351,7 @@ class TabBottomBar extends StatelessWidget {
     required String title, 
     required IconData icon, 
     required Function() onTap,
+    String? workspaceColor,
     bool? useTitle
   }) {
     return Padding(
@@ -376,18 +372,19 @@ class TabBottomBar extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
-            color: HexColor.fromHex('222222')
+            color: HexColor.fromHex(colorMap[model.workspace.color ?? 'grey']!)
           ),
           child: Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                Icon(icon, size: 25,),
+                Icon(icon, size: 25, color: Colors.black,),
                 if (useTitle == true)
                 Text(title,
                   style: TextStyle(
                     fontSize: 14,
+                    color: Colors.black
                   ),
                 ),
                 

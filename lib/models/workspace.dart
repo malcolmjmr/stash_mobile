@@ -40,6 +40,8 @@ class Workspace {
   bool showWebView = false;
 
   List<String> contexts = [];
+  List<String> parents = [];
+  List<String> children = [];
 
   Workspace({this.title, this.color, this.isIncognito}) {
     id = Uuid().v4().split('-').last;
@@ -87,6 +89,8 @@ class Workspace {
     isFavorite = json['isFavorite'] ?? false;
     contexts = json['contexts'] != null ? List<String>.from(json['contexts']) : [];
     showWebView = json['showWebView'] ?? false;
+    parents = json['parents'] != null ? List<String>.from(json['parents']) : [];
+    children = json['children'] != null ? List<String>.from(json['children']) : [];
   }
 
   Map<String, dynamic> toJson() {
@@ -117,6 +121,8 @@ class Workspace {
       'isFavorite': isFavorite,
       'contexts': contexts,
       'showWebView': showWebView,
+      'children': children,
+      'parents': parents,
     };
     json.removeWhere((key, value) => value == null);
     return json;

@@ -39,6 +39,7 @@ class ResourceListItem extends StatelessWidget {
     this.isFirstListItem = false,
     this.isLastListItem = false,
     this.isLastActiveTab = false,
+    this.view = ResourceViewType.singleLine,
   }) : super(key: key);
 
 
@@ -49,6 +50,8 @@ class ResourceListItem extends StatelessWidget {
   final bool isLastListItem;
   final bool isFirstListItem;
   final bool isLastActiveTab;
+
+  final ResourceViewType  view;
 
   @override
   Widget build(BuildContext context) {
@@ -184,4 +187,11 @@ class ResourceListItem extends StatelessWidget {
   }
 
 
+}
+
+
+enum ResourceViewType {
+  card,
+  singleLine,
+  grid,
 }

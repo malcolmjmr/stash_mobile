@@ -9,68 +9,52 @@ import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 import 'package:stashmobile/main.dart';
 import 'package:stashmobile/models/tab_commands.dart';
 
-class TabActions extends StatefulWidget {
-  const TabActions({Key? key, required this.workspaceModel}) : super(key: key);
+class TabActions extends StatelessWidget {
+  const TabActions({Key? key, required this.model}) : super(key: key);
 
-  final WorkspaceViewModel workspaceModel;
-
-  @override
-  State<TabActions> createState() => _TabActionsState();
-}
-
-class _TabActionsState extends State<TabActions> {
-  /*
-
-    Default actions (hidden when quick actions are shown)
-
-    Quick actions (expand widget)
-
-    Tab Menu (screen)
-
-  */
-
-  late TabActionsModel model;
-
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-    model = TabActionsModel(
-      workspaceModel: widget.workspaceModel, 
-      setState: setState
-    );
-  }
+  final TabActionsModel model;
   
   @override
   Widget build(BuildContext context) {
-      return _buildDefaultActions();
+      return _buildDefaultActions(context);
   }
 
-  Widget _buildDefaultActions() {
+  Widget _buildDefaultActions(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 15),
+      //padding: EdgeInsets.symmetric(horizontal: 10),
+
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
 
-          ActionIcon(
+          model.workspaceModel.workspace.title != null 
+          ? ActionIcon(
+            padding: EdgeInsets.only(top: 5, bottom: 5, right: 10, left: 20),
             action: TabCommand(
               icon: Symbols.folder_open_rounded,
               name: 'Open Space',
               onTap: model.onOpenSpaceTapped,
               onLongPress: () => context.read(showHomeProvider).state = true,
+              iconFillFunction: (_) => 0 // show open spaces modal
+
             ), 
             color: model.workspaceColor,
             workspaceModel: model.workspaceModel,
-          ),
+          )
+          : _buildTabsIcon(
+              padding: EdgeInsets.only(top: 5, bottom: 5, right: 10, left: 20),
+              onTap: model.onOpenSpaceTapped,
+              onLongPress: () => context.read(showHomeProvider).state = true,
+            ),
 
           ActionIcon(
             action: TabCommand(
               icon: Symbols.star_rounded,
               name: 'Save',
               iconFillFunction: (model) => model.currentTab.model.resource.isSaved ? 1 : 0,
-              onTap: () => model.onSaveTapped(context)
+              onTap: () => model.onSaveTapped(context),
+              onDoubleTap: () => null //model.workspaceModel.currentTab.model.scrollToNextHighlight()
             ), 
             color: model.workspaceColor,
             workspaceModel: model.workspaceModel,
@@ -78,18 +62,53 @@ class _TabActionsState extends State<TabActions> {
 
           ActionIcon(
             action: TabCommand(
+              icon: Symbols.arrow_back_ios_rounded,
+              name: 'Back',
+              onTap: model.workspaceModel.goBack,
+              onDoubleTap: model.workspaceModel.goToStart,
+              onLongPress: () => model.workspaceModel.showBackHistory(context),
+              iconFillFunction:  (model) {
+                return model.currentTab.model.canGoBack ? 1 : 0;
+              },
+              opacity: model.workspaceModel.currentTab.model.canGoBack ? 1 : .5
+            ), 
+            color: model.workspaceColor,
+            size: 24,
+            workspaceModel: model.workspaceModel,
+          ),
+
+          ActionIcon(
+            action: TabCommand(
+
               icon: Symbols.add_box_rounded,
               name: 'New Tab',
               onTap: model.onCreateTapped,
               onLongPress: model.onCreateLongPressed,
               iconFillFunction: (model) {
-                return model.showCreateOptions ? 1 : 0;
+                return 1; //model.showCreateOptions ? 1 : 0;
               }
             ), 
             color: model.workspaceColor,
-            size: 30,
+            size: 36,
             workspaceModel: model.workspaceModel,
           ),
+
+           ActionIcon(
+            
+            action: TabCommand(
+              icon: Symbols.arrow_forward_ios_rounded,
+              name: 'Forward',
+              onTap: model.workspaceModel.goForward,
+              onLongPress: () => model.workspaceModel.showForwardQueue(context),
+              iconFillFunction:  (model) {
+                return model.currentTab.model.canGoForward ? 1 : 0;
+              },
+              opacity: model.workspaceModel.currentTab.model.canGoForward ? 1 : .5
+            ), 
+            color: model.workspaceColor,
+            size: 24,
+            workspaceModel: model.workspaceModel,
+                         ),
 
           ActionIcon(
             action: TabCommand(
@@ -104,6 +123,7 @@ class _TabActionsState extends State<TabActions> {
             workspaceModel: model.workspaceModel,
           ),
           ActionIcon(
+            padding: EdgeInsets.only(top: 5, bottom: 5, left: 10, right: 20),
             action: TabCommand(
               icon: Symbols.new_window_rounded,
               name: 'New Session',
@@ -113,6 +133,55 @@ class _TabActionsState extends State<TabActions> {
             workspaceModel: model.workspaceModel,
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTabsIcon({ 
+    Function()? onTap, 
+    Function()? onDoubleTap, 
+    Function()? onLongPress, 
+    EdgeInsets padding = const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5) 
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      onDoubleTap: onDoubleTap,
+      onLongPress: onLongPress,
+      child: Padding(
+        padding: padding,
+        child: Stack(
+          children: [
+            Center(
+              child: Opacity(
+                opacity: 1,
+                child: Container(
+                  height: 23,
+                  width: 23,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: model.workspaceColor, width: 1.3),
+                    borderRadius: BorderRadius.circular(3),
+                    //color: model.workspaceColor
+                  ),
+                ),
+              ),
+            ),
+            Center(
+              child: Container(
+                width: 23,
+                child: Text(model.workspaceModel.tabs.length.toString(),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    color: model.workspaceColor
+                     
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              )
+            )
+        
+          ],
+        
+        ),
       ),
     );
   }
@@ -135,28 +204,36 @@ class ActionIcon extends StatelessWidget {
     required this.action, 
     this.size = 25, 
     this.color, 
-    required this.workspaceModel
+    required this.workspaceModel,
+    this.padding = const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5) 
   }) : super(key: key);
 
   final TabCommand action;
   final double size;
   final Color? color;
   final WorkspaceViewModel workspaceModel;
+  final EdgeInsets padding;
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: action.onTap,
       onDoubleTap: action.onLongPress,
       onLongPress: action.onLongPress,
-      child: Container(
-        child: Icon(
-          action.icon,
-          size: size,
-          fill: action.iconFillFunction != null 
-            ? action.iconFillFunction!.call(workspaceModel) 
-            : 0,
-          color: color,
-        )
+      child: Padding(
+        padding: padding,
+        child: Container(
+          child: Opacity(
+            opacity: action.opacity,
+            child: Icon(
+              action.icon,
+              size: size,
+              fill: action.iconFillFunction != null 
+                ? action.iconFillFunction!.call(workspaceModel) 
+                : 0,
+              color: color,
+            ),
+          )
+        ),
       ),
     );
 

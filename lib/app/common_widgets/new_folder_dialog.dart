@@ -19,34 +19,33 @@ class NewFolderDialog extends StatelessWidget {
       ),
       content: Material(
         type: MaterialType.transparency,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(top: 5.0, bottom: 20),
-              child: Text('Enter a name for this folder.'),
-            ),
-            Container(
-              height: 38,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  width: 1,
-                  color: HexColor.fromHex('333333')
-                )
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                child: TextField(
-                  controller: controller,
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                    hintText: 'Name',
-                    //contentPadding: EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+        child: Padding(
+          padding: const EdgeInsets.only(top: 8.0),
+          child: Column(
+            children: [
+              Container(
+                height: 45,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    width: 1,
+                    color: HexColor.fromHex('333333')
+                  )
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                  child: TextField(
+                    controller: controller,
+                    decoration: InputDecoration(
+                      border: InputBorder.none,
+                      hintText: 'Enter folder name',
+                      //contentPadding: EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
       actions: [

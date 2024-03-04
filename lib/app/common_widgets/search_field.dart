@@ -43,7 +43,7 @@ class SearchField extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Icon(Icons.search, size: 25.0,),
+                  Icon(Icons.search, size: 25.0, color: Colors.white,),
                   Expanded(
                     child: showPlaceholder 
                       ? Text('Search',

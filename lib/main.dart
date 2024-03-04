@@ -17,7 +17,6 @@ import 'package:stashmobile/app/authentication/firebase_providers.dart';
   Todo: 
   - update workspace resource view selection 
   - filter view
-  - remove webview header and footers on scroll
   - search within space
   - workspace menu/details
   - bookmark edit modal
@@ -26,7 +25,6 @@ import 'package:stashmobile/app/authentication/firebase_providers.dart';
     - highlights (set preview)
     - images (set preview item)
   - reconcile mobile and desktop urls
-
 */
 
 Future<void> main() async {

@@ -20,6 +20,7 @@ import 'package:flutter/material.dart';
 import 'package:stashmobile/app/modals/create_new_tab/create_new_tab_modal.dart';
 import 'package:stashmobile/app/search/search_view_model.dart';
 import 'package:stashmobile/app/web/tab_preview_modal.dart';
+import 'package:stashmobile/app/windows/windows_view_model.dart';
 import 'package:stashmobile/extensions/color.dart';
 import 'package:stashmobile/models/resource.dart';
 import 'package:stashmobile/models/tag.dart';
@@ -31,6 +32,7 @@ class HomeView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, ScopedReader watch) {
     final model = watch(homeViewProvider);
+    final windows = watch(windowsProvider);
     return Scaffold(
       backgroundColor: Colors.black,
       body: model.isLoading 
@@ -46,7 +48,50 @@ class HomeView extends ConsumerWidget {
                 shrinkWrap: true,
                 slivers: [
                   SliverToBoxAdapter(child: Header(model: model)),
-                  
+
+
+
+                  if (windows.workspaces.length > 1)
+                  SliverToBoxAdapter(
+                    child: SectionHeader(
+                      title: 'Open',
+                      trailing: GestureDetector(
+                        onTap: () => windows.closeAll(),
+                        child: Text('Close All',
+                          style: TextStyle(
+                            fontSize: 14,
+                            //fontWeight: FontWeight.w300,
+                          ),
+                        ),
+
+                      ),
+                    )
+                  ),
+                  if (windows.workspaces.length > 1)
+                  SliverList.builder(
+                    itemCount: windows.workspaces.length - 1,
+                    itemBuilder: (context, index) {
+                      final workspaceModel = windows.workspaces[index].model;
+                      if (workspaceModel.workspaceIsSet) {
+                         final workspace = workspaceModel.workspace;
+                        return WorkspaceListItem(
+                          key: Key(workspace.id),
+                          isFirstListItem: index == 0,
+                          isLastListItem: index == windows.workspaces.length - 2,
+                          workspace: workspace,
+                          togglePin: (context) => model.toggleWorkspacePinned(workspace),
+                          onTap: () => model.openWorkspace(context, workspace),
+                          onDelete: () => model.deleteWorkspace(context, workspace),
+                        );
+                      } else {
+                        return Container();
+                      }
+                     
+                    }
+                  ),
+                  if (windows.workspaces.length > 1)
+                  SliverPadding(padding: EdgeInsets.only(bottom: 15)),
+
                   if (model.recentSpaces.isNotEmpty)
                   SliverToBoxAdapter(
                     child: SectionHeader(
@@ -391,16 +436,30 @@ class Footer extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 5.0),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                CreateButton(onTap: () => null, onDoubleTap: () => null, icon: Symbols.chat_add_on),
-                _buildCounts(context, model),
+                Expanded(child: Container(),),
                 CreateButton(
-                  icon: Symbols.library_add_rounded,
-                  onDoubleTap: () => Navigator.pushNamed(context, AppRoutes.createNewTab),
-                  onTap:() =>  model.createWindow(context)
+                  icon: Symbols.forum_rounded,
+                  size: 28,
+                  onTap: () => null, 
+                  onDoubleTap: () => null
                 ),
+                CreateButton(
+                  icon: Symbols.add_box_rounded,
+                  size: 32,
+                  padding: EdgeInsets.symmetric(horizontal: 50),
+                  onDoubleTap: () => Navigator.pushNamed(context, AppRoutes.createNewTab),
+                  onTap:() =>  model.createWindow(context),
+                ),
+                CreateButton(
+                  icon: Symbols.edit_document,
+                  size: 26,
+                  onTap: () => null, 
+                  onDoubleTap: () => null, 
+                ),
+                Expanded(child: Container(),),
                 //CreateButton(onTap: () => null, onDoubleTap: () => null, icon: Symbols.edit_square, padding: EdgeInsets.only(top: 0, left: 5, right: 5, bottom: 10),),
 
               ],
@@ -499,12 +558,20 @@ class CreateFolderButton extends StatelessWidget {
 }
 
 class CreateButton extends StatelessWidget {
-  const CreateButton({Key? key, required this.onTap, required this.onDoubleTap, required this.icon, this.padding = const EdgeInsets.all(5)}) : super(key: key);
+  const CreateButton({
+    Key? key, 
+    required this.onTap, 
+    required this.onDoubleTap, 
+    required this.icon, 
+    this.padding = const EdgeInsets.all(5),
+    this.size = 32,
+  }) : super(key: key);
   
   final VoidCallback onTap;
   final VoidCallback onDoubleTap;
   final IconData icon;
   final EdgeInsets padding;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
@@ -513,7 +580,12 @@ class CreateButton extends StatelessWidget {
       onDoubleTap: onDoubleTap,
       child: Padding(
         padding: padding, 
-        child: Icon(icon, size: 32.0, weight: 300.0, color: HexColor.fromHex('999999')),
+        child: Icon(icon, 
+          size: size, 
+          weight: 400.0, 
+          color: Colors.white,
+          //color: HexColor.fromHex('999999')
+        ),
       ),
     );
   }

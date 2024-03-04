@@ -14,7 +14,8 @@ class WindowsView extends ConsumerWidget {
     return PageView(
       controller: model.pageController,
       scrollDirection: Axis.horizontal,
-      children: model.workspaces
+      children: model.workspaces,
+      onPageChanged: model.onPageChanged,
     );
   }
 }

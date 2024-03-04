@@ -13,6 +13,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -21,11 +22,16 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:stashmobile/app/common_widgets/drop_down_menu.dart';
+import 'package:stashmobile/app/common_widgets/fav_icon.dart';
+import 'package:stashmobile/app/common_widgets/home_icon.dart';
+import 'package:stashmobile/app/common_widgets/modal_container.dart';
+import 'package:stashmobile/app/common_widgets/new_folder_dialog.dart';
 import 'package:stashmobile/app/common_widgets/search_field.dart';
 import 'package:stashmobile/app/common_widgets/section_header.dart';
 import 'package:stashmobile/app/common_widgets/tag.dart';
 import 'package:stashmobile/app/home/create_workspace_modal.dart';
 import 'package:stashmobile/app/home/home_view_model.dart';
+import 'package:stashmobile/app/home/workspace_listitem.dart';
 import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark.dart' hide SectionHeader;
 import 'package:stashmobile/app/modals/move_tabs/move_tabs_modal.dart';
 import 'package:stashmobile/app/providers/workspace.dart';
@@ -40,6 +46,7 @@ import 'package:stashmobile/app/web/tab_menu.dart';
 import 'package:stashmobile/app/web/tab_preview.dart';
 import 'package:stashmobile/app/web/text_selection_menu.dart';
 import 'package:stashmobile/app/web/vertical_tabs.dart';
+import 'package:stashmobile/app/windows/windows_view_model.dart';
 import 'package:stashmobile/app/workspace/space_list_item.dart';
 import 'package:stashmobile/app/workspace/resource_list_item.dart';
 import 'package:stashmobile/app/workspace/tab_list_item.dart';
@@ -48,6 +55,7 @@ import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 import 'package:stashmobile/app/workspace/workspace_view_params.dart';
 import 'package:stashmobile/constants/color_map.dart';
 import 'package:stashmobile/extensions/color.dart';
+import 'package:stashmobile/models/workspace.dart';
 import 'package:stashmobile/routing/app_router.dart';
 //import 'package:material_symbols_icons/symbols.dart';
 
@@ -57,14 +65,14 @@ class WorkspaceView extends StatefulWidget {
 
   //final WorkspaceViewParams? params;
   final bool  showWebView;
-  WorkspaceView({required this.model, this.showWebView = false});
+  WorkspaceView({Key? key, required this.model, this.showWebView = false, }) : super(key: UniqueKey());
   final WorkspaceViewModel model; 
 
   @override
   State<WorkspaceView> createState() => _WorkspaceViewState();
 }
 
-class _WorkspaceViewState extends State<WorkspaceView> {
+class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveClientMixin {
 
   late WorkspaceViewModel model; 
 
@@ -85,15 +93,27 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     );
   }
 
+  @override
+  void dispose() {
+    model.dispose();
+    super.dispose();
+  }
+
+  @override
+  bool get wantKeepAlive => true;
+
 
   @override
   Widget build(BuildContext context) {
-    print('building workspace view');
+    super.build(context);
     return SafeArea(
       child: !model.isLoading
         ? Scaffold(
             backgroundColor: Colors.black,
             body: Container(
+              decoration: BoxDecoration(
+                border: Border.symmetric(vertical: BorderSide(color: HexColor.fromHex('222222'), width: .5))
+              ),
               child: IndexedStack(
                 index: model.workspace.showWebView ? 1 : 0,
                 children: [
@@ -112,196 +132,36 @@ class _WorkspaceViewState extends State<WorkspaceView> {
       body: Stack(
         children: [
           Column(
+            //mainAxisAlignment: model.showToolbar ? MainAxisAlignment.spaceEvenly : MainAxisAlignment.end,
             children: [
-              _buildWebViewHeader(),
-              Container(
-                height: MediaQuery.of(context).size.height - 160,
-                child: IndexedStack(
-                  index: model.workspace.activeTabIndex,
-                  children: model.tabs
-                )
+              KeyboardVisibilityBuilder(
+                builder: (context, isVisible) => isVisible 
+                  ? Container()
+                  : WorkspaceHeader(model: model)
               ),
-              TabBottomBar(model: model),
+
+              Expanded(
+                
+                child: Container(
+                  //height: MediaQuery.of(context).size.height - (model.showToolbar ?  160 : 0),
+                  child: IndexedStack(
+                    index: model.workspace.activeTabIndex,
+                    children: model.tabs
+                  )
+                ),
+              ),
+              KeyboardVisibilityBuilder(
+                builder: (context, isVisible) {
+                  return isVisible ? Container() : TabBottomBar(model: model);
+                }
+              )
+                
+
             ],
           ),
           if (model.showFindInPage)
-          FindInPage(model: model)
-        ],
-      ),
-    );
-  }
+          FindInPage(model: model),
 
-  Widget _buildEditModeMenu() {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: GestureDetector(
-        onTap: () => model.setEditMode(false),
-        child: Container(
-          decoration: BoxDecoration(
-            color: HexColor.fromHex('222222'),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Center(
-              child: Text('Exit Edit Mode',
-                //overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.amber,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-
-  }
-
-  Widget _buildNotification() {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Container(
-        decoration: BoxDecoration(
-          color: HexColor.fromHex('222222'),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Text(model.notificationParams!.title,
-                  //overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500
-                  ),
-                ),
-              ),
-              if (model.notificationParams!.actionLabel != null)
-              GestureDetector(
-                onTap: () => model.notificationParams?.action?.call(),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 5.0),
-                  child: Text(model.notificationParams!.actionLabel!,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    
-                      color: Colors.amber,
-                    ),
-                  ),
-                ),
-              )
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHorizontalTabs() {
-    return ListView.builder(
-      scrollDirection: Axis.horizontal,
-      itemCount: model.tabs.length,
-      itemBuilder: (context, index) {
-        final tab = model.tabs[index];
-        return GestureDetector(
-          onTap: () => model.onPageChanged(index),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 10),
-            child: Container(
-              height: 35,
-              width: 50,
-              decoration: BoxDecoration(
-                color: index == model.workspace.activeTabIndex ? HexColor.fromHex('444444') : HexColor.fromHex('222222'),
-                borderRadius: BorderRadius.circular(8)
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: tab.model.resource.favIconUrl != null 
-                  ? Image.network(tab.model.resource.favIconUrl ?? '',
-                    //loadingBuilder: (context, child, loadingProgress) => Icon(Icons.language, size: 30,),
-                    errorBuilder: (context, child, loadingProgress) => Icon(Icons.public, size: 35,),
-                  )
-                  : Icon(Icons.public, size: 35,),
-              )
-              ),
-          ),
-        );
-      }
-    );
-  }
-
-
-  Widget _buildWebViewHeader() {
-    final workspaceColor = HexColor.fromHex(model.workspaceHexColor);
-    return Container(
-      height: 40, 
-      width: double.infinity, 
-      padding: EdgeInsets.symmetric(horizontal: 10),
-      decoration: BoxDecoration(
-        color: Colors.black
-        // border: model.app.currentWorkspace != null 
-        // ? Border(
-        //     bottom: BorderSide(
-        //       color: model.workspaceColor,
-        //       width: 3.0
-        //     )
-        //   ) 
-        // : null
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          GestureDetector(
-            onTap: () => model.goBackToWorkspaceView(),
-            child: Row(
-              children: [
-                // Icon(Icons.arrow_back_ios,
-                //   color: workspaceColor,
-                // ),
-                Material(
-                  type: MaterialType.transparency,
-                  child: Hero(
-                    tag: model.workspace.title ?? '',
-                    child: Text(model.workspace.title ?? 'Tabs (${model.tabs.length})',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: workspaceColor,
-                        fontSize: 20
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(child: Container(),),
-          if (model.workspace.isIncognito == true)
-              Padding(
-                padding: const EdgeInsets.only(right: 15.0),
-                child: _buildIncognitoIcon(),
-              ),
-
-          GestureDetector(
-            onTap: () => showCupertinoModalBottomSheet(
-              context: context, 
-              builder: (context) {
-                return TabMenu(
-                  resource: model.currentTab.model.resource,
-                  workspaceModel: model,
-                );
-              }
-            ),
-            child: Icon(Icons.more_horiz, 
-              color: workspaceColor
-            ),
-          )
         ],
       ),
     );
@@ -313,7 +173,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
       children: [
         _buildScrollView(),
         Positioned(
-          height: 50,
+          height: 51,
           width: MediaQuery.of(context).size.width,
           bottom: 0,
           left: 0,
@@ -324,49 +184,66 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   }
 
   Widget _buildScrollView() {
-  
     return CustomScrollView(
-      //controller: ,
+      controller: model.scrollController,
       slivers: [
-        // SliverAppBar(
-        //   titleSpacing: 0,
-        //   //expandedHeight: 130,
-        //   bottom: PreferredSize(
-        //     preferredSize: Size.fromHeight(130),
-        //     child: _buildExpandedHeader(context, model)
-        //   ),
-        //   //title: _buildHeader(context, model),
-        //   // flexibleSpace: FlexibleSpaceBar(
-        //   //   background: Container(color: HexColor.fromHex(model.workspaceHexColor)),
-        //   //   title: _buildHeader(context, model),//_buildExpandedHeader(context, model),
-        //   //   expandedTitleScale: 1,
-        //   // ),
-        //   centerTitle: true,
-        //   automaticallyImplyLeading: false, 
-        //   leading: null,
-        //   backgroundColor: Colors.black,
-        //   stretch: true,
-        //   leadingWidth: 0,
-          
-        //   primary: true,
-          
-        // ),
+
         SliverAppBar(
-          title: _buildHeader(),
+          title: Container(
+            decoration: BoxDecoration(
+              color: Colors.black,
+              border: model.showCollapsedHeader || model.workspace.title == null
+                ? Border(
+                    bottom:  BorderSide(color: HexColor.fromHex('333333'))  
+                )
+                :  null
+            ),
+            child: WorkspaceHeader(model: model),
+          ),
           automaticallyImplyLeading: false,
           pinned: true,
           leadingWidth: 0,
           leading: null,
           backgroundColor: Colors.black,
-        ),
-        if (model.workspace.title != null)
-        SliverToBoxAdapter(
-          child: _buildExpandedHeader(),
+          foregroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          expandedHeight: 0,
+          toolbarHeight: 52,
+          forceMaterialTransparency: true,
+          titleSpacing: 0,
         ),
 
-        SliverToBoxAdapter(
-          child: SizedBox(height: 10),
+        if (model.workspace.title != null)
+        SliverAppBar(
+          titleSpacing: 0,
+          title: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 15.0),
+            child: SearchField(
+              showPlaceholder: true,
+              onTap: () {
+                context.read(searchViewProvider).initBeforeNavigation();
+                Navigator.pushNamed(context, AppRoutes.search);
+              }
+            ),
+          ),
+          automaticallyImplyLeading: false,
+          floating: true,
+          leadingWidth: 0,
+          leading: null,
+          backgroundColor: Colors.transparent,
+          foregroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          expandedHeight: 0,
+          toolbarHeight: 50,
+          forceMaterialTransparency: true,
         ),
+
+
+        // if (model.workspace.title != null)
+        // SliverToBoxAdapter(
+        //   child: _buildExpandedHeader(),
+        // ),
+
 
         if (model.tabs.isNotEmpty && model.workspace.title != null)
         SliverToBoxAdapter(
@@ -415,95 +292,69 @@ class _WorkspaceViewState extends State<WorkspaceView> {
         if (model.workspace.title == null) 
         SliverToBoxAdapter(
           
-          child: Center(
-            child: Wrap(
-              runAlignment: WrapAlignment.spaceEvenly,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: model.tabs.map((tab) => 
-                TabPreview(
-                  tab: tab.model.resource, 
-                  showSelectionToggle: model.selectedResources.length > 0,
-                  isSelected: model.selectedResources.contains(tab.model.resource.id),
-                  toggleSelection: () => model.toggleResourceSelection(tab.model.resource),
-                  open: () => model.openTab(tab.model.resource),
-                  close: () => model.closeTab(tab.model.resource),
-                )
-              ).toList(),
-            ),
-          ),
-        ),
-
-
-
-        // if (model.queue.length > 0)
-        //   SliverToBoxAdapter(
-        //   child: Padding(
-        //     padding: const EdgeInsets.symmetric(horizontal: 15.0),
-        //     child: SectionHeader(
-        //       title: 'Queue',
-        //       isCollapsed: model.showQueue,
-        //       onToggleCollapse: () => model.toggleShowQueue(),
-        //     ),
-        //   ),
-        // ),
-        // if (model.showQueue && model.queue.isNotEmpty)
-        // SliverList.builder(
-        //   itemCount: model.queue.length,
-        //   itemBuilder: ((context, index) {
-        //     final resource = model.queue[index];
-        //     return Padding(
-        //       padding: EdgeInsets.only(
-        //         left: 15.0, 
-        //         right: 15, 
-        //       ),
-        //       child: ResourceListItem(
-        //         isFirstListItem: index == 0,
-        //         isLastListItem: index == model.queue.length - 1,
-        //         resource: resource,
-        //         model: model,
-        //         onTap: () {
-        //           model.openTab(resource);
-        //         }
-        //       ),
-        //     );
-        //   })
-        // ),
-
-        // if (model.showQueue && model.queue.isNotEmpty)
-        //   SliverToBoxAdapter(
-        //   child: Padding(
-        //     padding: const EdgeInsets.symmetric(vertical: 5),
-        //   ),
-        // ),
-        
-        if (model.visibleResources.isNotEmpty || model.selectedTags.isNotEmpty)
-        SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.only(top: 10, left: 15.0, right: 15, bottom: 5),
-            child: Container(
-              height: 50,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: _buildListOptions(),
+            padding: const EdgeInsets.symmetric(horizontal: 10.0),
+            child: Center(
+              child: Wrap(
+                runAlignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  ...model.tabs.map((tab) =>  
+                    TabPreview(
+                      tab: tab.model.resource, 
+                      showSelectionToggle: model.selectedResources.length > 0,
+                      isSelected: model.selectedResources.contains(tab.model.resource.id),
+                      toggleSelection: () => model.toggleResourceSelection(tab.model.resource),
+                      open: () => model.openTab(tab.model.resource),
+                      close: () => model.closeTab(tab.model.resource),
+                    )
+                  ).toList(),
+                  Container()
+                ]
               ),
             ),
           ),
         ),
 
-        // if (model.visibleTags.isNotEmpty) 
-        // SliverToBoxAdapter(
-        //   child: _buildTags(),
-        // ),
+        
+        if (model.visibleResources.isNotEmpty || model.selectedTags.isNotEmpty)
+         SliverAppBar(
+          title: Padding(
+            padding: const EdgeInsets.only(bottom: 0.0),
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: HexColor.fromHex('222222'))),
+                color: Colors.black,
+              ),
+              height: 60,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 10, bottom: 10),
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: _buildListOptions(),
+                ),
+              ),
+            ),
+          ),
+          automaticallyImplyLeading: false,
+          pinned: true,
+          leadingWidth: 0,
+          leading: null,
+          backgroundColor: Colors.black,
+          foregroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          expandedHeight: 0,
+          toolbarHeight: 60,
+          forceMaterialTransparency: true,
+          titleSpacing: 0,
+        ),
 
-        // if (model.showDomains)
-        // SliverToBoxAdapter(
-        //   child: _buildDomains(),
-        // )
-        // else if (model.showTags)
-        // SliverToBoxAdapter(
-        //   child: _buildTags(),
-        // )
-        if (model.visibleResources.isNotEmpty)
+        if (model.resourceView == ResourceView.tagged) 
+        SliverToBoxAdapter(
+          child: _buildTags(),
+        ),
+
+        if (model.visibleResources.isNotEmpty && model.resourceView != ResourceView.folders)
         SliverList.builder(
           itemCount: model.visibleResources.length,
           itemBuilder: ((context, index) {
@@ -526,6 +377,33 @@ class _WorkspaceViewState extends State<WorkspaceView> {
             );
           })
         ),
+
+        if (model.resourceView == ResourceView.tagged)
+        SliverToBoxAdapter(
+          child: _buildSearchRelatedContentButton()
+        ),
+        
+        if (model.resourceView == ResourceView.folders) 
+        SliverList.builder(
+          itemCount: model.folders.length,
+          itemBuilder: ((context, index) {
+            final folder = model.folders[index];
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 15.0, 
+                right: 15, 
+              ),
+              child: WorkspaceListItem(
+                isFirstListItem: index == 0,
+                isLastListItem: index == model.folders.length - 1,
+                workspace: folder,
+                onTap: () {
+                  context.read(windowsProvider).openWorkspace(folder);
+                },
+              )
+            );
+          })
+        ),
         SliverToBoxAdapter(
           child: SizedBox(height: 70),
         )
@@ -539,20 +417,81 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   List<Widget> _buildListOptions() {
   
     return [
+      Padding(padding: EdgeInsets.only(left: 15)),
       if (model.hasSavedResources)
-      _buildListOption(text: 'Recent'),
+      _buildListOption(
+        icon: Symbols.history,
+        text: 'History',
+        view: ResourceView.history,
+      ),
       if (model.hasFavorites)
-      _buildListOption(text: 'Favorites', view: ResourceView.important),
-      if (model.hasHighlights)
-      _buildListOption(text: 'Highlights', view: ResourceView.highlights),
+      _buildListOption(
+        icon: Symbols.favorite,
+        text: 'Favorites', 
+        view: ResourceView.favorites
+      ),
+      if (model.folders.isNotEmpty)
+      _buildListOption(
+        icon: Symbols.folder_rounded,
+        text: 'Folders', 
+        view: ResourceView.folders,
+      ),
+      if (model.folders.isNotEmpty)
+      _buildListOption(
+        icon: Symbols.sell,
+        text: 'Tagged', 
+        view: ResourceView.tagged,
+      ),
       if (model.hasQueue)
-      _buildListOption(text: 'To Visit', view: ResourceView.queue),
-      if (model.hasImages)
-      _buildListOption(text: 'Images', view: ResourceView.images)
+      _buildListOption(
+        icon: Symbols.inbox,
+        text: 'To Visit', 
+        view: ResourceView.queue
+      ),
     ];
   }
 
-  Widget _buildListOption({ResourceView? view, required String text}) {
+  Widget _buildSearchRelatedContentButton() {
+    return Padding(
+      padding: const EdgeInsets.only(left: 15.0, top: 10, right: 15),
+      child: GestureDetector(
+        onTap: model.openRelatedContent,
+        child: Container(
+          height: 45,
+          decoration: BoxDecoration(
+            //color: HexColor.fromHex('333333'),
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(8),
+              bottomRight: Radius.circular(8)
+            )
+          ),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Padding(
+                //   padding: const EdgeInsets.only(right: 8.0),
+                //   child: Icon(Symbols.travel_explore_rounded, size: 30,),
+                // ),
+                Text('Click for related content',
+                  textAlign: TextAlign.left,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w500
+                    
+                  ),
+                )
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildListOption({ResourceView? view, required String text, IconData? icon}) {
     final isSelected = model.resourceView == view;
     return Center(
         child: Padding(
@@ -568,11 +507,22 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                 ),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 8.0),
-                  child: Text(text, 
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: isSelected ? Colors.black : Colors.white,
-                    ),
+                  child: Row(
+                    children: [
+                      if (icon != null) Padding(
+                        padding: const EdgeInsets.only(right: 5.0),
+                        child: Icon(icon,
+                          color: isSelected ? Colors.black : Colors.white,
+                          fill: isSelected ? 1 : 0,
+                        ),
+                      ),
+                      Text(text, 
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: isSelected ? Colors.black : Colors.white,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -596,230 +546,69 @@ class _WorkspaceViewState extends State<WorkspaceView> {
 
   Widget _buildTags() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 15),
+      padding: const EdgeInsets.only(bottom: 15),
       child: Container(
-        height: 40,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.only(topLeft: Radius.circular(8), topRight: Radius.circular(8)),
-          color: HexColor.fromHex('222222')
+          //borderRadius: BorderRadius.circular(8),
+          color: HexColor.fromHex('111111'),
+          border: Border(
+            top: BorderSide(color: HexColor.fromHex('222222')),
+            bottom: BorderSide(color: HexColor.fromHex('222222')),
+          )
         ),
         //width: MediaQuery.of(context).size.width,
         child: Padding(
-          padding: const EdgeInsets.only(top: 8.0, bottom: 5.0),
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: model.visibleTags.length,
-            itemBuilder: (context, index) {
-              final tag = model.visibleTags[index];
-              return Padding(
-                padding: EdgeInsets.only(right: 10.0, left: index == 0 ? 10 : 0),
-                child: TagChip(
-                  key: Key(tag.name),
-                  tag: tag,
-                  isSelected: model.selectedTags.firstWhereOrNull((t) => t.name == tag.name) != null,
-                  onTap: () => model.toggleTagSelection(tag),
-                ),
-              );
-            }
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildExpandedHeader() {
-    final title = model.workspace.title ?? 'Untitled';
-    final textWidget = Text(title,
-      maxLines: 2,
-      overflow: TextOverflow.ellipsis,
-      textAlign: TextAlign.left,
-      style: TextStyle(
-        color: HexColor.fromHex(model.workspaceHexColor),
-        fontWeight: FontWeight.bold, 
-        fontSize: 30,
-      ),
-    );
-    return Padding(
-      padding: const EdgeInsets.only(top: 10, left: 15, right: 15),
-      child: Container(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(bottom: 20.0, left: 5, right: 5),
-              child: Container(
-
-                child: title.length < 15 
-                  ? FittedBox(
-                    fit: BoxFit.fitHeight,
-                    child: Material(
-                      type: MaterialType.transparency,
-                      child: textWidget,
-                    )
-                  )
-                  : textWidget
-              ),
-            ),
-            SearchField(
-              showPlaceholder: true,
-              onTap: () {
-                context.read(searchViewProvider).initBeforeNavigation();
-                Navigator.pushNamed(context, AppRoutes.search);
-              }
-            )
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-
-    return Container(
-      decoration: BoxDecoration(
-        //border: Border(bottom: BorderSide(color: HexColor.fromHex(model.workspaceHexColor))),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal:0.0),
-        child: model.selectedResources.isNotEmpty
-          ? _buildSelectionHeader()
-          : Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+          child: Wrap(
+            alignment: WrapAlignment.start,
             children: [
-              _buildBackButton(),
-              //_buildTitle(context, model),
-              model.workspace.title == null 
-              ? SaveSpaceButton(model: model,)
-              : _buildMoreButton(),
-            ],
-          ),
-      ),
-    );
-  }
-
-
-  Widget _buildIncognitoIcon() {
-    return Icon(
-      Icons.visibility_off,
-
-      color: HexColor.fromHex('444444'),
-    );
-  }
-
-
-
-  Widget _buildSelectionHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text('${model.selectedResources.length} Selected', 
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w400,
+              ...model.visibleTags.map((tag) {
+                return Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 5, vertical: 4),
+                  child: TagChip(
+                    key: Key(tag.name),
+                    tag: tag,
+                    selectionColor: HexColor.fromHex(model.workspaceHexColor),
+                    isSelected: model.selectedTags.firstWhereOrNull((t) => t.name == tag.name) != null,
+                    onTap: () => model.toggleTagSelection(tag),
+                  ),
+                );
+              }).toList(),
+              _buildGenerateTagsButton(),
+            ]
           ),
         ),
-        GestureDetector(
-          onTap: () => model.cancelTabSelection(),
-          child: Text('Cancel',
-          
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.white.withOpacity(0.7)
-            ),
-          ),
-        )
-      ],
-    );
-  }
-
-  Widget _buildBackButton() {
-    final text = model.parentWorkspace != null ? model.parentWorkspace!.title! : 'Back';
-    final color = model.parentWorkspace != null ? HexColor.fromHex(colorMap[model.parentWorkspace?.color ?? 'grey']!) : null;
-    return GestureDetector(
-      onTap: () {
-         Navigator.pop(context);
-         context.read(homeViewProvider).refreshData();
-      },
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.arrow_back_ios, 
-            weight: 100, 
-            color: color
-          ),
-          Material(
-            type: MaterialType.transparency,
-            child: Hero(
-              tag: text,
-              child: Text(text, 
-                style: TextStyle(
-                  fontSize: 18,
-                  color: color
-                ),
-              )
-            ),
-          )
-        ],
       ),
     );
   }
-
-
-  Widget _buildMoreButton() {
-
-    final color = HexColor.fromHex(colorMap[model.workspace.color ?? 'grey']!);
+  
+  Widget _buildGenerateTagsButton() {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context, 
-          PageTransition<dynamic>(
-            type: PageTransitionType.rightToLeft,
-            alignment: Alignment.topCenter,
-            curve: Curves.easeInExpo,
-            child: WorkspaceMenu(),
-
-            fullscreenDialog: true,
-          )
-        );
-      },
+      onTap: () => model.generateTerms(),
       child: Padding(
-        padding: EdgeInsets.all(8.0),
+        padding: EdgeInsets.symmetric(horizontal: 5, vertical: 4),
         child: Container(
           decoration: BoxDecoration(
-            border: Border.all(color: color, width: 1),
-            borderRadius: BorderRadius.circular(100),
+            color: HexColor.fromHex('333333'),
+            borderRadius: BorderRadius.circular(8)
           ),
-          child: Icon(Icons.more_horiz_outlined, color: color, size: 20,)
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 2),
+            child: Icon(
+              Symbols.more_horiz_rounded,
+              fill: 1,
+              weight: 700,
+            ),
+          ),
         ),
       ),
     );
   }
-
-  // Widget _buildResourceContainer(BuildContext context, WorkspaceViewModel model) {
-  //   return Expanded(
-  //     child: Container(
-        
-  //       child: ListView.builder(
-  //         itemCount: model.visibleResources.length,
-  //         itemBuilder: ((context, index) {
-  //           final resource = model.visibleResources[index];
-  //           return TabListItem(
-  //             key: Key(resource.id ?? resource.toString()),
-  //             resource: resource,
-  //             model: model,
-  //             onTap: () => model.openTab(resource)
-  //           );
-  //         }),
-  //       ),
-  //     ),
-  //   );
-  // }
 
   Widget _buildFooter() {
 
     
     return Container(
-      height: 50,
       //padding: EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
         //border: Border(top: BorderSide(color: HexColor.fromHex(model.workspaceHexColor), width: 1)),
@@ -832,55 +621,117 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   }
 
   Widget _buildDefaultFooter() {
-    final color = HexColor.fromHex(model.workspaceHexColor);
+    
     return Container(
        decoration: BoxDecoration(
         color: Colors.black,
         border: Border(
           top: BorderSide(
-            color: HexColor.fromHex('333333'), 
+            color: HexColor.fromHex('222222'), 
             width: 1
           )
         )
       ),
+      child: model.workspace.title == null 
+        ? _buildWindowBottomBar()
+        : _buildWorkspaceBottomBar(),
+    );
+  }
+
+  Widget _buildWindowBottomBar() {
+    final color = HexColor.fromHex(model.workspaceHexColor);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        FooterIcon(
+            padding: EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+            onTap: () => model.clearTabs(),
+            icon: Symbols.tab_close,
+            color: color, 
+            size: 30,
+          )
+   
+        ,
+        _buildResourceCounts(context, model),
+        FooterIcon(
+          padding: EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+          onTap: model.createNewTab,
+          icon: Symbols.add_box, 
+          color: color, 
+          size: 30
+        ),
+      ]
+    );
+  }
+
+  Widget _buildWorkspaceBottomBar() {
+    final color = HexColor.fromHex(model.workspaceHexColor);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        _buildActiveTabButton(),
+        // FooterIcon(
+        //   onTap: () => showCupertinoDialog(
+        //     context: context, 
+        //     builder: (context) {
+        //       return NewFolderDialog(
+        //         onSave: (title) => model.createNewFolder(context, title),
+        //       );
+        //     }
+        //   ),
+        //   icon: Symbols.create_new_folder_rounded,
+        //   color: color,
+        //   size: 30,
+
+        // ),
+
+        FooterIcon(
+          
+          onTap: model.createChat,
+          icon: Symbols.forum_rounded, 
+          color: color, 
+          size: 25
+        ),
+
+        FooterIcon(
+          onTap: model.createNewTab,
+          icon: Symbols.add_box, 
+          color: color, 
+          size: 30
+        ),
+        FooterIcon(
+          onTap: model.createNote,
+          icon: Symbols.edit_document, 
+          color: color, 
+          size: 25
+        ),
+        FooterIcon(
+          padding: EdgeInsets.only(top: 5, bottom: 5, right: 20, left: 10),
+          onTap: () => context.read(windowsProvider).openWorkspace(null),
+          icon: Symbols.new_window, 
+          color: color, 
+          size: 25
+        ),
+      ]
+    );
+  }
+
+  Widget _buildActiveTabButton() {
+    final resource = model.currentTab.model.resource;
+    return GestureDetector(
+      onTap: () => model.openTab(resource),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10.0),
-        child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // FooterIcon(icon: Icons.dynamic_feed_outlined, color: color,),
-              // FooterIcon(icon: Icons.history_outlined, color: color),
-              // FooterIcon(icon: Icons.folder_outlined, color: color),
-              // FooterIcon(icon: Icons.inbox_outlined, color: color),
-              model.workspace.title == null 
-              ?  FooterIcon(
-                  onTap: () => model.clearTabs(createNewTab: true),
-                  icon: Symbols.tab_close,
-                  color: color, 
-                  size: 30,
-                )
-              : FooterIcon(
-                onTap: () {
-                  // showCupertinoModalBottomSheet(
-                  //   context: context, 
-                  //   builder: (context) => CreateWorkspaceModal(
-                  //     onDone: (workspace) => model.createNewFolder(context, workspace.title!))
-                  //   );
-                },
-                icon: Symbols.filter_list_alt_rounded, 
-                color: color, 
-                size: 30
-              ),
-              _buildResourceCounts(context, model),
-              FooterIcon(
-                onTap: model.createNewTab,
-                icon: Symbols.add_box, 
-                color: color, 
-                size: 30
-              ),
-            ],
-          ),
+        padding: const EdgeInsets.only(left: 20.0, right: 10, top: 5, bottom: 5.0),
+        child: Container( 
+          child: resource.favIconUrl != null && resource.favIconUrl!.isNotEmpty
+            ? FavIcon(resource: resource, size: 25,)
+            : Icon(Symbols.tab_rounded, 
+              size: 25,
+              color: HexColor.fromHex(model.workspaceHexColor),
+            )
+        ),
       ),
     );
   }
@@ -977,18 +828,31 @@ class TabWebViewsContainer extends StatelessWidget {
 }
 
 class FooterIcon extends StatelessWidget {
-  const FooterIcon({Key? key, required this.icon, this.onTap, this.color = Colors.black, this.size = 30}) : super(key: key);
+  const FooterIcon({Key? key,
+    required this.icon, 
+    this.onTap, 
+    this.onDoubleTap,
+    this.onLongPress,
+    this.color = Colors.black, 
+    this.size = 30,
+    this.padding = const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+  }) : super(key: key);
   final IconData icon;
   final VoidCallback? onTap;
   final Color color;
   final double size;
+  final Function()? onLongPress;
+  final Function()? onDoubleTap;
+  final EdgeInsets padding;
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
+      onDoubleTap: onDoubleTap,
+      onLongPress: onLongPress,
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.all(3.0),
-        child: Icon(icon, size: size, color: color, weight: 300,),
+        padding: padding,
+        child: Icon(icon, size: size, color: color, weight: 400,),
       ),
     );
   }
@@ -1026,6 +890,153 @@ class SaveSpaceButton extends StatelessWidget {
           fill: 1,
         ),
       ),
+    );
+  }
+}
+
+class WorkspaceHeader extends StatelessWidget {
+  const WorkspaceHeader({Key? key, required this.model}) : super(key: key);
+  final WorkspaceViewModel model;
+
+  @override
+  Widget build(BuildContext context) {
+    final workspaceColor = HexColor.fromHex(model.workspaceHexColor);
+    return AnimatedSize(
+      duration: Duration(milliseconds: 500),
+      reverseDuration: Duration(milliseconds: 0),
+      child: _buildHeader(context),
+
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+
+    return Container(
+      height: model.workspace.showWebView && (!model.showToolbar || model.workspace.title == null || model.selectedHighlight != null)
+        ? 0
+        : null,
+      decoration: BoxDecoration(
+        color: Colors.black,
+        // border: !model.workspace.showWebView && model.workspace.title == null 
+        //   ? Border(bottom: BorderSide(color: HexColor.fromHex(model.workspaceHexColor), width: 1))
+        //   : null,
+      ),
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: 12.0, 
+          right: 12.0, 
+          top: model.workspace.showWebView ? 10 :  16, 
+          bottom: 10
+        ),
+        child: model.selectedResources.isNotEmpty
+          ? _buildSelectionHeader()
+          : Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+               _buildHeaderTitle(),
+              model.workspace.title == null 
+              ? SaveSpaceButton(model: model,)
+              : _buildMoreButton(context),
+            ],
+          ),
+      ),
+    );
+  }
+
+  Widget _buildMoreButton(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Navigator.push(context, 
+        PageTransition<dynamic>(
+          type: PageTransitionType.bottomToTop,
+          curve: Curves.easeInExpo,
+          child: ModalContainer(
+            child: WorkspaceMenu(model: model),
+          ),
+          fullscreenDialog: true,
+        )
+      ),
+      child: Icon(Icons.more_horiz, 
+        color: HexColor.fromHex(model.workspaceHexColor)
+      ),
+    );
+  }
+
+  Widget _buildHeaderTitle() {
+    final fontSize = 20.0;
+    return Container(
+      color: Colors.black,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          HomeIcon(
+            size: model.workspace.title != null ? 25 : 30,
+            padding: EdgeInsets.only(left: 3, right: 5),
+          ),
+          
+          Padding(
+            padding: const EdgeInsets.only(right: 5.0),
+            child: Text(model.workspace.title != null 
+              ? '/'
+              : '', 
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: fontSize - 2,
+              ),
+            ),
+          ),
+          
+          if (model.workspace.parents.isNotEmpty) 
+          _buildBreadCrumbIcon(),
+          if (model.workspace.title != null)
+          Text(model.workspace.title ?? 'Untitled', 
+            style: TextStyle(
+              color: HexColor.fromHex(colorMap[model.workspace.color ?? 'grey']!),
+              fontSize: fontSize,
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBreadCrumbIcon() {
+    return GestureDetector(
+      onTap: () {
+        // show path hierarchies
+        // what happens when the  
+      },
+      child: Padding(
+        padding: const EdgeInsets.all(3.0),
+        child: Text('../'),
+      ),
+    );
+  }
+
+
+
+  Widget _buildSelectionHeader() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text('${model.selectedResources.length} Selected', 
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w400,
+            color: Colors.white,
+          ),
+        ),
+        GestureDetector(
+          onTap: () => model.cancelTabSelection(),
+          child: Text('Cancel',
+          
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.white.withOpacity(0.7)
+            ),
+          ),
+        )
+      ],
     );
   }
 }

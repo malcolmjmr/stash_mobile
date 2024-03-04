@@ -22,7 +22,7 @@ class TabPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.all(isSelected ? 6 : 8),
+      padding: EdgeInsets.all(isSelected ? 5 : 8),
       child: Column(
         children: [
           Stack(
@@ -41,11 +41,11 @@ class TabPreview extends StatelessWidget {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: Container(
-                      width: MediaQuery.of(context).size.width * .45 - (isSelected ? 8 : 0),
-                    
+                      width: MediaQuery.of(context).size.width * .43 - (isSelected ? 8 : 0),
+                      height: MediaQuery.of(context).size.width * .45 * 1.2,
                       child: tab.image == null 
                         ? Container(
-                            width: MediaQuery.of(context).size.width * .45,
+                            width: MediaQuery.of(context).size.width * .43,
                             height: MediaQuery.of(context).size.width * .45 * 1.2,
                             decoration: BoxDecoration(
                               border: Border.all(color: HexColor.fromHex('222222'), width: 2)
@@ -57,7 +57,7 @@ class TabPreview extends StatelessWidget {
                               ]
                             ),
                           )
-                        : Image.memory(tab.image!, fit: BoxFit.fill,),
+                        : Image.memory(tab.image!, fit: BoxFit.cover,),
                     ),
                   ),
                 ),
@@ -134,7 +134,7 @@ class TabPreview extends StatelessWidget {
       padding: const EdgeInsets.only(top: 10.0),
       child: Container(
         height: 20,
-        width: MediaQuery.of(context).size.width * .45,
+        width: MediaQuery.of(context).size.width * .42,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           mainAxisSize: MainAxisSize.min,

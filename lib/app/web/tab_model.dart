@@ -16,6 +16,11 @@ class TabViewModel {
   late Resource resource;
   WorkspaceViewModel workspaceModel;
 
+  List<String> queue = [];
+  bool canGoBack = false;
+  bool canGoForward = false;
+  
+
   String id = UniqueKey().toString();
 
   TabViewModel({required this.workspaceModel, Resource? initialResource}) {
@@ -27,6 +32,8 @@ class TabViewModel {
   }
 
   bool loaded = false;
+
+  bool isNewTab = true;
 
   Future<String?> getFaviconUrl(InAppWebViewController controller) async {
     final favIcons = await controller.getFavicons();
@@ -50,6 +57,7 @@ class TabViewModel {
       controllerSet = true;
     }
     workspaceModel.onTabUpdated(this, controller, uri);
+
     scrollX = 0;
     //updateTabData(context, controller);
   }
@@ -185,6 +193,10 @@ class TabViewModel {
       handlerName: 'onDocumentBodyClicked',
       callback: onPageClicked,
     );
+    controller.addJavaScriptHandler(
+      handlerName: 'onDocumentBodyDoubleClicked',
+      callback: onPageDoubleClicked,
+    );
 
     controller.addJavaScriptHandler(
       handlerName: 'onTextSelection',
@@ -219,6 +231,10 @@ class TabViewModel {
       handlerName: 'onHighlightClicked',
       callback: onHighlightClicked,
     );
+    controller.addJavaScriptHandler(
+      handlerName: 'scrollDirectionChanged',
+      callback: onScrollDirectionChanged,
+    );
   }
 
   onInputEntered(args) {
@@ -243,7 +259,7 @@ class TabViewModel {
 
   onScrollEnd(args) async  {
   
-    if (workspaceModel.workspace.title == null)
+    //if (workspaceModel.workspace.title == null)
     resource.image = await controller.takeScreenshot();
 
   }
@@ -280,7 +296,6 @@ class TabViewModel {
   }
 
   onLinkSelected(args) {
-    print('link selected');
 
     Resource resource = Resource(
       title: args[0],
@@ -302,6 +317,10 @@ class TabViewModel {
     if (workspaceModel.isInEditMode) {
       removeLastClickedElement();
     }
+  }
+
+  onPageDoubleClicked(args) {
+    workspaceModel.setShowToolbar(!workspaceModel.showToolbar);
   }
 
   removeLastClickedElement() {
@@ -386,6 +405,21 @@ class TabViewModel {
 
   onHighlightClicked(args) async {
     workspaceModel.setSelectedHighlight(args[0]);
+    if (!workspaceModel.showToolbar) {
+      workspaceModel.setShowToolbar(true);
+    }
+  }
+
+  onScrollDirectionChanged(args) async {
+    final direction = args[0];
+    if (direction == 'down') {
+      if (workspaceModel.selectedHighlight == null) {
+        workspaceModel.setShowToolbar(false);
+      }
+      
+    } else if (direction == 'up') {
+      workspaceModel.setShowToolbar(true);
+    }
   }
 
   
