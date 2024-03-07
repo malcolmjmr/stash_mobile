@@ -66,7 +66,7 @@ class TabActions extends StatelessWidget {
               name: 'Back',
               onTap: model.workspaceModel.goBack,
               onDoubleTap: model.workspaceModel.goToStart,
-              onLongPress: () => model.workspaceModel.showBackHistory(context),
+              onLongPress: () => model.workspaceModel.showBackModal(context),
               iconFillFunction:  (model) {
                 return model.currentTab.model.canGoBack ? 1 : 0;
               },
@@ -99,7 +99,7 @@ class TabActions extends StatelessWidget {
               icon: Symbols.arrow_forward_ios_rounded,
               name: 'Forward',
               onTap: model.workspaceModel.goForward,
-              onLongPress: () => model.workspaceModel.showForwardQueue(context),
+              onLongPress: () => model.workspaceModel.showForwardModal(context),
               iconFillFunction:  (model) {
                 return model.currentTab.model.canGoForward ? 1 : 0;
               },

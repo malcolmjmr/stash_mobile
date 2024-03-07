@@ -378,7 +378,7 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
           })
         ),
 
-        if (model.resourceView == ResourceView.tagged)
+        if (model.resourceView == ResourceView.tagged && model.selectedTags.isNotEmpty)
         SliverToBoxAdapter(
           child: _buildSearchRelatedContentButton()
         ),
@@ -453,17 +453,15 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
 
   Widget _buildSearchRelatedContentButton() {
     return Padding(
-      padding: const EdgeInsets.only(left: 15.0, top: 10, right: 15),
+      padding: const EdgeInsets.only(left: 15.0, top: 20, right: 15),
       child: GestureDetector(
         onTap: model.openRelatedContent,
         child: Container(
           height: 45,
+          //width: double.maxFinite,
           decoration: BoxDecoration(
-            //color: HexColor.fromHex('333333'),
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(8),
-              bottomRight: Radius.circular(8)
-            )
+            color: HexColor.fromHex('111111'),
+            borderRadius: BorderRadius.circular(15)
           ),
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 12, vertical: 5),
@@ -475,7 +473,7 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
                 //   padding: const EdgeInsets.only(right: 8.0),
                 //   child: Icon(Symbols.travel_explore_rounded, size: 30,),
                 // ),
-                Text('Click for related content',
+                Text('Explore related content',
                   textAlign: TextAlign.left,
                   style: TextStyle(
                     fontSize: 18,
@@ -671,7 +669,7 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        _buildActiveTabButton(),
+        // _buildActiveTabButton(),
         // FooterIcon(
         //   onTap: () => showCupertinoDialog(
         //     context: context, 
@@ -686,6 +684,13 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
         //   size: 30,
 
         // ),
+        FooterIcon(
+          padding: EdgeInsets.only(top: 5, bottom: 5, right: 10, left: 20),
+          onTap: () => model.openTab(model.currentTab.model.resource),
+          icon: Symbols.tab,
+          color: color,
+          size: 25,
+        ),
 
         FooterIcon(
           
@@ -699,7 +704,8 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
           onTap: model.createNewTab,
           icon: Symbols.add_box, 
           color: color, 
-          size: 30
+          fill: 1,
+          size: 36
         ),
         FooterIcon(
           onTap: model.createNote,
@@ -836,6 +842,7 @@ class FooterIcon extends StatelessWidget {
     this.color = Colors.black, 
     this.size = 30,
     this.padding = const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+    this.fill = 0,
   }) : super(key: key);
   final IconData icon;
   final VoidCallback? onTap;
@@ -844,6 +851,7 @@ class FooterIcon extends StatelessWidget {
   final Function()? onLongPress;
   final Function()? onDoubleTap;
   final EdgeInsets padding;
+  final double fill;
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -852,7 +860,12 @@ class FooterIcon extends StatelessWidget {
       onTap: onTap,
       child: Padding(
         padding: padding,
-        child: Icon(icon, size: size, color: color, weight: 400,),
+        child: Icon(icon, 
+          size: size, 
+          color: color, 
+          weight: 400,
+          fill: fill,
+        ),
       ),
     );
   }

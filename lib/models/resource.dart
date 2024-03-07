@@ -21,6 +21,8 @@ class Resource {
   String? favIconUrl;
   String? imageUrl;
   String? title;
+  String? text;
+  String? summary;
   String? id;
   List<String> contexts = [];
   List<String> tags = [];
@@ -62,6 +64,8 @@ class Resource {
     imageUrl = json['imageUrl'];
     images = json['images'] != null ? List<String>.from(json['images']) : [];
     title = json['title'];
+    summary = json['summary'];
+    text = json['text'];
     created = json['created'];
     lastVisited = json['lastVisited'];
     contexts = json['contexts'] != null ? List<String>.from(json['contexts']) : [];
@@ -105,6 +109,8 @@ class Resource {
       'rating': rating,
       'note': note,
       'notes': notes.map((n) => n.toJson()),
+      'summary': summary,
+      'text': text,
     };
     json.removeWhere((key, value) => value == null || value == [] || value == 0);
     return json;

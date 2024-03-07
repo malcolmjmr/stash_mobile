@@ -21,6 +21,7 @@ import 'package:stashmobile/app/modals/create_new_tab/create_new_tab_modal.dart'
 import 'package:stashmobile/app/search/search_view_model.dart';
 import 'package:stashmobile/app/web/tab_preview_modal.dart';
 import 'package:stashmobile/app/windows/windows_view_model.dart';
+import 'package:stashmobile/constants/color_map.dart';
 import 'package:stashmobile/extensions/color.dart';
 import 'package:stashmobile/models/resource.dart';
 import 'package:stashmobile/models/tag.dart';
@@ -190,7 +191,7 @@ class HomeView extends ConsumerWidget {
             Positioned(
               bottom: 0, 
               left: 0, 
-              height: 45, 
+              height: 50, 
               width: MediaQuery.of(context).size.width, 
               child: Footer(model: model)
             ),
@@ -448,7 +449,8 @@ class Footer extends StatelessWidget {
                 ),
                 CreateButton(
                   icon: Symbols.add_box_rounded,
-                  size: 32,
+                  fill: 1,
+                  size: 36,
                   padding: EdgeInsets.symmetric(horizontal: 50),
                   onDoubleTap: () => Navigator.pushNamed(context, AppRoutes.createNewTab),
                   onTap:() =>  model.createWindow(context),
@@ -565,6 +567,7 @@ class CreateButton extends StatelessWidget {
     required this.icon, 
     this.padding = const EdgeInsets.all(5),
     this.size = 32,
+    this.fill = 0,
   }) : super(key: key);
   
   final VoidCallback onTap;
@@ -572,6 +575,7 @@ class CreateButton extends StatelessWidget {
   final IconData icon;
   final EdgeInsets padding;
   final double size;
+  final double fill;
 
   @override
   Widget build(BuildContext context) {
@@ -583,7 +587,8 @@ class CreateButton extends StatelessWidget {
         child: Icon(icon, 
           size: size, 
           weight: 400.0, 
-          color: Colors.white,
+          color: HexColor.fromHex(colorMap['grey']!),
+          fill: fill,
           //color: HexColor.fromHex('999999')
         ),
       ),

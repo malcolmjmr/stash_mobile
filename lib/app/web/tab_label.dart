@@ -52,16 +52,7 @@ class OpenTabLabel extends StatelessWidget {
       onTap: onTap,
       child: GestureDetector(
         onLongPress: () {
-          
-          showCupertinoModalBottomSheet(
-            context: context, 
-            builder: (context) => Material(
-              type: MaterialType.transparency,
-              child: VeritcalTabsModal(
-                workspaceModel: model
-              ),
-            )
-          );
+          model.openSummaryModal();
         },
         child: Slidable(
           key: Key(resource.toString()),

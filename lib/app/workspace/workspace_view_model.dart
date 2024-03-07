@@ -18,8 +18,12 @@ import 'package:stashmobile/app/providers/user.dart';
 import 'package:stashmobile/app/providers/workspace.dart';
 
 import 'package:stashmobile/app/web/tab.dart';
+
 import 'package:stashmobile/app/web/tab_edit_modal.dart';
+import 'package:stashmobile/app/web/tab_history_modal.dart';
+
 import 'package:stashmobile/app/web/tab_model.dart';
+import 'package:stashmobile/app/web/tab_summary_modal.dart';
 import 'package:stashmobile/app/web/text_selection_menu.dart';
 import 'package:stashmobile/app/windows/windows_view_model.dart';
 import 'package:stashmobile/app/workspace/workspace_view.dart';
@@ -697,7 +701,7 @@ class WorkspaceViewModel extends ChangeNotifier {
         deleteResource(model.resource);
       }
 
-      model.canGoForward = model.resource.queue.isNotEmpty || (await controller.canGoForward());
+      model.canGoForward = model.queue.isNotEmpty || (await controller.canGoForward());
       model.canGoBack = await controller.canGoBack();
 
 
@@ -1310,6 +1314,19 @@ class WorkspaceViewModel extends ChangeNotifier {
   saveLink(Resource resource) {
 
     resource.isQueued = true;
+    if (resource.favIconUrl == null) {
+      resource.favIconUrl = [
+        ...tabs.map((t) => t.model.resource).toList(), 
+        ...allResources
+      ].firstWhereOrNull((r) {
+        if (r.favIconUrl == null) return false;
+
+        final rHost = Uri.parse(r.url!).host;
+        final linkHost = Uri.parse(resource.url!).host;
+        return linkHost == rHost;
+
+      })?.favIconUrl;
+    }
     saveResource(resource);
 
     final queueIndex = currentTab.model.queue.indexWhere((i) => i == resource.url);
@@ -1339,9 +1356,23 @@ class WorkspaceViewModel extends ChangeNotifier {
 
   goBackToWorkspaceView() async {
     saveTabsScrollPositionOnExit();
+    await getTabImages();
     setState(() {
       workspace.showWebView = false;
     });
+  }
+
+  getTabImages() async {
+    if (workspace.title != null) return;
+
+    for (int i = 0; i < tabs.length; i++) {
+      final needToGetImage = (
+        tabs[i].model.resource.image == null 
+        || tabs[i] == currentTab);
+      if (needToGetImage) {
+        tabs[i].model.resource.image = await tabs[i].model.controller.takeScreenshot();
+      }
+    }
   }
 
   saveTabsScrollPositionOnExit() async {
@@ -1448,14 +1479,16 @@ class WorkspaceViewModel extends ChangeNotifier {
   }
 
 
-  showBackHistory(BuildContext context) {
-    //  Navigator.push(context, 
-    //   PageTransition<dynamic>(
-    //     type: PageTransitionType.bottomToTop,
-    //     curve: Curves.easeInExpo,
-    //     child: TabHistoryModal()
-    //   )
-    // );
+  showBackModal(BuildContext context) {
+     Navigator.push(context, 
+      PageTransition<dynamic>(
+        type: PageTransitionType.bottomToTop,
+        curve: Curves.easeInExpo,
+        child: TabBackModal(
+          model: currentTab.model, 
+        )
+      )
+    );
   }
 
   goForward() async {
@@ -1507,8 +1540,16 @@ class WorkspaceViewModel extends ChangeNotifier {
 
   
 
-  showForwardQueue(BuildContext context) {
-
+  showForwardModal(BuildContext context) {
+    Navigator.push(context, 
+      PageTransition<dynamic>(
+        type: PageTransitionType.fade,
+        curve: Curves.easeInExpo,
+        child: TabForwardModal(
+          model: currentTab.model, 
+        )
+      )
+    );
   }
 
 
@@ -1542,6 +1583,19 @@ class WorkspaceViewModel extends ChangeNotifier {
     );
   }
 
+  openSummaryModal() {
+    Navigator.push(context, 
+      PageTransition<dynamic>(
+        type: PageTransitionType.bottomToTop,
+        curve: Curves.easeInExpo,
+        child: TabSummaryModal(
+          model: currentTab.model,
+        ),
+        fullscreenDialog: true,
+      )
+    );
+  }
+
   generateTerms() async {
     
     String prompt = '''
@@ -1563,9 +1617,36 @@ class WorkspaceViewModel extends ChangeNotifier {
   }
 
   openRelatedContent() {
-    String url = 'https://exa.ai/search?q=' + Uri.encodeComponent(
-        'Articles related to the following topics: ${selectedTags.map((t) => t.name).join(', ')}, ${visibleTags.where((t)=> t.isSelected != true).map((t) => t.name).join(', ')}'
+
+    /*
+      Todo: 
+        - make multiple queries
+        - get links that are present in more than one results page
+        - open tab with queue of links 
+    */
+
+    String prompt = '';
+    List<Highlight> highlights = [];
+    for (final resource in visibleResources) {
+      highlights.addAll(
+        resource.highlights.where((h) => selectedTags.any((tag) => h.text.toLowerCase().contains(tag.name))).toList()
       );
+    }
+    
+    if (highlights.isEmpty) {
+      prompt = '''
+      Articles related to the following topics: 
+      ${selectedTags.map((t) => t.name).join(', ')}
+      ''';
+    } else {
+      prompt = '''
+      Articles related to the following excerpts: 
+      ${highlights.map((h) => '"${h.text}"').join('\n')}
+      ''';
+    }
+    
+    String url = 'https://exa.ai/search?q=' + Uri.encodeComponent(prompt);
+
     createNewTab(url: url);
   }
 

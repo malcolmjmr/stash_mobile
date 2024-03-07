@@ -10,11 +10,15 @@ class ModalContainer extends StatelessWidget {
     return SafeArea(
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        body: Stack(
-          children: [
-            _buildBackground(context),
-            Center(child:  child,)
-          ],
+        body: Container(
+          // height: MediaQuery.of(context).size.height,
+          // width: MediaQuery.of(context).size.width,
+          child: Stack(
+            children: [
+              _buildBackground(context),
+              Center(child:  child,)
+            ],
+          ),
         ),
       )
     );

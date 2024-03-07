@@ -219,6 +219,10 @@ class JS {
   """;
   }
 
+  /*
+    find 
+  */
+
   static String updateSavedLink(Map<String, dynamic> link) => """
     rootDoc.updateLink(${convert.jsonEncode(link)});
   """;
@@ -354,6 +358,33 @@ class JS {
       break;
     }
   }
+  """;
+
+
+  
+
+  static String getExaSearchResults = """
+    getExaSearchResults();
+  """;
+
+  static String loadExaFunctions = """
+    function getExaSearchResults() {
+      let results = [];
+      let links = document.querySelectorAll('div a')
+      for (const link of links) {
+        if (!link.className.includes('SearchResultFlexWrapper')) continue;
+
+        let resource = {
+          title: link.querySelector('a').title,
+          url: link.href,
+          favIconUrl: link.querySelector('img').src,
+          summary: link.querySelector('p')
+        }
+        results.push(resource);
+      }
+
+      window.flutter_inappwebview.callHandler("exaSearchResults", results);
+    }
   """;
 
   static String createAnnotation = r"""

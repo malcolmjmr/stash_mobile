@@ -1,13 +1,17 @@
 
 
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:stashmobile/app/web/js.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 import 'package:stashmobile/constants/color_map.dart';
 import 'package:stashmobile/models/resource.dart';
 import 'package:stashmobile/services/hypothesis.dart';
+import 'package:stashmobile/services/llm.dart';
 
 class TabViewModel {
  
@@ -26,6 +30,7 @@ class TabViewModel {
   TabViewModel({required this.workspaceModel, Resource? initialResource}) {
     if (initialResource != null) {
       resource = initialResource;
+      queue = workspaceModel.allResources.where((r) => r.isQueued == true).map((r) => r.url!).toList();
     } else {
       resource = Resource(title: 'New Tab', url: 'https://www.google.com/');
     }
@@ -51,12 +56,46 @@ class TabViewModel {
   bool isNotAWebsite(Resource? content) =>
       content == null || content.url == null;
  
+
+  WebHistory? history = WebHistory();
+  List<Resource> get backItems {
+    return history?.list?.sublist(0, history?.currentIndex)
+      .map((i) => resources[i.url.toString()]!).toList() ?? [];
+  }
+
+  List<Resource> get forwardItems {
+    
+    List<Resource> items = [];
+    final forwardHistory = history?.list?.sublist(history?.currentIndex ?? 0,  history?.list?.length)
+      .map((i) => resources[i.url.toString()]!).toList() ?? [];
+    
+    return [
+      ...forwardHistory,
+      ...queue.where((url) => forwardHistory.firstWhereOrNull((h) => h.url.toString() != url) == null)
+        .map((url) => workspaceModel.allResources.firstWhere((r) => r.url == url))
+    ];
+  }
+
+  goTo(Resource resource) {
+    if (resource.isQueued == true) {
+      controller.loadUrl(urlRequest: URLRequest(url: Uri.parse(resource.url!)));
+    } else {
+      controller.goTo(historyItem: history!.list!.firstWhere((item) => item.url.toString() == resource.url));
+    }
+  }
+
+  Map<String, Resource> resources = {};
+
   onWebsiteLoadStart(BuildContext context, InAppWebViewController _controller, Uri? uri) async {
     if (!controllerSet) {
       controller = _controller;
       controllerSet = true;
     }
+
+    resources[resource.url!] = resource;
     workspaceModel.onTabUpdated(this, controller, uri);
+    history  = await controller.getCopyBackForwardList();
+  
 
     scrollX = 0;
     //updateTabData(context, controller);
@@ -77,6 +116,30 @@ class TabViewModel {
     await addEventHandlers(context);
     await addAnnotationFunctions();
     await getAnnotations();
+  }
+
+  Future<void>? getSummary() async {
+    if (resource.summary != null) return;
+
+    if (resource.text == null) {
+      resource.text = await controller.evaluateJavascript(source: 'document.body.innerText');
+    }
+
+    final prompt = """
+      
+      Could you please provide a concise and comprehensive summary of the given text? The summary should capture the main points and key details of the text while conveying the author's intended meaning accurately. Please ensure that the summary is well-organized and easy to read, with clear headings and subheadings to guide the reader through each section. The length of the summary should be appropriate  to capture the main points and key details of the text, without including unnecessary information or becoming overly long.   Then explain the implications of the articles main propositions or arguments. Please go beyond reiterating what the author has identified as being the main implications. Then play devils advocate and address any deficiencies of the article. What is author missing or not considering that undermines their argument. The output should be in the following form:
+
+      Summary:
+      Implications:
+      Deficiencies:
+
+      ${resource.text}
+
+    """;
+
+    resource.summary = await LLM().mistralChatCompletion(prompt: prompt);
+
+    //workspaceModel.saveResource(resource);
   }
 
   getAnnotations() async {
@@ -235,6 +298,13 @@ class TabViewModel {
       handlerName: 'scrollDirectionChanged',
       callback: onScrollDirectionChanged,
     );
+    controller.addJavaScriptHandler(
+      handlerName: 'onDocumentContent',
+      callback: onDocumentContent,
+    );
+
+
+    
   }
 
   onInputEntered(args) {
@@ -259,8 +329,8 @@ class TabViewModel {
 
   onScrollEnd(args) async  {
   
-    //if (workspaceModel.workspace.title == null)
-    resource.image = await controller.takeScreenshot();
+    // if (workspaceModel.workspace.title == null)
+    // resource.image = await controller.takeScreenshot();
 
   }
 
@@ -420,6 +490,11 @@ class TabViewModel {
     } else if (direction == 'up') {
       workspaceModel.setShowToolbar(true);
     }
+  }
+
+  onDocumentContent(args) async {
+    print('got document content');
+    print(JsonEncoder.withIndent(' ').convert(args[0]));
   }
 
   
