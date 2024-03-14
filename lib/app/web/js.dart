@@ -361,7 +361,7 @@ class JS {
   """;
 
 
-  
+
 
   static String getExaSearchResults = """
     getExaSearchResults();
@@ -403,6 +403,9 @@ class JS {
   var timer = null;
   let lastScrollPosition = 0;
   let scrollDirection;
+  let scrollPositionOnDirectionChange;
+  let reachedScrollThreshold;
+  const scrollThreshold = 30;
 
   document.addEventListener('scroll', onScroll);
 
@@ -420,13 +423,26 @@ class JS {
 
     if (isScrollingDown && scrollDirection != 'down') {
       scrollDirection = 'down';
+      scrollPositionOnDirectionChange = currentScrollPosition;
       window.flutter_inappwebview.callHandler("scrollDirectionChanged", scrollDirection);
+      reachedScrollThreshold = false;
       hideFixedElements();
     } else if (!isScrollingDown && scrollDirection != 'up') {
       scrollDirection = 'up';
-      window.flutter_inappwebview.callHandler("scrollDirectionChanged", scrollDirection);
-      showFixedElements();
+      scrollPositionOnDirectionChange = currentScrollPosition;
+      reachedScrollThrehold = false;
+      
+    }
 
+    if (!reachedScrollThreshold && scrollDirection == 'up') {
+        let scrollDelta = scrollPositionOnDirectionChange - currentScrollPosition;
+
+      if (scrollDelta > scrollThreshold || currentScrollPosition < 5) {
+
+        window.flutter_inappwebview.callHandler("scrollDirectionChanged", scrollDirection);
+        reachedScrollThreshold = true;
+        showFixedElements();
+      }
     }
     
     timer = setTimeout(function() {
@@ -449,80 +465,34 @@ class JS {
   }
 
   function hideFixedElements() {
+
     if (hiddenElements.length == 0)  {
-      const scrollingElement = lastTouchedElement;
-      // Traverse up the DOM tree from the scrolling element
-      let currentElement = scrollingElement;
-      while (currentElement.parentElement) {
-        const parent = currentElement.parentElement;
 
-        // Determine if the parent or any of its siblings should be hidden
-        // based on your specific criteria, such as position or other CSS properties
-        checkAndHideElements(parent);
+        hiddenElements = [].filter.call(
+          document.all,
+          e => ['fixed', 'sticky'].includes(getComputedStyle(e).position)
+        ).map((e) => {
+            return {
+                element: e,
+                display: getComputedStyle(e).display,
+            };
+        });
 
-        // Move to the next ancestor
-        currentElement = parent;
-      }
-    } else {
-      for (let {element} of hiddenElements) {
+        
+        
+    } 
+    for (let {element} of hiddenElements) {
         element.style.display = 'none';
-      }
     }
     
   }
-
-  function checkAndHideElements(element) {
-
-
-   
-    let sibling = element.previousElementSibling;
-    while (sibling) {
-      hideElement(sibling);
-      sibling = sibling.previousElementSibling;
-    }
-
-    sibling = element.nextElementSibling;
-    while (sibling) {
-      hideElement(sibling);
-      sibling = sibling.nextElementSibling;
-    }
-  }
-
   
 
-  // Function to check if an element is in the viewport
-  function isInViewport(element) {
-      const rect = element.getBoundingClientRect();
-      return (
-          rect.top >= 0 &&
-          rect.left >= 0 &&
-          rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-          rect.right <= (window.innerWidth || document.documentElement.clientWidth)
-      );
-  }
-
   let hiddenElements = [];
-  function hideFixedOrSticky(element) {
-      const style = window.getComputedStyle(element);
-
-      if (style.position === 'fixed' || style.position === 'sticky') {
-        
-        hiddenElements.push({
-          element,
-          dipslay: element.style.display,
-        });
-        element.style.display = 'none';
-      } 
-  }
-
-  // Function to determine if the element should be hidden
-  function hideElement(element) {
-    hideFixedOrSticky(element);
-  }
 
   function showFixedElements() {
-    for (let {element, display} of hiddenElements) {
-      element.style.display = display;
+    for (let i = 0; i < hiddenElements.length; i++) {
+      hiddenElements[i].element.style.display = hiddenElements[i].display;
     }
   }
 

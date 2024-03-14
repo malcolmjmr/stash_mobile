@@ -57,7 +57,10 @@ class ActivityHistoryView extends ConsumerWidget {
                         isFirstListItem: index == 1,
                         isLastListItem: index == section.spaces.length,
                         workspace: space, 
-                        onTap: () => model.openWorkspace(context, space)
+                        onTap: () {
+                          model.openWorkspace(context, space);
+                          Navigator.pop(context);
+                        }
                       ),
                     );
                   }

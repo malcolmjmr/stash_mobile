@@ -44,7 +44,7 @@ import 'package:stashmobile/app/web/tab_edit_modal.dart';
 import 'package:stashmobile/app/web/tab_label.dart';
 import 'package:stashmobile/app/web/tab_menu.dart';
 import 'package:stashmobile/app/web/tab_preview.dart';
-import 'package:stashmobile/app/web/text_selection_menu.dart';
+import 'package:stashmobile/app/modals/text_selection/text_selection_modal.dart';
 import 'package:stashmobile/app/web/vertical_tabs.dart';
 import 'package:stashmobile/app/windows/windows_view_model.dart';
 import 'package:stashmobile/app/workspace/space_list_item.dart';
@@ -436,7 +436,7 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
         text: 'Folders', 
         view: ResourceView.folders,
       ),
-      if (model.folders.isNotEmpty)
+      if (model.hasTags)
       _buildListOption(
         icon: Symbols.sell,
         text: 'Tagged', 
@@ -743,49 +743,63 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
   }
 
   Widget _buildSelectionFooter() {
-    return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-            GestureDetector(
-              onTap: () => showCupertinoModalBottomSheet(
-                context: context, 
-                builder: (context) {
-                  return MoveToSpaceModal(
-                    workspaceViewModel: model,
-                    onSpaceSelected: (workspace) => null,
-                  );
-                }
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: HexColor.fromHex('222222')))
+      ),
+      child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+              GestureDetector(
+                onTap: () => showCupertinoModalBottomSheet(
+                  context: context, 
+                  builder: (context) {
+                    return MoveToSpaceModal(
+                      workspaceViewModel: model,
+                      onSpaceSelected: (workspace) => null,
+                    );
+                  }
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 15, top: 5, bottom: 5, right: 10),
+                  child: Text('Move',
+                    style: TextStyle(
+                      fontSize: 20
+                    ),
+                  ),
+                )
               ),
-              child: Text('Move',
-                style: TextStyle(
-                  fontSize: 20
+              GestureDetector(
+                onTap: () => showCupertinoModalBottomSheet(
+                  context: context, 
+                  builder: (context) {
+                    return EditBookmarkModal(workspaceViewModel: model);
+                  }
                 ),
-              )
-            ),
-            GestureDetector(
-              onTap: () => showCupertinoModalBottomSheet(
-                context: context, 
-                builder: (context) {
-                  return EditBookmarkModal(workspaceViewModel: model);
-                }
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  child: Text('Save',
+                    style: TextStyle(
+                      fontSize: 20
+                    ),
+                  ),
+                )
               ),
-              child: Text('Save',
-                style: TextStyle(
-                  fontSize: 20
-                ),
-              )
-            ),
-            GestureDetector(
-              onTap: () => model.closeSelectedTabs(),
-              child: Text('Close', 
-                style: TextStyle(
-                  fontSize: 20
-                ),
-              )
-            ),
-        ],
-      );
+              GestureDetector(
+                onTap: () => model.closeSelectedTabs(),
+                child: Padding(
+                  padding: EdgeInsets.only(top: 5, bottom: 5, left: 10, right: 15),
+                  child: Text('Close', 
+                    style: TextStyle(
+                      fontSize: 20
+                    ),
+                  ),
+                )
+              ),
+          ],
+        ),
+    );
   }
 
   Widget _buildResourceCounts(BuildContext context, WorkspaceViewModel model) {

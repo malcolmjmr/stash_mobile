@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:stashmobile/app/common_widgets/section_list_item.dart';
 import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark.dart';
@@ -39,6 +41,8 @@ class TabListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
+    bool isSelected = model.selectedResources.firstWhereOrNull((resourceId) => resourceId == resource.id) != null;
+
     List<SlidableAction> leftActions = [];
 
     return Stack(
@@ -47,7 +51,7 @@ class TabListItem extends StatelessWidget {
         SectionListItemContainer(
           isFirstListItem: isFirstListItem,
           isLastListItem: isLastListItem,
-          isHighlighted: isLastActiveTab,
+          isHighlighted: isLastActiveTab || isSelected,
           onTap: onTap,
           child: GestureDetector(
             onLongPress: () {
@@ -128,19 +132,7 @@ class TabListItem extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.only(right: 5.0),
-                      child: Container(
-                        height: 35,
-                        width: 35,
-                        child: resource.favIconUrl != null 
-                          ? Image.network(resource.favIconUrl ?? '',
-                            //loadingBuilder: (context, child, loadingProgress) => Icon(Icons.language, size: 30,),
-                            errorBuilder: (context, child, loadingProgress) => Icon(Icons.public, size: 35,),
-                          )
-                          : Icon(Icons.public, size: 35,)
-                        ),
-                    ),
+                    _buildIcon(isSelected),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -187,6 +179,28 @@ class TabListItem extends StatelessWidget {
           left: 25
         ),
       ],
+    );
+  }
+
+  Widget _buildIcon(bool isSelected) {
+    
+    return GestureDetector(
+      onTap: () => model.toggleResourceSelection(resource),
+      child: Padding(
+        padding: const EdgeInsets.only(right: 5.0),
+        child: Container(
+          height: 35,
+          width: 35,
+          child: isSelected 
+            ? Icon(Symbols.select_check_box_rounded, size: 35, fill: 1)
+            : resource.favIconUrl != null 
+              ? Image.network(resource.favIconUrl ?? '',
+                //loadingBuilder: (context, child, loadingProgress) => Icon(Icons.language, size: 30,),
+                errorBuilder: (context, child, loadingProgress) => Icon(Icons.public, size: 35,),
+              )
+              : Icon(Icons.public, size: 35,)
+          ),
+      ),
     );
   }
 }

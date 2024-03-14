@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stashmobile/app/providers/data.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
@@ -28,6 +29,8 @@ class EditBookmarkModel {
   }
 
   bool changesToSave = false;
+
+  
 
   onDone() {
     if (resource != null) {
@@ -102,9 +105,10 @@ class EditBookmarkModel {
   }
 
   removeTag(String tag) {
+    HapticFeedback.mediumImpact();
     setState(() {
       if (resource != null) {
-        resource!.tags.add(tag);
+        resource!.tags.remove(tag);
         tags = resource!.tags;
       }
     });
@@ -115,10 +119,10 @@ class EditBookmarkModel {
   }
 
   setRating(int rating) {
+    HapticFeedback.mediumImpact();
     data.saveResource(resource!);
     setState(() {
       resource!.rating = rating;
-      print(resource!.rating);
     });
   }
 

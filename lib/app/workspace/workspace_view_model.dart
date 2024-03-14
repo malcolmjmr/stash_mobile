@@ -13,6 +13,7 @@ import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark.dart';
+import 'package:stashmobile/app/modals/text_selection/copy_modal.dart';
 import 'package:stashmobile/app/providers/data.dart';
 import 'package:stashmobile/app/providers/user.dart';
 import 'package:stashmobile/app/providers/workspace.dart';
@@ -24,11 +25,12 @@ import 'package:stashmobile/app/web/tab_history_modal.dart';
 
 import 'package:stashmobile/app/web/tab_model.dart';
 import 'package:stashmobile/app/web/tab_summary_modal.dart';
-import 'package:stashmobile/app/web/text_selection_menu.dart';
+import 'package:stashmobile/app/modals/text_selection/text_selection_modal.dart';
 import 'package:stashmobile/app/windows/windows_view_model.dart';
 import 'package:stashmobile/app/workspace/workspace_view.dart';
 import 'package:stashmobile/app/workspace/workspace_view_params.dart';
 import 'package:stashmobile/main.dart';
+import 'package:stashmobile/models/chat.dart';
 import 'package:stashmobile/models/domain.dart';
 import 'package:stashmobile/models/note.dart';
 import 'package:stashmobile/models/tag.dart';
@@ -76,8 +78,7 @@ class WorkspaceViewModel extends ChangeNotifier {
   List<Resource> visibleResources = [];
   List<Domain> domains = [];
   List<TabView> tabs = [];
-
-  
+  List<TabView> selectedTabs = [];
 
   String view = Views.tabs;
   PageController? tabPageController;
@@ -403,6 +404,8 @@ class WorkspaceViewModel extends ChangeNotifier {
 
       if (resource.tags.isNotEmpty) {
 
+        if (!hasTags) hasTags = true;
+
         final lastViwed = resource.updated ?? resource.created ?? resource.lastVisited ?? 0;
         for (final tagName in resource.tags) {
           if (tagName == workspace.title) continue;
@@ -451,7 +454,8 @@ class WorkspaceViewModel extends ChangeNotifier {
 
     tags = sortedTags;
     visibleTags = tags.sublist(0, min(20, tags.length)).toList();
-    
+    print('refreshing resources');
+    print(tags);
   }
 
  
@@ -553,8 +557,9 @@ class WorkspaceViewModel extends ChangeNotifier {
         
         return b.valueCount.compareTo(a.valueCount);
       });
+      
       visibleTags = selectedTags.isEmpty
-        ? sortedTags.sublist(0, min(20, tags.length)).toList()
+        ? sortedTags.sublist(0, min(20, sortedTags.length)).toList()
         : sortedTags;
     });
   }
@@ -629,6 +634,7 @@ class WorkspaceViewModel extends ChangeNotifier {
 
     });
  
+    
     tabPageController?.jumpToPage(workspace.activeTabIndex!);
   }
 
@@ -691,17 +697,21 @@ class WorkspaceViewModel extends ChangeNotifier {
 
       final newfavIconUrl = await model.getFaviconUrl(controller);
       final newTitle = await controller.getTitle();
-      model.resource = allResources.firstWhereOrNull((r) => r.url == url) ?? Resource(
-        url: url,
-        favIconUrl: newfavIconUrl != model.resource.favIconUrl ? newfavIconUrl : null,
-        title: newTitle != model.resource.title ? newTitle : null,
-      );
+      model.resource = model.resources[url] 
+        ?? allResources.firstWhereOrNull((r) => r.url == url) 
+        ?? Resource(
+          url: url,
+          favIconUrl: newfavIconUrl != model.resource.favIconUrl ? newfavIconUrl : null,
+          title: newTitle != model.resource.title ? newTitle : null,
+        );
+
+      model.resources[model.resource.url!] = model.resource;
 
       if (model.resource.isQueued == true) {
         deleteResource(model.resource);
       }
 
-      model.canGoForward = model.queue.isNotEmpty || (await controller.canGoForward());
+      model.canGoForward = model.queue.isNotEmpty || model.resource.highlights.isNotEmpty || (await controller.canGoForward());
       model.canGoBack = await controller.canGoBack();
 
 
@@ -936,11 +946,19 @@ class WorkspaceViewModel extends ChangeNotifier {
     });
   }
 
-  createNewTab({Resource? resource, String? url, bool lazyload = false, bool? incognito}) {
+  createNewTab({
+    Resource? resource, 
+    String? url, 
+    bool lazyload = false, 
+    bool? incognito, 
+    TabViewType viewType = TabViewType.web
+  }) {
+    
     TabView tab = TabView(
       incognito: incognito ?? workspace.isIncognito ?? false,
       model: TabViewModel(
         workspaceModel: this,
+        viewType: viewType,
         initialResource: resource != null 
           ? resource
           : url != null 
@@ -1029,9 +1047,12 @@ class WorkspaceViewModel extends ChangeNotifier {
 
   saveResource(Resource resource) {
     allResources.add(resource);
-    resource.contexts = [workspace.id];
-    data.saveResource(resource);
 
+    if (!resource.contexts.contains(workspace.id)) {
+      resource.contexts.add(workspace.id);
+    }
+   
+    data.saveResource(resource);
     updateVisibleResources();
 
   }
@@ -1051,8 +1072,6 @@ class WorkspaceViewModel extends ChangeNotifier {
   bool showTextSelectionMenu = false;
 
   showTextSelectionModal(String text) {
-    print('text selected');
-    print(text);
     setState(() {
       selectedText = text;
       showTextSelectionMenu = true;
@@ -1060,10 +1079,10 @@ class WorkspaceViewModel extends ChangeNotifier {
   }
 
 
-  searchSelectedText() {
+  searchSelectedText({bool openInNewTab = true}) {
 
     TabView currentTab = tabs[workspace.activeTabIndex!];
-    currentTab.model.controller.clearFocus();
+    currentTab.model.clearSelectedText();
     setState(() {
       showTextSelectionMenu = false;
       selectedHighlight = null;
@@ -1077,10 +1096,13 @@ class WorkspaceViewModel extends ChangeNotifier {
     } else {
       url = 'https://www.google.com/search?q=' + Uri.encodeComponent(selectedText!);
     }
-    currentTab.model.controller.loadUrl(urlRequest: URLRequest(url: Uri.tryParse(url)));
     
-    
-    //createNewTab(url: url);
+    if (currentTab.model.viewType == TabViewType.web) {
+      currentTab.model.controller.loadUrl(urlRequest: URLRequest(url: Uri.tryParse(url)));
+    } else {
+      createNewTab(url: url);
+    }
+   
   }
 
   tagTabWithSelectedText() {
@@ -1130,6 +1152,8 @@ class WorkspaceViewModel extends ChangeNotifier {
         id: id,
     );
 
+    extractTagsFromSelectedText();
+
     Resource resource = currentTab.model.resource;
     setState(() {
       resource.highlights.add(highlight);
@@ -1139,8 +1163,13 @@ class WorkspaceViewModel extends ChangeNotifier {
       }
       data.saveResource(resource);
       currentTab.model.controller.clearFocus();
+      if (!currentTab.model.canGoForward) {
+        currentTab.model.canGoForward = true;
+      }
       showTextSelectionMenu = false;
     });
+
+    HapticFeedback.mediumImpact();
 
     showNotification(NotificationParams(
       title: 'Highlight Added', 
@@ -1150,6 +1179,31 @@ class WorkspaceViewModel extends ChangeNotifier {
 
     if (!hasHighlights) hasHighlights = true;
     updateVisibleResources();
+  }
+
+  extractTagsFromSelectedText() {
+
+    Resource resource = currentTab.model.resource;
+    const punctuation = ['.',',',';','!','?','"','(',')',':'];
+    String text = selectedText!.toLowerCase();
+
+    for (final mark in punctuation) {
+      text = text.replaceAll(mark, '');
+    }
+
+   text = text.replaceAll('-', ' ').replaceAll('\n', ' ');
+   
+    for (final term in text.split(' ')) {
+      for (final tag in tags) {
+        final termPrefix = term.substring(0, min(term.length, 4));
+        final tagPrefix = tag.name.substring(0, min(tag.name.length, 4));
+        if (termPrefix.contains(tagPrefix)) {
+          if (resource.tags.firstWhereOrNull((t) => t.contains(termPrefix)) == null) {
+            resource.tags.add(term);
+          }
+        }
+      }
+    }
   }
 
   onTabContentClicked() async {
@@ -1460,113 +1514,35 @@ class WorkspaceViewModel extends ChangeNotifier {
 
   bool canGoBack = false;
 
-  goBack() {
-    if (!currentTab.model.canGoBack) return;
-    HapticFeedback.mediumImpact();
-    currentTab.model.controller.goBack();
-    
-  }
-
-  goToStart() async {
-    if (!currentTab.model.canGoBack) return;
-    HapticFeedback.mediumImpact();
-    final controller = currentTab.model.controller;
-    final history = await controller.getCopyBackForwardList();
-    final historyItem = history?.list?[0];
-    if (historyItem != null) {
-      controller.goTo(historyItem: historyItem);
-    }
-  }
 
 
-  showBackModal(BuildContext context) {
-     Navigator.push(context, 
-      PageTransition<dynamic>(
-        type: PageTransitionType.bottomToTop,
-        curve: Curves.easeInExpo,
-        child: TabBackModal(
-          model: currentTab.model, 
-        )
-      )
-    );
-  }
-
-  goForward() async {
-    if (!currentTab.model.canGoForward) return;
-    HapticFeedback.mediumImpact();
-    final controller = currentTab.model.controller;
-    final queue = currentTab.model.queue;
-    final hasForwardHistoryItem = await controller.canGoForward();
-    if (hasForwardHistoryItem) {
-      await controller.goForward();
-    } else if (queue.isNotEmpty) {
-      final nextItemString = queue.removeAt(0);
-      print('getting next item in queue');
-      print(nextItemString);
-      if (nextItemString.contains('http')) {
-        await currentTab.model.controller.loadUrl(
-          urlRequest: URLRequest(
-            url: Uri.parse(nextItemString)
-          )
-        );
-      } else {
-        final resource = allResources.firstWhereOrNull((r) => r.id == nextItemString);
-        if (resource != null) {
-          await currentTab.model.controller.loadUrl(
-            urlRequest: URLRequest(
-              url: Uri.parse(resource.url!)
-            )
-          );
-        }
-      }
-    } else {
-
-      /*
-        Options
-        - prompt
-          - current url
-          - recent highlights and keywords
-
-        - view
-        - show exa serp
-        - scrape exa serp
-          - add all items to queue
-      */
-        String url = 'https://exa.ai/search?q=' + Uri.encodeComponent(currentTab.model.resource.url!);
-        currentTab.model.controller.loadUrl(urlRequest: URLRequest(url: Uri.tryParse(url)));
-    
-    }
-  }
-
-  
-
-  showForwardModal(BuildContext context) {
-    Navigator.push(context, 
-      PageTransition<dynamic>(
-        type: PageTransitionType.fade,
-        curve: Curves.easeInExpo,
-        child: TabForwardModal(
-          model: currentTab.model, 
-        )
-      )
-    );
-  }
 
 
   bool showToolbar = true;
   setShowToolbar(bool value) {
-
     setState(() {
       showToolbar = value;
     });
   }
 
   createNote() {
-    createNewTab(resource: Resource(note: Note()));
+    createNewTab(resource: Resource(note: Note()), viewType: TabViewType.note);
   }
 
-  createChat() {
+  createChat({bool withLastPrompt = true}){
 
+    if (selectedText != null) {
+
+    }
+    createNewTab(
+      resource: Resource(
+        chat: Chat(), 
+        title: 'New Chat',
+        parentId: selectedText != null ? currentTab.model.resource.id : null,
+      ), 
+      
+      viewType: TabViewType.chat,
+    );
   }
 
   openTabEditModal() {
@@ -1648,6 +1624,31 @@ class WorkspaceViewModel extends ChangeNotifier {
     String url = 'https://exa.ai/search?q=' + Uri.encodeComponent(prompt);
 
     createNewTab(url: url);
+  }
+
+  List<Prompt> selectionPrompts = [];
+
+  List<Prompt> suggestedPrompts = [];
+
+  copySelectionToLastLocation() {
+
+  }
+
+  openCopyModal(BuildContext context) {
+    Navigator.push(context, 
+      PageTransition<dynamic>(
+        type: PageTransitionType.bottomToTop,
+        curve: Curves.easeInExpo,
+        child: CopyModal()
+      )
+    );
+  }
+
+  updateHighlight(Highlight highlight) {
+    setState(() {
+       data.saveResource(currentTab.model.resource);
+    });
+   
   }
 
 }

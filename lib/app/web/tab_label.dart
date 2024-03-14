@@ -12,6 +12,7 @@ import 'package:stashmobile/app/common_widgets/section_list_item.dart';
 import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark.dart';
 import 'package:stashmobile/app/modals/move_tabs/move_tabs_modal.dart';
 import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark_model.dart';
+import 'package:stashmobile/app/web/tab.dart';
 import 'package:stashmobile/app/web/tab_menu.dart';
 import 'package:stashmobile/app/web/vertical_tabs_modal.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
@@ -220,12 +221,16 @@ class OpenTabLabel extends StatelessWidget {
                   child: Container(
                     height: 25,
                     width: 25,
-                    child: resource.favIconUrl != null 
-                      ? Image.network(resource.favIconUrl ?? '',
-                        //loadingBuilder: (context, child, loadingProgress) => Icon(Icons.language, size: 30,),
-                        errorBuilder: (context, child, loadingProgress) => Icon(Icons.public, size: 25,),
-                      )
-                      : Icon(Icons.public, size: 25,)
+                    child: model.currentTab.model.viewType == TabViewType.web 
+                      ? resource.favIconUrl != null 
+                        ? Image.network(resource.favIconUrl ?? '',
+                          //loadingBuilder: (context, child, loadingProgress) => Icon(Icons.language, size: 30,),
+                          errorBuilder: (context, child, loadingProgress) => Icon(Icons.public, size: 25,),
+                        )
+                        : Icon(Icons.public, size: 25,)
+                      : model.currentTab.model.viewType == TabViewType.chat
+                        ? Icon(Symbols.forum_rounded)
+                        : Icon(Symbols.edit_document_rounded)
                     ),
                 ),
                 Expanded(
@@ -234,7 +239,14 @@ class OpenTabLabel extends StatelessWidget {
                     children: [
                       Container(
                         constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * ( isIncognito ? .65 : .75)),
-                        child: Text(resource.title ?? '', 
+                        child: Text(resource.title != null && resource.title!.isNotEmpty
+                          ? resource.title!
+                          : model.currentTab.model.viewType == TabViewType.web 
+                            ? resource.url!
+                            : model.currentTab.model.viewType == TabViewType.chat
+                              ? 'New Chat'
+                              : 'New Note'
+                          , 
                           overflow: TextOverflow.ellipsis,
                           maxLines: 1,
                           style: TextStyle(

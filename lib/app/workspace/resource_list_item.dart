@@ -54,6 +54,7 @@ class ResourceListItem extends StatelessWidget {
     return SectionListItemContainer(
       isFirstListItem: isFirstListItem,
       isLastListItem: isLastListItem,
+      isHighlighted: isLastActiveTab,
       onTap: onTap,
       child: GestureDetector(
         onLongPress: () {
@@ -133,7 +134,7 @@ class ResourceListItem extends StatelessWidget {
                             Text(resource.title ?? '', 
                               maxLines: 1,
                               style: TextStyle(
-                                color: isLastActiveTab ? Colors.amber : Colors.white,
+                                color: Colors.white,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 0.5,
                                 fontSize: 16,  

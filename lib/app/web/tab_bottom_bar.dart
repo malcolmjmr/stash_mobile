@@ -6,7 +6,7 @@ import 'package:page_transition/page_transition.dart';
 import 'package:stashmobile/app/web/horizontal_tabs.dart';
 import 'package:stashmobile/app/web/tab_actions.dart';
 import 'package:stashmobile/app/web/tab_actions_model.dart';
-import 'package:stashmobile/app/web/text_selection_menu.dart';
+import 'package:stashmobile/app/modals/text_selection/text_selection_modal.dart';
 import 'package:stashmobile/app/web/vertical_tabs.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 import 'package:stashmobile/constants/color_map.dart';
@@ -189,7 +189,7 @@ class TabBottomBar extends StatelessWidget {
           child: _buildActionButton(
             title: 'Note',
             icon: Symbols.edit_document_rounded,
-            onTap: () => null,
+            onTap: () => model.createNote(),
             useTitle: true
           ),
         ),
@@ -197,7 +197,7 @@ class TabBottomBar extends StatelessWidget {
           child: _buildActionButton(
             title: 'Chat',
             icon: Symbols.chat,
-            onTap: () => null,
+            onTap: () => model.createChat(),
             useTitle: true
           ),
         )
@@ -302,8 +302,10 @@ class TabBottomBar extends StatelessWidget {
               title: 'Favorite', 
               icon: Symbols.favorite, 
               onTap: () {
-                //update highlight
-              }
+                highlight.favorites += 1;
+                model.saveResource(model.currentTab.model.resource);
+              },
+              isFilled: highlight.favorites > 0
             ),
           ),
           Expanded(
@@ -311,8 +313,10 @@ class TabBottomBar extends StatelessWidget {
               title: 'Like', 
               icon: Symbols.thumb_up_rounded, 
               onTap: () {
-                //update highlight
-              }
+                highlight.likes += 1;
+                model.saveResource(model.currentTab.model.resource);
+              },
+              isFilled: highlight.likes > 0
             ),
           ),
           Expanded(
@@ -320,7 +324,8 @@ class TabBottomBar extends StatelessWidget {
               title: 'Dislike', 
               icon: Symbols.thumb_down_rounded, 
               onTap: () {
-                //update highlight
+                highlight.dislikes += 1;
+                model.saveResource(model.currentTab.model.resource);
               }
             ),
           ),
@@ -329,13 +334,15 @@ class TabBottomBar extends StatelessWidget {
               title: 'Funny', 
               icon: Symbols.sentiment_excited_rounded, 
               onTap: () {
-                //update highlight
-              }
+                highlight.laughs += 1;
+                model.saveResource(model.currentTab.model.resource);
+              },
+              isFilled: highlight.laughs > 0
             ),
           ),
           Expanded(
             child: _buildActionButton(
-              title: 'Note', 
+              title: 'Chat', 
               icon: Symbols.comment, 
               onTap: () {
                 //update highlight
@@ -352,7 +359,8 @@ class TabBottomBar extends StatelessWidget {
     required IconData icon, 
     required Function() onTap,
     String? workspaceColor,
-    bool? useTitle
+    bool? useTitle,
+    bool isFilled = true,
   }) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
@@ -379,7 +387,7 @@ class TabBottomBar extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                Icon(icon, size: 25, color: Colors.black,),
+                Icon(icon, size: 25, color: Colors.black, fill: isFilled ? 1 : 0,),
                 if (useTitle == true)
                 Text(title,
                   style: TextStyle(

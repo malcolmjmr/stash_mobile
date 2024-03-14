@@ -4,11 +4,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
+import 'package:stashmobile/app/chat/chat_view.dart';
 import 'package:stashmobile/app/note/note_view.dart';
+import 'package:stashmobile/app/web/tab_journey.dart';
 
 import 'package:stashmobile/app/web/tab_model.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 import 'package:stashmobile/models/resource.dart';
+
+enum TabViewType {
+  web, 
+  note,
+  chat,
+}
 
 class TabView extends StatefulWidget {
   TabView({Key? key, 
@@ -22,6 +30,7 @@ class TabView extends StatefulWidget {
   final TabViewModel model;
   final int? windowId;
   final bool incognito;
+
   //final Function(TabViewModel model, InAppWebViewController controller, Uri? uri) onTabUpdated;
 
   // final Function() onWindowCreated
@@ -35,20 +44,44 @@ class TabView extends StatefulWidget {
 
 class _TabViewState extends State<TabView> {
 
+  
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    widget.model.dispose();
+    super.dispose();
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    widget.model.init(setState, context);
+    
+  }
+
   Widget build(BuildContext context) {
     final resource = widget.model.resource;
-    if (resource.url != null) {
+    
+    if (widget.model.showTabJourney) {
+      return TabJourney(tabModel: widget.model,);
+    }
+
+    if (widget.model.viewType == TabViewType.web) {
       return _buildWebView();
-    } else if (resource.note != null) {
+    } else if (widget.model.viewType == TabViewType.note) {
       return NoteView(
         resource: resource, 
         workspaceModel: widget.model.workspaceModel
       );
+    } else if (widget.model.viewType == TabViewType.chat) {
+      return ChatView(tabModel: widget.model,);
     } else {
       return Container();
     }
-    
   }
+
 
   Widget _buildWebView() {
     return InAppWebView(

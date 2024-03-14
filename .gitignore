@@ -47,3 +47,4 @@ app.*.map.json
 lib/services/config.dart
 
 */config.*
+lib/services/config.dart

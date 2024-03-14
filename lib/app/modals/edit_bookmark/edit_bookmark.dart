@@ -60,7 +60,10 @@ class _EditBookmarkModalState extends State<EditBookmarkModal> {
         child: CustomScrollView(
           slivers: [
             SliverAppBar(
-              title: ModalHeader(titleText: 'Edit Bookmark',), 
+              title: ModalHeader(
+                titleText: 'Edit Bookmark',
+                onDone: model.onDone,
+              ), 
               backgroundColor: HexColor.fromHex('111111'),
               floating: true, 
               automaticallyImplyLeading: false,

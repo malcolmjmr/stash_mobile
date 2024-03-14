@@ -1,6 +1,7 @@
 
 
 import 'package:flutter/foundation.dart';
+import 'package:stashmobile/models/chat.dart';
 import 'package:stashmobile/models/note.dart';
 import 'package:stashmobile/models/tag.dart';
 import 'package:uuid/uuid.dart';
@@ -48,11 +49,12 @@ class Resource {
   List<Note> notes = [];
   List<String> queue = [];
   Note? note;
+  Chat? chat;
 
   bool annotationsLoaded = false;
 
 
-  Resource({ this.url, this.title, this.favIconUrl, this.note}) {
+  Resource({ this.url, this.title, this.favIconUrl, this.note, this.chat, this.parentId}) {
     id = Uuid().v4().split('-').last;
     created = DateTime.now().millisecondsSinceEpoch;
   }
@@ -82,7 +84,7 @@ class Resource {
     rating = json['rating'] != null ? json['rating'] : 0;
     note = json['note'];
     notes = json['notes'] != null ? List<Note>.from(json['notes'].map((n) => Note.fromJson(n))) : [];
-
+    chat = json['chat'] != null ? Chat.fromJson(json['chat']) : null;
   }
 
   Map<String, dynamic> toJson() {
@@ -128,6 +130,11 @@ class Highlight {
   late String text;
   String? id;
 
+  int favorites = 0;
+  int likes = 0;
+  int dislikes = 0;
+  int laughs = 0;
+
   Map<String, dynamic>? target;
   
   Highlight({
@@ -138,14 +145,23 @@ class Highlight {
   Highlight.fromJson(Map<String,dynamic> json) {
     text = json['text'];
     id = json['id'];
+    favorites = json['favorites'] ?? 0;
+    likes = json['likes'] ?? 0;
+    dislikes = json['dislikes'] ?? 0;
+    laughs = json['laughs'] ?? 0;
+
   }
 
   Map<String,dynamic> toJson() {
      Map<String, dynamic> json = {
       'id': id,
       'text': text,
+      'favorites': favorites,
+      'likes': likes,
+      'dislikes': dislikes,
+      'laughs': laughs,
     };
-    json.removeWhere((key, value) => value == null);
+    json.removeWhere((key, value) => value == null || value == 0 || value == '');
     return json;
   }
 

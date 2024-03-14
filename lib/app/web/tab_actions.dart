@@ -64,13 +64,13 @@ class TabActions extends StatelessWidget {
             action: TabCommand(
               icon: Symbols.arrow_back_ios_rounded,
               name: 'Back',
-              onTap: model.workspaceModel.goBack,
-              onDoubleTap: model.workspaceModel.goToStart,
-              onLongPress: () => model.workspaceModel.showBackModal(context),
+              onTap: model.tabModel.goBack,
+              onDoubleTap: model.tabModel.goToStart,
+              onLongPress: () => model.tabModel.setShowJourney(true),
               iconFillFunction:  (model) {
                 return model.currentTab.model.canGoBack ? 1 : 0;
               },
-              opacity: model.workspaceModel.currentTab.model.canGoBack ? 1 : .5
+              opacity: model.tabModel.canGoBack ? 1 : .5
             ), 
             color: model.workspaceColor,
             size: 24,
@@ -98,8 +98,8 @@ class TabActions extends StatelessWidget {
             action: TabCommand(
               icon: Symbols.arrow_forward_ios_rounded,
               name: 'Forward',
-              onTap: model.workspaceModel.goForward,
-              onLongPress: () => model.workspaceModel.showForwardModal(context),
+              onTap: model.tabModel.goForward,
+              onLongPress: () => model.tabModel.setShowJourney(true),
               iconFillFunction:  (model) {
                 return model.currentTab.model.canGoForward ? 1 : 0;
               },

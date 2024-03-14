@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark.dart';
+import 'package:stashmobile/app/web/tab_model.dart';
 import 'package:stashmobile/app/windows/windows_view_model.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 import 'package:stashmobile/app/workspace/workspace_view_params.dart';
@@ -16,13 +17,11 @@ class TabActionsModel {
 
 
   WorkspaceViewModel workspaceModel;
+  TabViewModel get tabModel => workspaceModel.currentTab.model;
 
   TabActionsModel({
-    required this.workspaceModel, 
-
-  }){
-
-  }
+    required this.workspaceModel,
+  });
 
 
 
