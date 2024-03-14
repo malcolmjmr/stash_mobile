@@ -38,7 +38,7 @@ class TabViewModel {
         queue = workspaceModel.allResources
           .where((r) => r.isQueued == true 
             && !r.isSaved 
-            && (r.created ?? 0) > (resource.created ?? 0)
+            && (r.created ?? 0) < (resource.created ?? 0)
           ).map((r) => r.url!).toList();
 
         if (queue.isNotEmpty) canGoForward = true;
@@ -93,18 +93,16 @@ class TabViewModel {
   WebHistory? history = WebHistory();
   List<Resource> get backItems {
     return history?.list?.sublist(0, history?.currentIndex)
-      .map((i) => resources[i.url.toString()]!).toList() ?? [];
+      .map((i) => resources[i.url.toString()] ?? Resource(url: i.url.toString())).toList() ?? [];
   }
 
   List<Resource> get forwardItems {
     return history?.list?.sublist(history?.currentIndex ?? 0,  history?.list?.length)
-      .map((i) => resources[i.url.toString()]!).toList() ?? [];
+      .map((i) => resources[i.url.toString()] ?? Resource(url: i.url.toString())).toList() ?? [];
   }
 
   List<Resource> get queueItems {
-    final forwardHistory = history?.list?.sublist(history?.currentIndex ?? 0,  history?.list?.length)
-      .map((i) => resources[i.url.toString()]!).toList() ?? [];
-    
+
     return queue //.where((url) => forwardHistory.firstWhereOrNull((h) => h.url.toString() != url) == null)
       .map((url) => workspaceModel.allResources.firstWhere((r) => r.url == url)).toList();
 
@@ -114,6 +112,12 @@ class TabViewModel {
   setShowJourney(bool value) {
     setState(() {
       showTabJourney = value;
+    });
+  }
+
+  toggleShowJourney() {
+    setState(() {
+      showTabJourney = !showTabJourney;
     });
   }
 

@@ -19,99 +19,81 @@ class TabJourney extends StatelessWidget {
     final forwardItems = tabModel.forwardItems;
 
     return Container(
-      color: Colors.black,
+      decoration: BoxDecoration(
+        color: Colors.black,
+        border: Border(top: BorderSide(color: HexColor.fromHex('333333')))
+      ),
+      
       child: CustomScrollView(
         slivers: [
 
           if (backItems.isNotEmpty)
-          SliverAppBar(
-            title: SectionHeader(title: 'Back'),
-            backgroundColor: HexColor.fromHex('111111'),
-            pinned: true,
-            automaticallyImplyLeading: false,
-            leadingWidth: 0,
-            leading: null,
-          ),
-          
-          SliverList.builder(
-            itemCount: tabModel.backItems.length,
-            itemBuilder: (context, index) {
-              final resource = tabModel.backItems[index];
-              return ResourceListItem(
-                model: tabModel.workspaceModel, 
-                resource: resource, 
-                onTap: () => tabModel.goTo(resource),
-              );
-            }
-          ),
-          SliverAppBar(
-            title: SectionHeader(title: 'Current Location'),
-            backgroundColor: HexColor.fromHex('111111'),
-            pinned: true, 
-            automaticallyImplyLeading: false,
-            leadingWidth: 0,
-            leading: null,
-          ),
-
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 15.0),
-              child: ResourceListItem(
-                model: tabModel.workspaceModel,
-                resource: tabModel.resource,
-                isFirstListItem: true,
-                isLastListItem: true,
-                isLastActiveTab: true,
-                onTap: () => tabModel.goTo(tabModel.resource),
-              ),
-            ),
-          ),
-          if (forwardItems.isNotEmpty)
-          SliverAppBar(
-            title: SectionHeader(title: 'Forward'),
-            backgroundColor: HexColor.fromHex('111111'),
-            pinned: true, 
-            automaticallyImplyLeading: false,
-            leadingWidth: 0,
-            leading: null,
-          ),
-                    
-          SliverList.builder(
-            itemCount: forwardItems.length,
-            itemBuilder: (context, index) {
-              final resource = forwardItems[index];
-              return ResourceListItem(
-                model: tabModel.workspaceModel, 
-                resource: resource, 
-                onTap: () => tabModel.goTo(resource),
-              );
-            }
-          ),
-          if (queueItems.isNotEmpty)
-          SliverAppBar(
-            title: SectionHeader(title: 'Up Next'),
-            backgroundColor: HexColor.fromHex('111111'),
-            pinned: true, 
-            automaticallyImplyLeading: false,
-            leadingWidth: 0,
-            leading: null,
-          ),
-          SliverList.builder(
-            itemCount: queueItems.length,
-            itemBuilder: (context, index) {
-              final resource = queueItems[index];
+          Section(
+            title: 'Back', 
+            items: backItems.map((resource) {
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 15.0),
                 child: ResourceListItem(
-                  isFirstListItem: index == 0,
-                  isLastListItem: index == queueItems.length - 1,
+                  isFirstListItem: resource == backItems[0],
+                  isLastListItem: resource == backItems[backItems.length - 1],
                   model: tabModel.workspaceModel, 
                   resource: resource, 
                   onTap: () => tabModel.goTo(resource),
                 ),
               );
-            }
+            }).toList()
           ),
+     
+          Section(
+            title: 'Current Location', 
+            items: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                child: ResourceListItem(
+                  model: tabModel.workspaceModel,
+                  resource: tabModel.resource,
+                  isFirstListItem: true,
+                  isLastListItem: true,
+                  isLastActiveTab: true,
+                  onTap: () => tabModel.goTo(tabModel.resource),
+                ),
+              ),
+            ]
+          ),
+
+          if (forwardItems.isNotEmpty)
+          Section(
+            title: 'Forward', 
+            items: forwardItems.map((resource) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                child: ResourceListItem(
+                  isFirstListItem: resource == forwardItems[0],
+                  isLastListItem: resource == forwardItems[forwardItems.length - 1],
+                  model: tabModel.workspaceModel, 
+                  resource: resource, 
+                  onTap: () => tabModel.goTo(resource),
+                ),
+              );
+            }).toList()
+          ),
+          if (queueItems.isNotEmpty)
+          Section(
+            title: 'Up Next', 
+            items: queueItems.map((resource) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                child: ResourceListItem(
+                  isFirstListItem: resource == queueItems[0],
+                  isLastListItem: resource == queueItems[queueItems.length - 1],
+                  model: tabModel.workspaceModel, 
+                  resource: resource, 
+                  onTap: () => tabModel.goTo(resource),
+                ),
+              );
+            }).toList()
+          ),
+
         ],
       ),
     );
@@ -141,12 +123,13 @@ class Section extends MultiSliver {
          pushPinnedChildren: true,
          children: [
            SliverPinnedHeader(
-             child: ColoredBox(
-               color: headerColor,
-               child: ListTile(
-                 textColor: titleColor,
-                 title: Text(title),
+             child: Container(
+              color: Colors.black,
+               child: Padding(
+                 padding: const EdgeInsets.only(left: 15, right: 15.0, top: 10),
+                 child: SectionHeader(title: title),
                ),
+             )
            ),
            SliverList(
              delegate: SliverChildListDelegate.fixed(items),
