@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:stashmobile/app/chat/chat_view_model.dart';
+import 'package:stashmobile/app/chat/default_prompts.dart';
 import 'package:stashmobile/app/web/tab_model.dart';
 import 'package:stashmobile/extensions/color.dart';
 import 'package:stashmobile/models/chat.dart';
@@ -62,7 +63,26 @@ class _ChatViewState extends State<ChatView> {
   }
 
   Widget _buildPromptScreen() {
-    return Container();
+
+    return Container(
+      child: Wrap(
+        children: defaultPrompts.map((prompt) {
+          return GestureDetector(
+            onTap: () => model.sendMessageWithPrompt(prompt),
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                color: HexColor.fromHex('222222')
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(prompt.symbol ?? prompt.name),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
   }
 
   Widget _buildMessages() {

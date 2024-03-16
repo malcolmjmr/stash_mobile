@@ -1536,7 +1536,10 @@ class WorkspaceViewModel extends ChangeNotifier {
     }
     createNewTab(
       resource: Resource(
-        chat: Chat(), 
+        chat: Chat(
+          selectedText: selectedText, 
+          parentId: currentTab.model.resource.id
+        ), 
         title: 'New Chat',
         parentId: selectedText != null ? currentTab.model.resource.id : null,
       ), 

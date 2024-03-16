@@ -301,9 +301,13 @@ class TabBottomBar extends StatelessWidget {
             child: _buildActionButton(
               title: 'Favorite', 
               icon: Symbols.favorite, 
+              onLongPress: () {
+                highlight.favorites = 0;
+                model.data.saveResource(model.currentTab.model.resource);
+              },
               onTap: () {
                 highlight.favorites += 1;
-                model.saveResource(model.currentTab.model.resource);
+                model.data.saveResource(model.currentTab.model.resource);
               },
               isFilled: highlight.favorites > 0
             ),
@@ -312,9 +316,13 @@ class TabBottomBar extends StatelessWidget {
             child: _buildActionButton(
               title: 'Like', 
               icon: Symbols.thumb_up_rounded, 
+              onLongPress: () {
+                highlight.likes = 0;
+                model.data.saveResource(model.currentTab.model.resource);
+              },
               onTap: () {
                 highlight.likes += 1;
-                model.saveResource(model.currentTab.model.resource);
+                model.data.saveResource(model.currentTab.model.resource);
               },
               isFilled: highlight.likes > 0
             ),
@@ -323,19 +331,28 @@ class TabBottomBar extends StatelessWidget {
             child: _buildActionButton(
               title: 'Dislike', 
               icon: Symbols.thumb_down_rounded, 
+              onLongPress: () {
+                highlight.dislikes = 0;
+                model.data.saveResource(model.currentTab.model.resource);
+              },
               onTap: () {
                 highlight.dislikes += 1;
-                model.saveResource(model.currentTab.model.resource);
-              }
+                model.data.saveResource(model.currentTab.model.resource);
+              },
+              isFilled: highlight.dislikes > 0,
             ),
           ),
           Expanded(
             child: _buildActionButton(
               title: 'Funny', 
               icon: Symbols.sentiment_excited_rounded, 
+              onLongPress: () {
+                highlight.laughs = 0;
+                model.data.saveResource(model.currentTab.model.resource);
+              },
               onTap: () {
                 highlight.laughs += 1;
-                model.saveResource(model.currentTab.model.resource);
+                model.data.saveResource(model.currentTab.model.resource);
               },
               isFilled: highlight.laughs > 0
             ),
@@ -346,7 +363,8 @@ class TabBottomBar extends StatelessWidget {
               icon: Symbols.comment, 
               onTap: () {
                 //update highlight
-              }
+              },
+              isFilled: false,
             ),
           ),
         ],
@@ -358,6 +376,7 @@ class TabBottomBar extends StatelessWidget {
     required String title, 
     required IconData icon, 
     required Function() onTap,
+    Function()? onLongPress,
     String? workspaceColor,
     bool? useTitle,
     bool isFilled = true,
@@ -365,6 +384,15 @@ class TabBottomBar extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: GestureDetector(
+        onLongPress: () {
+          try {
+            onLongPress?.call();
+          } catch (e) {
+            model.setShowCreateOptions(false);
+          }
+          //model.setShowCreateOptions(false);
+          HapticFeedback.mediumImpact();
+        },
         onTap: () {
 
           try {

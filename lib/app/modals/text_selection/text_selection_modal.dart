@@ -21,7 +21,7 @@ class TextSelectionMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = HexColor.fromHex(workspaceModel.workspaceHexColor);
+    final color = HexColor.fromHex('222222'); //HexColor.fromHex(workspaceModel.workspaceHexColor);
     return Container(
       height: 50,
       width: MediaQuery.of(context).size.width,

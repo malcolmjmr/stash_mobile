@@ -2,12 +2,18 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 class Chat {
   
-late int created; 
-List<Message> messages = [];
-String? parentId;
+  late int created; 
+  List<Message> messages = [];
+  String? parentId;
 
-  Chat(){
+  Chat({String? selectedText, this.parentId}){
     created = DateTime.now().millisecondsSinceEpoch;
+
+    if (selectedText != null && selectedText.isNotEmpty)  {
+      messages = [
+        Message.text(text: selectedText)
+      ];
+    }
   }
 
   Chat.fromJson(Map<String, dynamic> json) {
@@ -70,8 +76,8 @@ class Message {
     content = json['content'];
   }
 
-  Message.text({String? text, this.role = Role.user}){
-    content = [MessageContent(text: text,)];
+  Message.text({String? text, this.role = Role.user, bool isTextSelection = false}){
+    content = [MessageContent(text: text, isTextSelection: isTextSelection)];
   }
 
 
@@ -108,6 +114,7 @@ class MessageContent {
   MessageContent.fromJson(Map<String, dynamic> json) {
     imageUrl = json['imageUrl'] != null ? ImageUrl(json['imageUrl']) : null;
     text = json['text'];
+    isTextSelection = json['isTextSelection'];
   }
 
 
@@ -149,16 +156,21 @@ class ImageUrl {
 class Prompt {
   late String text;
   late String name;
+  String? symbol;
+
+  Prompt({required this.text, required this.name, this.symbol});
 
   Prompt.fromJson(Map<String, dynamic> json) {
     text = json['text'];
     name = json['name'];
+    symbol = json['symbol'];
   }
 
   Map<String, dynamic> toJson() {
     return {
       'text': text,
       'name': name,
+      'symbol': symbol,
     };
   }
 }

@@ -190,6 +190,7 @@ class JS {
         let _highlights = highlightRange(_anchor);
         _highlights.forEach(h => {
           h.style.backgroundColor = annotation.color;
+          h.style.color = 'black';
           h.addEventListener('click', event => {
             window.flutter_inappwebview.callHandler("onHighlightClicked", annotation.id);
           });
