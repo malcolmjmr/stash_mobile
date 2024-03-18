@@ -19,15 +19,15 @@ class LLM {
   }) async {
     const String apiUrl = 'https://api.mistral.ai/v1/chat/completions';
 
+    print('makeing request to minstral');
+
     if (messages == null && prompt == null) return;
 
-    var response = await http.post(
-      Uri.parse(apiUrl),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ${ServicesConfig.mistralApiKey}',
-      },
-      body: jsonEncode({
+    print('about to do it');
+    
+    String body = '';
+    try {
+      body = jsonEncode({
         'model': model, // You can choose a different model based on your needs
         'messages': prompt != null 
           ? [{
@@ -41,8 +41,24 @@ class LLM {
           : messages,
         'max_tokens': maxTokens, // Adjust based on how lengthy you expect the response to be
         'temperature': temp, // Adjust for creativity. Lower values mean more deterministic.
-      }),
+      });
+    } catch (e) {
+      print(e);
+      //print(body);
+    }
+    
+    
+
+    var response = await http.post(
+      Uri.parse(apiUrl),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ${ServicesConfig.mistralApiKey}',
+      },
+      body: body,
     );
+
+
 
     if (response.statusCode == 200) {
       var data = jsonDecode(response.body);

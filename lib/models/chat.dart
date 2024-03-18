@@ -11,7 +11,7 @@ class Chat {
 
     if (selectedText != null && selectedText.isNotEmpty)  {
       messages = [
-        Message.text(text: selectedText)
+        Message.text(text: selectedText, isTextSelection: true)
       ];
     }
   }
@@ -27,7 +27,7 @@ class Chat {
     Map<String, dynamic> json = {
       'created': created,
       'parentId': parentId,
-      'messages': messages.map((m) => m.toJson()),
+      'messages': messages.map((m) => m.toJson()).toList(),
     };
     json.removeWhere((key, value) => value == null || value == [] || value == 0 || value == "" || value == false);
     return json;
@@ -83,7 +83,7 @@ class Message {
 
   Map<String, dynamic> toJson({bool forRequest = false}) {
     Map<String, dynamic> json = {
-      'content': content.map((c) => c.toJson(forRequest: forRequest)),
+      'content': content.map((c) => c.toJson(forRequest: forRequest)).toList(),
       'role': role,
     };
     
@@ -115,6 +115,7 @@ class MessageContent {
     imageUrl = json['imageUrl'] != null ? ImageUrl(json['imageUrl']) : null;
     text = json['text'];
     isTextSelection = json['isTextSelection'];
+    resourceId = json['resourceId'];
   }
 
 

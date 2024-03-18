@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:stashmobile/app/web/tab_model.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
@@ -21,6 +22,12 @@ class ChatViewModel {
     required this.tabModel,
   }) {
     load();
+  }
+
+  TextEditingController messageController = TextEditingController();
+
+  dispose() {
+    messageController.dispose();
   }
 
   load() {
@@ -91,8 +98,46 @@ class ChatViewModel {
   }
 
 
+  
+  onSelectionChanged(String text, TextSelection textSelection, SelectionChangedCause? cause) {
+    setState(() {
+       print('text seleciton change');
+      final value = text.substring(textSelection.start, textSelection.end);
+      final selection = workspaceModel.selectedText.toString();
+      workspaceModel.selectedText = value;
+
+      if (selection.isEmpty && value.isNotEmpty) {
+        
+        workspaceModel.setShowTextSelectionMenu(true);
+      } else if (selection.isNotEmpty && value.isEmpty) {
+
+        workspaceModel.setShowTextSelectionMenu(false);
+    
+      }
+    });
+   
+  }
+
+    submitMessage() async  {
+
+      if (messageController.text.isEmpty) return;
+      print('submitting message');
+        HapticFeedback.mediumImpact();
+        resource.chat!.messages.add(Message.text(text: messageController.text));
+        final messages = resource.chat!.messages.map((m) => m.toJson(forRequest: true)).toList();
+        print(messages);
+        final response = await LLM().openAiChatCompletion(messages: messages);
+        print('got response');
+        print(response);
+        if (response == null) return;
+      setState(() {
+        
+        resource.chat!.messages.add(Message.text(role: Role.assistant, text: response));
+        workspaceModel.saveResource(resource);
+        messageController.text = '';
+      });
       
-
-
+    
+    }
 
 }

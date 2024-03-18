@@ -361,9 +361,7 @@ class TabBottomBar extends StatelessWidget {
             child: _buildActionButton(
               title: 'Chat', 
               icon: Symbols.comment, 
-              onTap: () {
-                //update highlight
-              },
+              onTap: () => model.createChat(),
               isFilled: false,
             ),
           ),

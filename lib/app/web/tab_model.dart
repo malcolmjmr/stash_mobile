@@ -66,7 +66,7 @@ class TabViewModel {
   }
 
   dispose() {
-    messageController.dispose();
+    
   }
 
   bool loaded = false;
@@ -635,19 +635,10 @@ class TabViewModel {
 
   String messageText = '';
 
-  TextEditingController messageController = TextEditingController();
+  
   
 
-  submitMessage() async  {
-    if (messageText.isEmpty) return;
-    resource.chat!.messages.add(Message.text(text: messageText));
-    final response = await LLM().mistralChatCompletion(messages: resource.chat!.messages.map((m) => m.toJson()).toList());
-    if (response == null) return;
-    resource.chat!.messages.add(Message.text(role: Role.assistant, text: response));
-    workspaceModel.saveResource(resource);
-    messageText = '';
 
-  }
 
   
 }

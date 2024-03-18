@@ -265,13 +265,16 @@ class WorkspaceViewModel extends ChangeNotifier {
 
     tabs = workspace.tabs.map((tab) {
       final isOpenedTab = openedTab != null && openedTab.url == tab.url;
+      final view = tab.url == null && tab.chat != null ? TabViewType.chat : TabViewType.web;
       return TabView(
         model: TabViewModel(
           workspaceModel: this,
           initialResource: tab,
+          viewType: view,
         ), 
         lazyLoad: isOpenedTab ? false : lazyLoad,
         incognito: workspace.isIncognito ?? false,
+        
       );
     }).toList();
 
@@ -1046,7 +1049,10 @@ class WorkspaceViewModel extends ChangeNotifier {
   }
 
   saveResource(Resource resource) {
-    allResources.add(resource);
+    
+    if (allResources.firstWhereOrNull((r) => r.id == resource.id) == null) {
+      allResources.add(resource);
+    }
 
     if (!resource.contexts.contains(workspace.id)) {
       resource.contexts.add(workspace.id);
@@ -1075,6 +1081,12 @@ class WorkspaceViewModel extends ChangeNotifier {
     setState(() {
       selectedText = text;
       showTextSelectionMenu = true;
+    });
+  }
+
+  setShowTextSelectionMenu(bool value) {
+    setState(() {
+      showTextSelectionMenu = value;
     });
   }
 
@@ -1531,17 +1543,17 @@ class WorkspaceViewModel extends ChangeNotifier {
 
   createChat({bool withLastPrompt = true}){
 
-    if (selectedText != null) {
-
-    }
+    final resource = currentTab.model.resource;
     createNewTab(
       resource: Resource(
         chat: Chat(
-          selectedText: selectedText, 
-          parentId: currentTab.model.resource.id
+          selectedText: selectedHighlight != null 
+            ? resource.highlights.firstWhere((h) => h.id == selectedHighlight).text 
+            : selectedText, 
+          parentId: resource.id
         ), 
         title: 'New Chat',
-        parentId: selectedText != null ? currentTab.model.resource.id : null,
+        parentId: resource.id,
       ), 
       
       viewType: TabViewType.chat,

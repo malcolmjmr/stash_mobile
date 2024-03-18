@@ -109,9 +109,9 @@ class _TabViewState extends State<TabView> {
       onLoadStart: (controller, uri) => widget.model.onWebsiteLoadStart(context, controller, uri),
       onProgressChanged: (controller, progress) => widget.model.onWebsiteProgressChanged(context, controller, progress),
       onLoadStop: (controller, uri) => widget.model.onWebsiteLoadStop(context, controller, uri),
-      // onConsoleMessage: (controller, msg) {
-      //   print('JS console:\n$msg');
-      // },
+      onConsoleMessage: (controller, msg) {
+        print('JS console:\n$msg');
+      },
       //onScrollChanged: (controller, x, y) => widget.model.onScrollChanged,
       onCloseWindow: (controller) => widget.model.onCloseWindow(context, controller),
       onCreateWindow:(controller, createWindowAction) => widget.model.onCreateWindow(context, controller, createWindowAction),

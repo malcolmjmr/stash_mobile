@@ -11,6 +11,7 @@ class JS {
     print('creating document');
     return """
 
+    var selectedHighlight;
     class RootDocument {
       constructor(links, annotations) {
 
@@ -193,6 +194,8 @@ class JS {
           h.style.color = 'black';
           h.addEventListener('click', event => {
             window.flutter_inappwebview.callHandler("onHighlightClicked", annotation.id);
+            this.setSelectedHighlight(annotation.id);
+
           });
         });
         let notify = !this.annotations.hasOwnProperty(annotation.id) && !this.loadingAnnotations;
@@ -213,6 +216,27 @@ class JS {
         removeHighlights(this.annotations[annotationData.id].highlights);
         this.addAnnotation(annotationData);
       }
+
+      setSelectedHighlight(annotationId) {
+
+        if (selectedHighlight) {
+          let highlightToUnselect = this.annotations[selectedHighlight];
+          for (const h of highlightToUnselect.highlights) {
+            h.style.boxShadow = 'none';
+          }
+          selectedHighlight = null;
+        }
+
+        if (annotationId) {
+          selectedHighlight = annotationId;
+          let highlightToSelect = this.annotations[annotationId];
+          for (const h of highlightToSelect.highlights) {
+            h.style.boxShadow = '2px 5px #333333';
+          }
+        } 
+
+      }
+
     }
 
     var rootDoc = new RootDocument($jsLinks, $jsAnnotations, $sectionCount);
@@ -267,6 +291,8 @@ class JS {
   var lastTouchMaxX = 0; 
   var lastTouchTime;
   var lastTouchedElement;
+  var swipeDirection;
+  console.log('loading touch listeners');
 
   document.addEventListener('touchstart', (e) => {
     var element = e.target || e.srcElement;
@@ -278,7 +304,7 @@ class JS {
       e = e || window.event;
       var target = e.target || e.srcElement;
       var href = target.getAttribute('href');
-      if (href == null) { return; }
+      //if (href == null) { return; }
       var touch = e.touches[0];
       if (touch.identifier != lastTouchId) {
         lastTouchId = touch.identifier;
@@ -287,9 +313,15 @@ class JS {
       } else {
         if (lastTouchMinX > touch.screenX) {
           lastTouchMinX = touch.screenX;
+          if (swipeDirection != 'left') {
+            swipeDirection = 'left';
+          }
         }
         if (lastTouchMaxX < touch.screenX) {
-          lastTouchMaxX = touch.screenX
+          lastTouchMaxX = touch.screenX;
+          if (swipeDirection != 'right') {
+            swipeDirection = 'right';
+          }
         }
       }
   }, false);
@@ -317,11 +349,31 @@ class JS {
       }
     } else {
       let textSelection = window.getSelection().toString();
-      if (textSelection != lastTextSelection && textSelection != '') {
-        lastTextSelection = textSelection;
-        lastTextSelectionElement = target;
-        //console.log('text selection: ' + textSelection);
-        window.flutter_inappwebview.callHandler("onTextSelection", textSelection);
+      if (textSelection != '') {
+        if (textSelection != lastTextSelection) {
+          lastTextSelection = textSelection;
+          lastTextSelectionElement = target;
+          //console.log('text selection: ' + textSelection);
+          window.flutter_inappwebview.callHandler("onTextSelection", textSelection);
+        }
+      } else { 
+        let swipeSize = lastTouchMaxX - lastTouchMinX;
+        if (swipeSize < 100) return;
+        let selector = target.className.length > 0 
+          ? '.' + target.className 
+          : target.parentElement.parentElement.tagName + ' ' + target.parentElement.tagName + ' ' + target.tagName;
+        let elements = document.querySelectorAll(selector);
+        let increase = swipeDirection == 'right';
+        elements.forEach(element => {
+            // Get the current font size
+            let currentSize = parseFloat(window.getComputedStyle(element, null).getPropertyValue('font-size'));
+
+            // Adjust the size
+            let newSize = increase ? currentSize * 1.1 : currentSize / 1.1; // Adjust scale factor as needed
+
+            // Set the new font size
+            element.style.fontSize = newSize + 'px';
+        });
       }
     }
   
@@ -592,6 +644,10 @@ class JS {
     document.addEventListener('dblclick', function (event) {
        let target = event.target || event.srcElement;
        let linkElement = getLinkElement(target);
+
+       if (target.tagName == 'IMG') {
+        window.flutter_inappwebview.callHandler("onDocumentBodyDoubleClicked");
+       }
        
        if (linkElement == null) { 
         window.flutter_inappwebview.callHandler("onDocumentBodyDoubleClicked");
@@ -601,9 +657,11 @@ class JS {
     document.addEventListener('click', function (event) {
        let target = event.target || event.srcElement;
        lastClickedElement = target;
-       let targetIsHighlight = target.tagName != 'HYPOTHESIS-HIGHLIGHT';
-       if (!targetIsHighlight) { return; }
+       let targetIsHighlight = target.tagName == 'HYPOTHESIS-HIGHLIGHT';
+      
+       if (targetIsHighlight) { return; }
        let linkElement = getLinkElement(target);
+       rootDoc.setSelectedHighlight(null);
        
        if (linkElement == null) { 
         window.flutter_inappwebview.callHandler("onDocumentBodyClicked");

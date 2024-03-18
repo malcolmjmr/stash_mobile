@@ -84,7 +84,7 @@ class Resource {
     rating = json['rating'] != null ? json['rating'] : 0;
     note = json['note'];
     notes = json['notes'] != null ? List<Note>.from(json['notes'].map((n) => Note.fromJson(n))) : [];
-    chat = json['chat'] != null ? Chat.fromJson(json['chat']) : null;
+    //chat = json['chat'] != null ? Chat.fromJson(json['chat']) : null;
   }
 
   Map<String, dynamic> toJson() {
@@ -113,6 +113,7 @@ class Resource {
       'notes': notes.map((n) => n.toJson()),
       'summary': summary,
       'text': text,
+      'chat': chat?.toJson()
     };
     json.removeWhere((key, value) => value == null || value == [] || value == 0);
     return json;

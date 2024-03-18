@@ -1,7 +1,10 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:stashmobile/app/chat/chat_view_model.dart';
 import 'package:stashmobile/app/chat/default_prompts.dart';
+import 'package:stashmobile/app/modals/text_selection/text_selection_modal.dart';
 import 'package:stashmobile/app/web/tab_model.dart';
 import 'package:stashmobile/extensions/color.dart';
 import 'package:stashmobile/models/chat.dart';
@@ -51,13 +54,48 @@ class _ChatViewState extends State<ChatView> {
     */
 
     return Container(
+      height: MediaQuery.of(context).size.height,
+      width: MediaQuery.of(context).size.width,
+      color: Colors.black,
       child: Stack(
         children: [
-          model.showPromptSuggestions 
-            ? _buildPromptScreen()
-            : _buildMessages(),
-          _buildMessageInput(),
+          GestureDetector(
+            onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+            child: model.chat.messages.isEmpty 
+              ? _buildBackground() // _buildPromptScreen()
+              : _buildMessages(),
+          ),
+          if (!model.workspaceModel.showTextSelectionMenu)
+          Positioned(
+            child: _buildMessageInput(), 
+            bottom: 0,
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBackground() {
+    return Container(
+      height: MediaQuery.of(context).size.height,
+      width: MediaQuery.of(context).size.width,
+      child: Center(
+        child: Container(
+          height: 100,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Icon(Symbols.forum_rounded, fill: 0, size: 50,),
+              ),
+              Text('New Chat',
+                style: TextStyle(
+                  fontSize: 24,
+                )
+              )
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -86,13 +124,19 @@ class _ChatViewState extends State<ChatView> {
   }
 
   Widget _buildMessages() {
+    final messages = widget.tabModel.resource.chat!.messages;
     return Container(
-      color: Colors.amber,
+      //color: Colors.amber,
+      width: MediaQuery.of(context).size.width,
       child: ListView.builder(
-        itemCount: widget.tabModel.resource.chat!.messages.length,
+        itemCount: messages.length + 1,
         itemBuilder: (context, index) {
-          final message = widget.tabModel.resource.chat!.messages[index];
-          return MessageView(message: message,);
+          
+          if (index == messages.length) {
+            return Padding(padding: EdgeInsets.only(bottom: 100));
+          }
+          final message = messages[index];
+          return MessageView(message: message, model: model,);
         }
       ),
     );
@@ -103,7 +147,14 @@ class _ChatViewState extends State<ChatView> {
       if (messages.isEmpty || showFullScreenMessageInput)
     */
 
+    //model.showExpandedMessage = false;
+
     return Container(
+      width: MediaQuery.of(context).size.width,
+      decoration: BoxDecoration(
+        color: Colors.black,
+        border: Border(top: BorderSide(color: HexColor.fromHex('222222')))
+      ),
       child: Column(
         children: [
           if (model.messageToSend.textSelection != null)
@@ -112,10 +163,9 @@ class _ChatViewState extends State<ChatView> {
           _buildResourcePreview()
           else if (model.messageToSend.imageUrl != null)
           _buildImage(),
+          if (model.chat.messages.isNotEmpty)
+          _buildPromptSuggestions(),
           Container(
-            height: model.showExpandedMessage
-              ? MediaQuery.of(context).size.height
-              : 60,
             child: _buildInputField()
           ),
         ],
@@ -159,69 +209,100 @@ class _ChatViewState extends State<ChatView> {
   }
 
   _buildInputField() {
-    return Container(
-      child: Row(
-        children: [
-          Expanded(
-            child: Container(
-              child: TextField(
-                controller: widget.tabModel.messageController,
-                autofocus: true,
-                decoration: InputDecoration(
-                  hintText: 'Enter message',
-                  border: InputBorder.none,
-                  
-                ),
-                
-                onChanged: (value) {
-                  widget.tabModel.messageText = value;
-                },
-                // onSubmitted: (value) {
-                //   tabModel.submitMessage(value);
-                // },
-              )
-            ),
-          ),
-          GestureDetector(
-            onTap: widget.tabModel.submitMessage,
-            child: Padding(
-              padding: const EdgeInsets.only(left: 8.0),
+    return Padding(
+      padding: const EdgeInsets.only(left: 8.0, bottom: 8, right: 8),
+      child: Container(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(
               child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(100),
-                  color: HexColor.fromHex(widget.tabModel.workspaceModel.workspaceHexColor),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(4.0),
-                  child: Icon(Symbols.arrow_upward_alt_rounded,
-                    color: Colors.black,
+                child: TextField(
+                  controller: model.messageController,
+                  autofocus: true,
+                  maxLines: null,
+                  decoration: InputDecoration(
+                    hintText: 'Enter message',
+                    border: InputBorder.none,
+                    
+                  ),
                   
+                  onChanged: (value) {
+                    widget.tabModel.messageText = value;
+                  },
+                  // onSubmitted: (value) {
+                  //   tabModel.submitMessage(value);
+                  // },
+                )
+              ),
+            ),
+            GestureDetector(
+              onTap: model.submitMessage,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 8.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(100),
+                    color: HexColor.fromHex(widget.tabModel.workspaceModel.workspaceHexColor),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(4.0),
+                    child: Icon(Symbols.arrow_upward_alt_rounded,
+                      color: Colors.black,
+                    
+                    ),
                   ),
                 ),
               ),
-            ),
-          )
-        ],
+            )
+          ],
+        ),
       ),
     );
   }
 
   _buildPromptSuggestions() {
+    
     return Container(
-      height: 50,
-      child: ListView.builder(
-        shrinkWrap: true,
-        scrollDirection: Axis.horizontal,
-        itemCount: widget.tabModel.workspaceModel.selectionPrompts.length,
-        itemBuilder: (context, index) {
-          final promptName = widget.tabModel.workspaceModel.selectionPrompts[index].name;
-          return Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: Container(
-              child: Text(promptName),
-            ),
-          );
-        }
+      height: 45,
+      width: MediaQuery.of(context).size.width,
+      child: Padding(
+        padding: const EdgeInsets.only(top: 8.0),
+        child: ListView.builder(
+          shrinkWrap: true,
+          scrollDirection: Axis.horizontal,
+          itemCount: defaultPrompts.length,
+          itemBuilder: (context, index) {
+            final prompt =  defaultPrompts[index];
+            return GestureDetector(
+              onTap: () {
+                model.messageController.text = prompt.text;
+              },
+              onLongPress: () => model.sendMessageWithPrompt(prompt),
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: HexColor.fromHex('222222'),
+                      borderRadius: BorderRadius.circular(8)
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 5),
+                      child: Text(prompt.symbol ?? prompt.name,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 18,
+                      
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }
+        ),
       ),
     );
   }
@@ -229,8 +310,9 @@ class _ChatViewState extends State<ChatView> {
 
 
 class MessageView extends StatelessWidget {
-  const MessageView({Key? key, required this.message}) : super(key: key);
+  const MessageView({Key? key, required this.message, required this.model}) : super(key: key);
 
+  final ChatViewModel model;
   final Message message;
 
   /*
@@ -245,22 +327,33 @@ class MessageView extends StatelessWidget {
     }
   return Container(
     color: message.role == Role.assistant 
-      ? HexColor.fromHex('333333') 
+      ? HexColor.fromHex('222222') 
       : Colors.black,
     child: Padding(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.all(15.0),
       child: Container(
-        child: message.text  != null
-          ? Text(message.text!,
+        decoration: message.textSelection != null 
+          ? BoxDecoration(border: Border(left: BorderSide(color: HexColor.fromHex('444444'), width: 5)))
+          : null,
+        child: Padding(
+          padding: message.textSelection != null 
+            ? EdgeInsets.only(left: 8) 
+            : EdgeInsets.all(0),
+          child: message.text  != null
+            ? SelectableText(message.text!,
+              onSelectionChanged: (selection, cause) => model.onSelectionChanged(message.text!, selection, cause),
               style: TextStyle(
-            
+                  fontSize: 16
+                )
               )
-            )
-          : message.imageUrl != null
-            ? Image.network(message.imageUrl!)
-            : Container()
+            : message.imageUrl != null
+              ? Image.network(message.imageUrl!)
+              : Container(),
+        )
         ),
       ),
     );
   }
 }
+
+

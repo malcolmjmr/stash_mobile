@@ -68,6 +68,11 @@ class DataManager extends ChangeNotifier {
     final aMonthAgo = DateTime.now().millisecondsSinceEpoch - (1000 * 60 * 60 * 24 * 30);
     final recentResources = await db.getResourcesByTime(user, aMonthAgo);
     for (final resource in recentResources) {
+      if (resource.chat != null || resource.url == null) {
+        print('found chat');
+        deleteResource(resource, permanent: true);
+        continue;
+      }
       if (_resources[resource.id] == null) {
         _resources[resource.id!] = resource;
         for (final tag in resource.tags) {
@@ -122,7 +127,7 @@ class DataManager extends ChangeNotifier {
 
 
   _getWorkspacesFromCloud() async  {
-    final workspaces = (await db.getUserWorkspaces(user)).where((w) => w.isIncognito != true).toList();
+    List<Workspace> workspaces = (await db.getUserWorkspaces(user)).where((w) => w.isIncognito != true).toList();
     for (final workspace in workspaces) {
       if (_workspaces[workspace.id] == null) {
         _workspaces[workspace.id] = workspace;
