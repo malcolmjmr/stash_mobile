@@ -62,7 +62,9 @@ class JS {
         if (root == null) {
           root = document.querySelector('main');
         }
-        if (root == null) { return; }
+        if (root == null) { 
+          root = document.body;
+        }
 
         this.getContent(root);
         
@@ -177,7 +179,6 @@ class JS {
       }
 
       async setAnnotations(annotations) {
-        console.log('setting annotations');
         this.loadingAnnotations = true;
         this.annotations = {};
         Promise.all(annotations.map(async a => { 
@@ -231,7 +232,7 @@ class JS {
           selectedHighlight = annotationId;
           let highlightToSelect = this.annotations[annotationId];
           for (const h of highlightToSelect.highlights) {
-            h.style.boxShadow = '2px 5px #333333';
+            h.style.boxShadow = '5px 5px #555555';
           }
         } 
 
@@ -267,7 +268,6 @@ class JS {
       - target
      */
     return """
-    //console.log(${convert.jsonEncode(annotation)});
     rootDoc.addAnnotation(${convert.jsonEncode(annotation)});
     """;
   }
@@ -289,27 +289,51 @@ class JS {
   var lastTouchId;
   var lastTouchMinX = 1000;
   var lastTouchMaxX = 0; 
-  var lastTouchTime;
+  var touchStartY = 0;
+  var lastTouchY = 0;
+  var lastTouchTime = 0;
   var lastTouchedElement;
   var swipeDirection;
-  console.log('loading touch listeners');
+  var longPressTimeout;
+
+
 
   document.addEventListener('touchstart', (e) => {
-    var element = e.target || e.srcElement;
-    lastTouchedElement = element;
+    var target = e.target || e.srcElement;
+    lastTouchedElement = target;
     lastTouchTime = Date.now();
+
+    let targetIsHighlight = target.tagName == 'HYPOTHESIS-HIGHLIGHT';
+      
+    if (targetIsHighlight) { return; }
+    let linkElement = getLinkElement(target);
+    rootDoc.setSelectedHighlight(null);
+    
+    if (linkElement == null) { 
+      window.flutter_inappwebview.callHandler("onTouchStart");
+    }
+
+    longPressTimeout = setTimeout(() => {
+      if (linkElement.href && lastTouchY - touchStartY > 100) {
+        window.flutter_inappwebview.callHandler("onLinkLongPress", linkElement.innerText, linkElement.href);
+      }
+    }, 1500)
+       
   });
   
   document.addEventListener('touchmove', function(e) {
       e = e || window.event;
-      var target = e.target || e.srcElement;
-      var href = target.getAttribute('href');
-      //if (href == null) { return; }
+      // var target = e.target || e.srcElement;
+      // var href = target.getAttribute('href');
+
+      // var linkElement = getLinkElement(target);
+      // if (href == null) { return; }
       var touch = e.touches[0];
       if (touch.identifier != lastTouchId) {
         lastTouchId = touch.identifier;
         lastTouchMinX = 1000;
         lastTouchMaxX = 0; 
+        touchStartY = touch.screenY;
       } else {
         if (lastTouchMinX > touch.screenX) {
           lastTouchMinX = touch.screenX;
@@ -323,7 +347,10 @@ class JS {
             swipeDirection = 'right';
           }
         }
+        lastTouchY = touche.screenX;
       }
+
+      
   }, false);
 
   var lastTextSelection;
@@ -333,48 +360,68 @@ class JS {
     e = e || window.event;
     let target = e.target || e.srcElement;
     
-    let href = target.getAttribute('href');
-    let text = target.innerText;
-    if (href != null) {
-      let swipeSize = lastTouchMaxX - lastTouchMinX;
+    
+    console.log('touch end');
+    let href;
+    let lext;
+    try {
+      let linkElement = getLinkElement(target);
+      href = linkElement?.href;
+      text = linkElement?.innerText;
+    } catch (error) {
+      console.log(error);
+    }
+
+
+    /*
+      Scenarios
+      - is link
+        - is swipe
+        - is long press 
+      - isn't link
+    */
+
+    let swipeSize = lastTouchMaxX - lastTouchMinX;
+    let touchDuration = Date.now() - lastTouchTime;
+
+
+    clearTimeout(longPressTimeout);
+
+    let textSelection = window.getSelection().toString();
+
+    if (textSelection != '') {
+      if (textSelection != lastTextSelection) {
+        lastTextSelection = textSelection;
+        lastTextSelectionElement = target;
+        window.flutter_inappwebview.callHandler("onTextSelection", textSelection);
+      }
+    } else if (href != null) {
       if (swipeSize > 100) {
         if (href.startsWith('/')) {
           href = 'https://' + window.location.hostname + href;
         }
         if (lastTouchedLink != href) {
-          console.log('link to save: ' + href);
           window.flutter_inappwebview.callHandler("onLinkSelected", text, href);
-          
         }
       }
-    } else {
-      let textSelection = window.getSelection().toString();
-      if (textSelection != '') {
-        if (textSelection != lastTextSelection) {
-          lastTextSelection = textSelection;
-          lastTextSelectionElement = target;
-          //console.log('text selection: ' + textSelection);
-          window.flutter_inappwebview.callHandler("onTextSelection", textSelection);
-        }
-      } else { 
-        let swipeSize = lastTouchMaxX - lastTouchMinX;
-        if (swipeSize < 100) return;
-        let selector = target.className.length > 0 
-          ? '.' + target.className 
-          : target.parentElement.parentElement.tagName + ' ' + target.parentElement.tagName + ' ' + target.tagName;
-        let elements = document.querySelectorAll(selector);
-        let increase = swipeDirection == 'right';
-        elements.forEach(element => {
-            // Get the current font size
-            let currentSize = parseFloat(window.getComputedStyle(element, null).getPropertyValue('font-size'));
 
-            // Adjust the size
-            let newSize = increase ? currentSize * 1.1 : currentSize / 1.1; // Adjust scale factor as needed
+    } else { 
+      if (swipeSize < 100 || touchDuration < 700 ) return;
+      let selector = target.className.length > 0 
+        ? '.' + target.className 
+        : target.parentElement.parentElement.tagName + ' ' + target.parentElement.tagName + ' ' + target.tagName;
+      let elements = document.querySelectorAll(selector);
+      let increase = swipeDirection == 'right';
+      elements.forEach(element => {
+          // Get the current font size
+          let currentSize = parseFloat(window.getComputedStyle(element, null).getPropertyValue('font-size'));
 
-            // Set the new font size
-            element.style.fontSize = newSize + 'px';
-        });
-      }
+          // Adjust the size
+          let newSize = increase ? currentSize * 1.1 : currentSize / 1.1; // Adjust scale factor as needed
+
+          // Set the new font size
+          element.style.fontSize = newSize + 'px';
+      });
     }
   
   }, false);
@@ -417,27 +464,21 @@ class JS {
 
 
   static String getExaSearchResults = """
-    getExaSearchResults();
-  """;
+    let results = [];
+    let links = document.querySelectorAll('div a')
+    for (const link of links) {
+      if (!link.className.includes('SearchResultFlexWrapper')) continue;
 
-  static String loadExaFunctions = """
-    function getExaSearchResults() {
-      let results = [];
-      let links = document.querySelectorAll('div a')
-      for (const link of links) {
-        if (!link.className.includes('SearchResultFlexWrapper')) continue;
-
-        let resource = {
-          title: link.querySelector('a').title,
-          url: link.href,
-          favIconUrl: link.querySelector('img').src,
-          summary: link.querySelector('p')
-        }
-        results.push(resource);
+      let resource = {
+        title: [...link.querySelectorAll('a')].find((l) => { return l.className.includes('Title') })?.innerText,
+        url: link.href,
+        favIconUrl: link.querySelector('img')?.src,
+        summary: link.querySelector('.highlight-text')?.innerText,
       }
-
-      window.flutter_inappwebview.callHandler("exaSearchResults", results);
+      results.push(resource);
     }
+
+    window.flutter_inappwebview.callHandler("exaSearchResults", results);
   """;
 
   static String createAnnotation = r"""
@@ -483,7 +524,7 @@ class JS {
     } else if (!isScrollingDown && scrollDirection != 'up') {
       scrollDirection = 'up';
       scrollPositionOnDirectionChange = currentScrollPosition;
-      reachedScrollThrehold = false;
+      reachedScrollThreshold = false;
       
     }
 
@@ -553,13 +594,13 @@ class JS {
 
   static String imageSelectionListener = """
 
-      document.addEventListener('touchend', (e) => {
-          if (e.target.tagName != 'IMG' || !lastTouchTime) return;
-          const now = Date.now();
-          if (lastTouchedElement?.tagName == 'IMG' && now - lastTouchTime > 2000 && now - lastTouchTime < 10000) {
-              window.flutter_inappwebview.callHandler("imageSelected", e.target.src);
-          }
-      });
+      // document.addEventListener('touchend', (e) => {
+      //     if (e.target.tagName != 'IMG' || !lastTouchTime) return;
+      //     const now = Date.now();
+      //     if (lastTouchedElement?.tagName == 'IMG' && now - lastTouchTime > 2000 && now - lastTouchTime < 10000) {
+      //         window.flutter_inappwebview.callHandler("imageSelected", e.target.src);
+      //     }
+      // });
 
       function getImageUrl() {
           // Todo: handle youtube videos
@@ -623,14 +664,13 @@ class JS {
        let parent = element; 
        while(true) {
          if (parent.tagName == 'A') { return parent; }
-         if (parent == document.body) { return;}
+         if (parent == document.body || parent == null) { return; }
          parent = parent.parentElement;
        }
     }
 
     function removeLastClickedElement() {
-      console.log('removing element');
-      console.log(lastClickedElement.toString());
+
       lastClickedElement?.remove();
     }
     
@@ -646,7 +686,7 @@ class JS {
        let linkElement = getLinkElement(target);
 
        if (target.tagName == 'IMG') {
-        window.flutter_inappwebview.callHandler("onDocumentBodyDoubleClicked");
+        window.flutter_inappwebview.callHandler("onImageSelected");
        }
        
        if (linkElement == null) { 
@@ -654,60 +694,60 @@ class JS {
        }
     });
     
-    document.addEventListener('click', function (event) {
-       let target = event.target || event.srcElement;
-       lastClickedElement = target;
-       let targetIsHighlight = target.tagName == 'HYPOTHESIS-HIGHLIGHT';
+    // document.addEventListener('click', function (event) {
+    //    let target = event.target || event.srcElement;
+    //    lastClickedElement = target;
+    //    let targetIsHighlight = target.tagName == 'HYPOTHESIS-HIGHLIGHT';
       
-       if (targetIsHighlight) { return; }
-       let linkElement = getLinkElement(target);
-       rootDoc.setSelectedHighlight(null);
+    //    if (targetIsHighlight) { return; }
+    //    let linkElement = getLinkElement(target);
+    //    rootDoc.setSelectedHighlight(null);
        
-       if (linkElement == null) { 
-        window.flutter_inappwebview.callHandler("onDocumentBodyClicked");
-       } else {
-        window.flutter_inappwebview.callHandler("onLinkClicked", linkElement.innerText, linkElement.href);
-       }
+    //    if (linkElement == null) { 
+    //     window.flutter_inappwebview.callHandler("onDocumentBodyClicked");
+    //    } else {
+    //     window.flutter_inappwebview.callHandler("onLinkClicked", linkElement.innerText, linkElement.href);
+    //    }
        
         
-      //  if (clickedLink == target && !isDelayedClick) { doubleClickedLink = target; }
-      //  if (isDelayedClick) { isDelayedClick = false; }
+    //   //  if (clickedLink == target && !isDelayedClick) { doubleClickedLink = target; }
+    //   //  if (isDelayedClick) { isDelayedClick = false; }
        
-      //  let delayClick = doubleClickedLink != target && !waitingOnDoubleClick;
-      //  let saveLink = doubleClickedLink == target && waitingOnDoubleClick;
-      //  let preventClick = doubleClickedLink == target && !waitingOnDoubleClick;
+    //   //  let delayClick = doubleClickedLink != target && !waitingOnDoubleClick;
+    //   //  let saveLink = doubleClickedLink == target && waitingOnDoubleClick;
+    //   //  let preventClick = doubleClickedLink == target && !waitingOnDoubleClick;
 
        
-      //  if (delayClick) {
+    //   //  if (delayClick) {
          
-      //   event.stopPropagation();
-      //   event.preventDefault();
-      //   clickedLink = target;
-      //   waitingOnDoubleClick = true;
-      //   setTimeout(function(){ isDelayedClick = true; target.click(); }, 1000);
-      //   return false;
+    //   //   event.stopPropagation();
+    //   //   event.preventDefault();
+    //   //   clickedLink = target;
+    //   //   waitingOnDoubleClick = true;
+    //   //   setTimeout(function(){ isDelayedClick = true; target.click(); }, 1000);
+    //   //   return false;
        
            
-      //  } else if (saveLink)  {
-      //    event.stopPropagation();
-      //    event.preventDefault();
-      //    waitingOnDoubleClick = false;
-      //    if (linkElement != null) {
-      //        window.flutter_inappwebview.callHandler("onLinkSelected", linkElement.innerText, linkElement.href);
-      //    }
-      //    return false;
+    //   //  } else if (saveLink)  {
+    //   //    event.stopPropagation();
+    //   //    event.preventDefault();
+    //   //    waitingOnDoubleClick = false;
+    //   //    if (linkElement != null) {
+    //   //        window.flutter_inappwebview.callHandler("onLinkSelected", linkElement.innerText, linkElement.href);
+    //   //    }
+    //   //    return false;
     
-      //  } else { 
-      //   clickedLink = null;
-      //   doubleClickedLink = null;
-      //   waitingOnDoubleClick = false;
-      //   if (preventClick) {
-      //     event.stopPropagation();
-      //     event.preventDefault();
-      //     return false;
-      //   } 
-      //  }
-    });
+    //   //  } else { 
+    //   //   clickedLink = null;
+    //   //   doubleClickedLink = null;
+    //   //   waitingOnDoubleClick = false;
+    //   //   if (preventClick) {
+    //   //     event.stopPropagation();
+    //   //     event.preventDefault();
+    //   //     return false;
+    //   //   } 
+    //   //  }
+    // });
    
     
     

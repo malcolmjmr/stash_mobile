@@ -98,6 +98,7 @@ class TabActions extends StatelessWidget {
             action: TabCommand(
               icon: Symbols.arrow_forward_ios_rounded,
               name: 'Forward',
+              onDoubleTap: () => model.tabModel.getRelatedContent(searchUrl: true),
               onTap: model.tabModel.goForward,
               onLongPress: () => model.tabModel.toggleShowJourney(),
               iconFillFunction:  (model) {

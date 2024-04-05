@@ -65,7 +65,7 @@ class TabListItem extends StatelessWidget {
                     height: MediaQuery.of(context).size.height * .66,
                     width: MediaQuery.of(context).size.width * .66,
                     child: InAppWebView(
-                      initialUrlRequest: URLRequest(url: Uri.parse(resource.url!)),
+                      initialUrlRequest: URLRequest(url: WebUri(resource.url!)),
                     ),
                   ),
                 )

@@ -7,6 +7,7 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
+import 'package:stashmobile/app/common_widgets/play_button.dart';
 
 import 'package:stashmobile/app/common_widgets/section_list_item.dart';
 import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark.dart';
@@ -46,6 +47,7 @@ class OpenTabLabel extends StatelessWidget {
 
     List<SlidableAction> leftActions = [];
 
+
     return SectionListItemContainer(
       isFirstListItem: isFirstListItem,
       isLastListItem: isLastListItem,
@@ -53,7 +55,10 @@ class OpenTabLabel extends StatelessWidget {
       onTap: onTap,
       child: GestureDetector(
         onLongPress: () {
-          model.openSummaryModal();
+          model.currentTab.model.stopLoading();
+        },
+        onDoubleTap: () {
+          model.createChat(getSummary: true);
         },
         child: Slidable(
           key: Key(resource.toString()),
@@ -258,6 +263,8 @@ class OpenTabLabel extends StatelessWidget {
                           ),
                         ),
                       ),
+
+                      if (model.isPlayingJourney)
                       if (isIncognito && !(model.workspace.isIncognito == true)) 
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 5),
@@ -271,23 +278,7 @@ class OpenTabLabel extends StatelessWidget {
                     ],
                   ),
                 ),
-                
-                // GestureDetector(
-                //   onTap: () => showCupertinoModalBottomSheet(
-                //     context: context, 
-                //     builder: (context) {
-                //       return TabMenu(
-                //         resource: resource,
-                //         workspaceModel: model,
-                //       );
-                //     }
-                //   ),
-                //   child: Padding(
-                //     padding: const EdgeInsets.symmetric(horizontal: 3.0),
-                //     child: Icon(Icons.more_vert),
-                //   ),
-                // ),
-                //Expanded(child: Container(),),
+
                 GestureDetector(
                   onTap: () => model.closeTab(resource),
                   child: Padding(

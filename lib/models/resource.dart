@@ -1,6 +1,7 @@
 
 
 import 'package:flutter/foundation.dart';
+import 'package:stashmobile/models/article.dart';
 import 'package:stashmobile/models/chat.dart';
 import 'package:stashmobile/models/note.dart';
 import 'package:stashmobile/models/tag.dart';
@@ -50,8 +51,10 @@ class Resource {
   List<String> queue = [];
   Note? note;
   Chat? chat;
+  Article? article;
 
   bool annotationsLoaded = false;
+  bool isSuggestion = false;
 
 
   Resource({ this.url, this.title, this.favIconUrl, this.note, this.chat, this.parentId}) {
@@ -84,7 +87,7 @@ class Resource {
     rating = json['rating'] != null ? json['rating'] : 0;
     note = json['note'];
     notes = json['notes'] != null ? List<Note>.from(json['notes'].map((n) => Note.fromJson(n))) : [];
-    //chat = json['chat'] != null ? Chat.fromJson(json['chat']) : null;
+    chat = json['chat'] != null ? Chat.fromJson(json['chat']) : null;
   }
 
   Map<String, dynamic> toJson() {
@@ -137,6 +140,26 @@ class Highlight {
   int laughs = 0;
 
   Map<String, dynamic>? target;
+
+  bool get hasQuestion => text.contains('?');
+
+  String get question {
+
+    final endSplit = text.split('?');
+    if (endSplit.length > 1) {
+      return endSplit[0] + '?';
+      // final startSplit = endSplit[0].split('. ');
+      // if (startSplit.length > 1) {
+      //   return startSplit[startSplit.length - 1] + '?';
+      // } else {
+      //   return startSplit[0] + '?';
+      // }
+    } else {
+      return '';
+    }
+
+
+  } 
   
   Highlight({
     this.id,

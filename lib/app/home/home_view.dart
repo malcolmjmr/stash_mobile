@@ -34,6 +34,7 @@ class HomeView extends ConsumerWidget {
   Widget build(BuildContext context, ScopedReader watch) {
     final model = watch(homeViewProvider);
     final windows = watch(windowsProvider);
+    print('building home');
     return Scaffold(
       backgroundColor: Colors.black,
       body: model.isLoading 

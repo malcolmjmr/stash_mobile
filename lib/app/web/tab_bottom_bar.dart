@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:page_transition/page_transition.dart';
+import 'package:stashmobile/app/providers/read_aloud.dart';
 import 'package:stashmobile/app/web/horizontal_tabs.dart';
 import 'package:stashmobile/app/web/tab_actions.dart';
 import 'package:stashmobile/app/web/tab_actions_model.dart';
 import 'package:stashmobile/app/modals/text_selection/text_selection_modal.dart';
 import 'package:stashmobile/app/web/vertical_tabs.dart';
+import 'package:stashmobile/app/windows/windows_view_model.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 import 'package:stashmobile/constants/color_map.dart';
 import 'package:stashmobile/extensions/color.dart';
@@ -23,31 +26,37 @@ class TabBottomBar extends StatelessWidget {
   Widget build(BuildContext context) {
 
     final showTopBar = (model.selectedHighlight != null || model.notificationIsVisible || model.selectedText != null);
-    return AnimatedSize(
-      alignment: showTopBar ? Alignment.bottomCenter : Alignment.topCenter,
-      duration: Duration(milliseconds: 300),
-      reverseDuration: Duration(milliseconds: 2000),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.black
-        ),
-        width: MediaQuery.of(context).size.width,
-        height: showTopBar
-          ? 60
-          : model.showToolbar 
-            ? 110 
-            : 0,
-        child: Column(
-          children: [
-            Expanded(
-              child: _buildTopSection(context)
-            ),
-            if (!showTopBar)
-            Container(
-              height: 50,
-              child: TabActions(model: TabActionsModel(workspaceModel: model),)
-            ),
-          ],
+    return GestureDetector(
+      onTapDown: (detail) {
+        context.read(windowsProvider).setIsScrollable(true);
+      },
+      child: AnimatedSize(
+        alignment: showTopBar ? Alignment.bottomCenter : Alignment.topCenter,
+        duration: Duration(milliseconds: 300),
+        reverseDuration: Duration(milliseconds: 2000),
+        clipBehavior: Clip.none,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.black
+          ),
+          width: MediaQuery.of(context).size.width,
+          height: showTopBar
+            ? 60
+            : model.showToolbar 
+              ? 110 
+              : 0,
+          child: Column(
+            children: [
+              Expanded(
+                child: _buildTopSection(context)
+              ),
+              if (!showTopBar)
+              Container(
+                height: 50,
+                child: TabActions(model: TabActionsModel(workspaceModel: model),)
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -98,7 +107,7 @@ class TabBottomBar extends StatelessWidget {
     } else if (highlight != null) {
       return _buildHighlightActions(highlight);
     } else {
-      return VeritcalTabs(workspaceModel: model);
+      return VertcalTabs(workspaceModel: model);
     }
   }
 
@@ -126,7 +135,10 @@ class TabBottomBar extends StatelessWidget {
     TabCommand(
       icon: Symbols.text_to_speech, 
       name: 'Listen', 
-      onTap: () => null,
+      onTap: () {
+        context.read(readAloudProvider).play(model: model.currentTab.model);
+        model.setShowQuickActions(false);
+      },
     ),
     TabCommand(
       icon: Symbols.chrome_reader_mode_rounded, 

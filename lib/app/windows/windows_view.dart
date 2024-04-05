@@ -11,7 +11,11 @@ class WindowsView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, ScopedReader watch) {
     final model = watch(windowsProvider);
+    print('building windows');
     return PageView(
+      physics: model.isScrollable 
+        ? AlwaysScrollableScrollPhysics() 
+        : NeverScrollableScrollPhysics(),
       controller: model.pageController,
       scrollDirection: Axis.horizontal,
       children: model.workspaces,

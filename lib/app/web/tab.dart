@@ -94,10 +94,12 @@ class _TabViewState extends State<TabView> {
 
   Widget _buildWebView() {
     return InAppWebView(
+
       windowId: widget.windowId,
-      initialUrlRequest: widget.lazyLoad || widget.windowId != null ? null : URLRequest(url: Uri.parse(widget.model.resource.url!)),
+      initialUrlRequest: widget.lazyLoad || widget.windowId != null ? null : URLRequest(url: WebUri(widget.model.resource.url!)),
+  
       pullToRefreshController: PullToRefreshController(
-        options: PullToRefreshOptions(),
+        onRefresh: () => widget.model.controller.reload()
       ),
       gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>[
         new Factory<OneSequenceGestureRecognizer>(
@@ -109,8 +111,9 @@ class _TabViewState extends State<TabView> {
       onLoadStart: (controller, uri) => widget.model.onWebsiteLoadStart(context, controller, uri),
       onProgressChanged: (controller, progress) => widget.model.onWebsiteProgressChanged(context, controller, progress),
       onLoadStop: (controller, uri) => widget.model.onWebsiteLoadStop(context, controller, uri),
+      onUpdateVisitedHistory: widget.model.onUpdateVisitedHistory,
       onConsoleMessage: (controller, msg) {
-        print('JS console:\n$msg');
+        print('JS console: ' + msg.toString());
       },
       //onScrollChanged: (controller, x, y) => widget.model.onScrollChanged,
       onCloseWindow: (controller) => widget.model.onCloseWindow(context, controller),
@@ -122,31 +125,28 @@ class _TabViewState extends State<TabView> {
       //   ],
       //   //options: ContextMenuOptions(hideDefaultSystemContextMenuItems: true)
       // ),
-
-      initialOptions: InAppWebViewGroupOptions(
-      
-        crossPlatform: InAppWebViewOptions(
-          disableHorizontalScroll: true,
+      initialSettings: InAppWebViewSettings(
+         disableHorizontalScroll: true,
           useShouldOverrideUrlLoading: true,
           incognito: widget.incognito,
           // javaScriptEnabled: true,
+          applicationNameForUserAgent: 'Stash Browser',
           userAgent: 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36',
           // javaScriptCanOpenWindowsAutomatically: true,
           //disableContextMenu: true
-          
-        ),
-        ios: IOSInAppWebViewOptions(
           allowsBackForwardNavigationGestures: true,
           disableLongPressContextMenuOnLinks: true,
           allowsLinkPreview: false,
           disallowOverScroll: true,
+          safeBrowsingEnabled: false,
           // sharedCookiesEnabled: true,
           // applePayAPIEnabled: true,
           //applePayAPIEnabled: true,
-
-        
-        ),
+          minimumFontSize: 18,
       ),
+      onWebContentProcessDidTerminate: (controller) {
+        controller.reload();
+      },
     );
   }
 }

@@ -60,6 +60,7 @@ class ResourceListItem extends StatelessWidget {
     return SectionListItemContainer(
       isFirstListItem: isFirstListItem,
       isLastListItem: isLastListItem,
+      isHighlighted: isLastActiveTab,
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.all(8.0),
@@ -97,10 +98,10 @@ class ResourceListItem extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(resource.title ?? '', 
+              Text(resource.title ?? resource.url ?? '', 
                 maxLines: 1,
                 style: TextStyle(
-                  color: isLastActiveTab ? Colors.amber : Colors.white,
+                  color: Colors.white,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 0.5,
                   fontSize: 16,  
@@ -112,7 +113,7 @@ class ResourceListItem extends StatelessWidget {
                   Text(Uri.parse(resource.url!).host.replaceAll('www.', '') ?? '', 
                     maxLines: 1,
                     style: TextStyle(
-                      color: isLastActiveTab ? Colors.amber : Colors.white,
+                      color: Colors.white,
                       fontWeight: FontWeight.w300,
                       letterSpacing: 0.5,
                       fontSize: 14,  

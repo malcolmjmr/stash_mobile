@@ -36,6 +36,7 @@ class EditBookmarkModel {
     if (resource != null) {
       data.saveResource(resource!);
     }
+    Navigator.pop(context);
   }
 
   updateTitle() {

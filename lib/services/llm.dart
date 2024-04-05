@@ -61,7 +61,7 @@ class LLM {
 
 
     if (response.statusCode == 200) {
-      var data = jsonDecode(response.body);
+      var data = jsonDecode(response.body,);
       print('got response from mistral');
       print(data);
       String generatedText = data['choices'][0]['message']['content'];

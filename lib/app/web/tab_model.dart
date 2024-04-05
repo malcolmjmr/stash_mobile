@@ -5,15 +5,21 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:stashmobile/app/providers/read_aloud.dart';
+import 'package:stashmobile/app/providers/search.dart';
 import 'package:stashmobile/app/web/js.dart';
 import 'package:stashmobile/app/web/tab.dart';
+import 'package:stashmobile/app/windows/windows_view_model.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 import 'package:stashmobile/constants/color_map.dart';
+import 'package:stashmobile/models/article.dart';
 import 'package:stashmobile/models/chat.dart';
 import 'package:stashmobile/models/resource.dart';
 import 'package:stashmobile/services/hypothesis.dart';
 import 'package:stashmobile/services/llm.dart';
+import 'package:stashmobile/services/search.dart';
 
 class TabViewModel {
  
@@ -22,8 +28,20 @@ class TabViewModel {
   late Resource resource;
   WorkspaceViewModel workspaceModel;
 
-  List<String> queue = [];
+  List<Resource> queue = [];
   bool canGoBack = false;
+  setCanGoBack(bool value) {
+    setState(() {
+      canGoBack = value;
+    });
+  }
+  setCanGoForward(bool value) {
+    setState(() {
+      canGoForward = value;
+    });
+  }
+
+
   bool canGoForward = false;
 
   final TabViewType viewType;
@@ -34,18 +52,19 @@ class TabViewModel {
     if (initialResource != null) {
       resource = initialResource;
       if (initialResource.isQueued == true) {
-        
-        queue = workspaceModel.allResources
+   
+        workspaceQueue = workspaceModel.allResources
           .where((r) => r.isQueued == true 
             && !r.isSaved 
             && (r.created ?? 0) < (resource.created ?? 0)
-          ).map((r) => r.url!).toList();
+          ).toList();
 
         if (queue.isNotEmpty) canGoForward = true;
       }
 
       if (resource.highlights.isNotEmpty) {
         canGoForward = true;
+        //getRelatedContent();
       }
 
       if (viewType == TabViewType.chat) {
@@ -63,6 +82,11 @@ class TabViewModel {
   init(_setState, _context) {
     setState = _setState;
     context = _context;
+    if (resource.highlights.isNotEmpty || (resource.isQueued == true && workspaceModel.hasQueue)) {
+        canGoForward = true;
+        //getRelatedContent();
+    }
+
   }
 
   dispose() {
@@ -90,21 +114,27 @@ class TabViewModel {
       content == null || content.url == null;
  
 
-  WebHistory? history = WebHistory();
+  WebHistory history = WebHistory();
   List<Resource> get backItems {
-    return history?.list?.sublist(0, history?.currentIndex)
+    //print(history.list);
+    if (history.currentIndex == null) return [];
+    return  history.list?.sublist(0, (history.currentIndex ?? 0))
       .map((i) => resources[i.url.toString()] ?? Resource(url: i.url.toString())).toList() ?? [];
   }
 
   List<Resource> get forwardItems {
-    return history?.list?.sublist(history?.currentIndex ?? 0,  history?.list?.length)
-      .map((i) => resources[i.url.toString()] ?? Resource(url: i.url.toString())).toList() ?? [];
+    if (history.currentIndex == null) return [];
+
+    return history.currentIndex != null && ((history.currentIndex!) < (history.list?.length ?? 0))
+      ? history.list?.sublist(history.currentIndex! + 1,  history.list?.length)
+      .map((i) => resources[i.url.toString()] ?? Resource(url: i.url.toString())).toList() ?? []
+      : [];
   }
 
   List<Resource> get queueItems {
-
+    if (queue.isEmpty) return [];
     return queue //.where((url) => forwardHistory.firstWhereOrNull((h) => h.url.toString() != url) == null)
-      .map((url) => workspaceModel.allResources.firstWhere((r) => r.url == url)).toList();
+      .map((queuedResource) => workspaceModel.allResources.firstWhereOrNull((r) => r.url == queuedResource.url) ?? resources[queuedResource.url]!).toList();
 
   }
 
@@ -118,31 +148,54 @@ class TabViewModel {
   toggleShowJourney() {
     setState(() {
       showTabJourney = !showTabJourney;
+      workspaceModel.setShowToolbar(!showTabJourney);
     });
+
+    
   }
 
 
+  Function()? goBackFunction;
+  Function()? goForwardFunction;
+
   goTo(Resource selectedResource) {
-    if (resource.isQueued == true) {
-      controller.loadUrl(urlRequest: URLRequest(url: Uri.parse(selectedResource.url!)));
+    if (selectedResource.isQueued == true) {
+      if (queue.length > 1) {
+        final index = queue.indexWhere((url) => url == selectedResource.url);
+        queue = queue.sublist(index + 1, queue.length - 1);
+      } else {
+        queue = [];
+      }
+      controller.loadUrl(urlRequest: URLRequest(url: WebUri.uri(Uri.parse(selectedResource.url!))));
     } else {
-      controller.goTo(historyItem: history!.list!.firstWhere((item) => item.url.toString() == selectedResource.url));
-      resource = selectedResource;
+      final historyItem = history.list?.firstWhereOrNull((item) => item.url.toString() == selectedResource.url);
+      if (historyItem != null) {
+        controller.goTo(historyItem: historyItem);
+        resource = selectedResource;
+      } else {
+        controller.loadUrl(urlRequest: URLRequest(url: WebUri.uri(Uri.parse(selectedResource.url!))));
+      }
+      
     }
     setState(() {
-      showTabJourney = true;
+      showTabJourney = false;
     });
     
   }
 
 
-  goBack() {
+  goBack({Function()? altFunction}) {
+    if (altFunction != null) {
+      altFunction.call();
+    }
     if (!canGoBack) return;
     HapticFeedback.mediumImpact();
     controller.goBack();
     //resource = 
     // need to move this function to tab model and ensure that previous resource is restored
-    
+    setState(() {
+      showTabJourney = false;
+    });
   }
 
   goToStart() async {
@@ -153,45 +206,36 @@ class TabViewModel {
     if (historyItem != null) {
       controller.goTo(historyItem: historyItem);
     }
+     setState(() {
+      showTabJourney = false;
+    });
   }
 
-    goForward() async {
+  goForward({Function()? altFunction}) async {
+    if (altFunction != null) {
+      altFunction.call();
+    }
     if (!canGoForward) return;
     HapticFeedback.mediumImpact();
     final hasForwardHistoryItem = await controller.canGoForward();
     if (hasForwardHistoryItem) {
       await controller.goForward();
     } else if (queue.isNotEmpty) {
-      final nextItemString = queue.removeAt(0);
-      if (nextItemString.contains('http')) {
-        await controller.loadUrl(
-          urlRequest: URLRequest(
-            url: Uri.parse(nextItemString)
-          )
-        );
-      } else {
-        final resource = workspaceModel.allResources.firstWhereOrNull((r) => r.id == nextItemString);
-        if (resource != null) {
-          await controller.loadUrl(
-            urlRequest: URLRequest(
-              url: Uri.parse(resource.url!)
-            )
-          );
-        }
-      }
+      final nextItem = queue.removeAt(0);
+      await controller.loadUrl(
+        urlRequest: URLRequest(
+          url: WebUri(nextItem.url!)
+        )
+      );
+    } else if (workspaceModel.hasQueue) {
+      queue = workspaceModel.allResources.where((r) => r.isQueued == true).toList();
+      final nextItem = queue.removeAt(0);
+      await controller.loadUrl(
+        urlRequest: URLRequest(
+          url: WebUri(nextItem.url!)
+        )
+      );
     } else {
-
-      /*
-        Options
-        - prompt
-          - current url
-          - recent highlights and keywords
-
-        - view
-        - show exa serp
-        - scrape exa serp
-          - add all items to queue
-      */
 
         String prompt = '';
 
@@ -213,9 +257,13 @@ class TabViewModel {
         
         String url = 'https://exa.ai/search?q=' + Uri.encodeComponent(prompt);
 
-        controller.loadUrl(urlRequest: URLRequest(url: Uri.tryParse(url)));
+        controller.loadUrl(urlRequest: URLRequest(url: WebUri((url))));
     
     }
+
+    setState(() {
+      showTabJourney = false;
+    });
 
   }
 
@@ -229,9 +277,10 @@ class TabViewModel {
       controllerSet = true;
     }
 
-    
+    history  = (await controller.getCopyBackForwardList()) ?? history;
+
+   
     workspaceModel.onTabUpdated(this, controller, uri);
-    history  = await controller.getCopyBackForwardList();
   
 
     scrollX = 0;
@@ -253,6 +302,13 @@ class TabViewModel {
     await addEventHandlers(context);
     await addAnnotationFunctions();
     await getAnnotations();
+    resources[resource.url!] = resource;
+    
+  }
+
+  onUpdateVisitedHistory(InAppWebViewController controller, WebUri? url, bool? isReloaded) async {
+    print('updating visit history');
+    history  = (await controller.getCopyBackForwardList()) ?? history;
   }
 
   Future<void>? getSummary() async {
@@ -386,12 +442,16 @@ class TabViewModel {
 
   addEventHandlers(BuildContext context) {
     controller.addJavaScriptHandler(
+      handlerName: 'onTouchStart',
+      callback: onTouchStart,
+    );
+    controller.addJavaScriptHandler(
       handlerName: 'onLinkSelected',
       callback: onLinkSelected,
     );
     controller.addJavaScriptHandler(
-      handlerName: 'onDocumentBodyClicked',
-      callback: onPageClicked,
+      handlerName: 'onLinkLongPress',
+      callback: onLinkLongPress,
     );
     controller.addJavaScriptHandler(
       handlerName: 'onDocumentBodyDoubleClicked',
@@ -403,10 +463,6 @@ class TabViewModel {
       callback: onTextSelection,
     );
 
-    controller.addJavaScriptHandler(
-      handlerName: 'onLinkClicked',
-      callback: onLinkClicked,
-    );
     controller.addJavaScriptHandler(
       handlerName: 'onScrollEnd',
       callback: onScrollEnd,
@@ -492,14 +548,11 @@ class TabViewModel {
 
   }
 
-  onLinkClicked(args) {
-    print('link clicked');
+  onLinkLongPress(args) { 
     final title = args[0];
-    final url = args[0];
-  }
-
-  onLinkLongPress(args) {
-    print('link long pressed');
+    final url = args[1];
+    HapticFeedback.mediumImpact();
+    workspaceModel.createNewTab(url: url);
   }
 
   onLinkSelected(args) {
@@ -512,19 +565,19 @@ class TabViewModel {
   }
 
   onTextSelection(args) {
-
     final text = args[0] as String;
-    if (text.isNotEmpty)
-    workspaceModel.showTextSelectionModal(text);
+    if (text.isEmpty) return;
+
+   if (workspaceModel.selectedHighlight != null && text.split(' ').length <= 2) {
+      workspaceModel.selectedText = text;
+      workspaceModel.tagTabWithSelectedText();
+    } else {
+      workspaceModel.showTextSelectionModal(text);
+    }
+
   }
 
-  onPageClicked(args) {
-    workspaceModel.onTabContentClicked();
-    checkIfUrlOrTitleHaveChanged();
-    if (workspaceModel.isInEditMode) {
-      removeLastClickedElement();
-    }
-  }
+
 
   onPageDoubleClicked(args) {
     workspaceModel.setShowToolbar(!workspaceModel.showToolbar);
@@ -629,16 +682,115 @@ class TabViewModel {
   }
 
   onDocumentContent(args) async {
-    print('got document content');
-    print(JsonEncoder.withIndent(' ').convert(args[0]));
+    resource.article = Article.fromWebView(args[0]);
+    final readAloud = context.read(readAloudProvider);
+    
+    if (readAloud.isPlaying && readAloud.tabModel == this) {
+      readAloud.stop();
+      readAloud.play(model: this);
+    }
   }
 
   String messageText = '';
 
   
-  
+
+  stopLoading() async {
+    await controller.stopLoading();
+    //onWebsiteLoadStop(context, controller, null);
+  }
+
+   getRelatedContent({String? searchText, bool searchUrl = false}) {
+
+    SearchServices search = context.read(searchProvider);
+    if (resource.url != null || searchText != null) {
+      search.getRelatedContent(
+        prompt: searchText,
+        resource: resource, 
+        workspaceModel: workspaceModel
+      );
+    } else {
+      workspaceModel.createNewTab(url: search.getExaSearchUrlforResource(resource: resource));
+    }
+  }
+
+  List<Resource> relatedResources = [];
+  addResourcesToQueue(List<Resource> _resources) {
+
+    /*
+      remove duplicates
+      rank duplicated resources higher
+
+    */  
+    List<Resource> resourcesToAdd = [];
+    for (final r in _resources) {
+      final resource = resources[r.url!];
+      if (resource != null) {
+        
+      } else {
+        if (resources.values.firstWhereOrNull((_r) => _r.title == r.title) == null) {
+          resourcesToAdd.add(r);
+          resources[r.url!] = r;
+        }
+        
+      }
+      
+    }
+    
+    setState(() {
+      queue = [
+        ...queue.where((r) => r.isQueued == true),
+        ...resourcesToAdd,  
+        ...queue.where((r) => r.isQueued != true)
+      ];
+    });
+
+    // if (!showTabJourney) {
+    //   goForward();
+    // }
+  }
+
+  navigateToSection(int sectionIndex) {
+    controller.evaluateJavascript(source: JS.scrollToSection(sectionIndex));
+  }
+
+  onTouchStart(args) {
+    workspaceModel.onTabContentClicked();
+    checkIfUrlOrTitleHaveChanged();
+    if (workspaceModel.isInEditMode) {
+      removeLastClickedElement();
+    }
+    final windows = context.read(windowsProvider);
+    if (windows.isScrollable) {
+      windows.setIsScrollable(false);
+    }
+  }
+
+  List<Resource> tabQueue = [];
+  List<Resource> suggestionQueue = [];
+  List<Resource> workspaceQueue = [];
+
+  removeItem(Resource resource) {
+
+    setState(() {
+      if (resource.isSuggestion) {
+        suggestionQueue.removeWhere((s) => s.id == resource.id);
+        suggestionQueue = suggestionQueue;
+      }
+    });
+  }
+
+  addItemToQueue(Resource resource) {
+    setState(() {
+      suggestionQueue.removeWhere((s) => s.id == resource.id);
+      tabQueue.removeWhere((s) => s.id == resource.id);
+
+      tabQueue.add(resource);
+
+    });
+  }
+
+  List<Prompt> suggestedPrompts = [];
 
 
-
-  
 }

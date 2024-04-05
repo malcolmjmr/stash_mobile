@@ -106,12 +106,15 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    
     return SafeArea(
       child: !model.isLoading
         ? Scaffold(
             backgroundColor: Colors.black,
             body: Container(
+
               decoration: BoxDecoration(
+                color: Colors.black,
                 border: Border.symmetric(vertical: BorderSide(color: HexColor.fromHex('222222'), width: .5))
               ),
               child: IndexedStack(
@@ -136,7 +139,7 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
             children: [
               KeyboardVisibilityBuilder(
                 builder: (context, isVisible) => isVisible 
-                  ? Container()
+                  ? Container(color: Colors.black,)
                   : WorkspaceHeader(model: model)
               ),
 
@@ -150,18 +153,17 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
                   )
                 ),
               ),
+
               KeyboardVisibilityBuilder(
                 builder: (context, isVisible) {
-                  return isVisible ? Container() : TabBottomBar(model: model);
+                  return isVisible ? Container(color: Colors.black,) : TabBottomBar(model: model);
                 }
-              )
-                
-
+              ),
+              
             ],
           ),
           if (model.showFindInPage)
           FindInPage(model: model),
-
         ],
       ),
     );
@@ -349,7 +351,7 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
           titleSpacing: 0,
         ),
 
-        if (model.resourceView == ResourceView.tagged) 
+        if (model.visibleTags.isNotEmpty && model.view != ResourceView.folders && model.view != ResourceView.queue)
         SliverToBoxAdapter(
           child: _buildTags(),
         ),
@@ -421,7 +423,7 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
       if (model.hasSavedResources)
       _buildListOption(
         icon: Symbols.history,
-        text: 'History',
+        text: 'Recent',
         view: ResourceView.history,
       ),
       if (model.hasFavorites)
@@ -435,12 +437,6 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
         icon: Symbols.folder_rounded,
         text: 'Folders', 
         view: ResourceView.folders,
-      ),
-      if (model.hasTags)
-      _buildListOption(
-        icon: Symbols.sell,
-        text: 'Tagged', 
-        view: ResourceView.tagged,
       ),
       if (model.hasQueue)
       _buildListOption(
@@ -835,7 +831,7 @@ class TabWebViewsContainer extends StatelessWidget {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(10),
                   child: InAppWebView(
-                    initialUrlRequest: URLRequest(url: Uri.parse(tab.url!)),
+                    initialUrlRequest: URLRequest(url: WebUri(tab.url!)),
                   ),
                 ),
               ),

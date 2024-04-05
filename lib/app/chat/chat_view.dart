@@ -1,7 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:stashmobile/app/chat/chat_view_model.dart';
 import 'package:stashmobile/app/chat/default_prompts.dart';
 import 'package:stashmobile/app/modals/text_selection/text_selection_modal.dart';
@@ -62,7 +66,7 @@ class _ChatViewState extends State<ChatView> {
           GestureDetector(
             onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
             child: model.chat.messages.isEmpty 
-              ? _buildBackground() // _buildPromptScreen()
+              ? _buildBackground()
               : _buildMessages(),
           ),
           if (!model.workspaceModel.showTextSelectionMenu)
@@ -103,32 +107,45 @@ class _ChatViewState extends State<ChatView> {
   Widget _buildPromptScreen() {
 
     return Container(
-      child: Wrap(
-        children: defaultPrompts.map((prompt) {
-          return GestureDetector(
-            onTap: () => model.sendMessageWithPrompt(prompt),
+      height: MediaQuery.of(context).size.height,
+      width: MediaQuery.of(context).size.width,
+      child: ListView.builder(
+        itemCount: model.questionPrompts.length,
+        itemBuilder: (context, index) {
+          final resource = model.questionPrompts[index];
+          return Padding(
+            padding: const EdgeInsets.all(8.0),
             child: Container(
+              // Need to extract the 
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                color: HexColor.fromHex('222222')
+                color: HexColor.fromHex('333333'),
+                borderRadius: BorderRadius.circular(8)
               ),
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Text(prompt.symbol ?? prompt.name),
+                child: GestureDetector(
+                  onTap: () { print(resource.highlights.firstWhere((h) => h.hasQuestion).toJson()); },
+                  child: Text(resource.highlights.firstWhere((h) => h.hasQuestion).question,
+                  ),
+                ),
               ),
             ),
           );
-        }).toList(),
-      ),
+        }
+      )
     );
   }
 
   Widget _buildMessages() {
     final messages = widget.tabModel.resource.chat!.messages;
+
     return Container(
       //color: Colors.amber,
       width: MediaQuery.of(context).size.width,
-      child: ListView.builder(
+      child: ScrollablePositionedList.builder(
+        scrollOffsetListener: model.scrollOffsetListener,
+        itemScrollController: model.scrollController,
+        itemPositionsListener: model.itemPositionsListener,
         itemCount: messages.length + 1,
         itemBuilder: (context, index) {
           
@@ -226,10 +243,8 @@ class _ChatViewState extends State<ChatView> {
                     border: InputBorder.none,
                     
                   ),
-                  
-                  onChanged: (value) {
-                    widget.tabModel.messageText = value;
-                  },
+
+                  onChanged: model.onMessageTextChanged,
                   // onSubmitted: (value) {
                   //   tabModel.submitMessage(value);
                   // },
@@ -237,19 +252,29 @@ class _ChatViewState extends State<ChatView> {
               ),
             ),
             GestureDetector(
-              onTap: model.submitMessage,
+              onLongPressStart: model.startSpeechToText,
+              onLongPressEnd: model.stopSpeechToText,
+              onTap: model.messageController.text.isNotEmpty 
+                ? model.submitMessage
+                : null,
               child: Padding(
-                padding: const EdgeInsets.only(left: 8.0),
+                padding: const EdgeInsets.only(left: 8.0, bottom: 4, right: 3),
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(100),
-                    color: HexColor.fromHex(widget.tabModel.workspaceModel.workspaceHexColor),
+                    color: model.messageController.text.isNotEmpty 
+                      ? HexColor.fromHex(widget.tabModel.workspaceModel.workspaceHexColor)
+                      : HexColor.fromHex('333333'),
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(4.0),
-                    child: Icon(Symbols.arrow_upward_alt_rounded,
-                      color: Colors.black,
-                    
+                    child: Icon(model.messageController.text.isEmpty 
+                        ? Symbols.mic_rounded
+                        : Symbols.arrow_upward_alt_rounded,
+                      color: model.messageController.text.isEmpty 
+                        ? Colors.white
+                        : Colors.black,
+                       
                     ),
                   ),
                 ),
@@ -262,8 +287,16 @@ class _ChatViewState extends State<ChatView> {
   }
 
   _buildPromptSuggestions() {
-    
-    return Container(
+    // todo: add prompt suggestions from previous prompt
+
+    final prompts = model.tabModel.suggestedPrompts.isNotEmpty
+      ? model.tabModel.suggestedPrompts
+      : model.chat.messages.length <= 1
+        ? defaultPrompts
+        : [];
+    return prompts.isEmpty 
+    ? Container()
+    : Container(
       height: 45,
       width: MediaQuery.of(context).size.width,
       child: Padding(
@@ -271,14 +304,16 @@ class _ChatViewState extends State<ChatView> {
         child: ListView.builder(
           shrinkWrap: true,
           scrollDirection: Axis.horizontal,
-          itemCount: defaultPrompts.length,
+          itemCount: model.tabModel.suggestedPrompts.length,
           itemBuilder: (context, index) {
-            final prompt =  defaultPrompts[index];
+            final prompt =  model.tabModel.suggestedPrompts[index];
             return GestureDetector(
               onTap: () {
-                model.messageController.text = prompt.text;
+                model.setMessageText(prompt.text);
               },
-              onLongPress: () => model.sendMessageWithPrompt(prompt),
+              onLongPress: () {
+                model.setMessageText(model.messageController.text + '\n' + prompt.text);
+              },
               child: Center(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 10.0),
@@ -289,7 +324,7 @@ class _ChatViewState extends State<ChatView> {
                     ),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 5),
-                      child: Text(prompt.symbol ?? prompt.name,
+                      child: Text(utf8.decode(prompt.symbol!.codeUnits) ?? prompt.name,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 18,
@@ -325,6 +360,7 @@ class MessageView extends StatelessWidget {
     if (message.role == Role.system) {
       return Container();
     }
+    final textSplit = message.text!.split('\n');
   return Container(
     color: message.role == Role.assistant 
       ? HexColor.fromHex('222222') 
@@ -340,7 +376,18 @@ class MessageView extends StatelessWidget {
             ? EdgeInsets.only(left: 8) 
             : EdgeInsets.all(0),
           child: message.text  != null
-            ? SelectableText(message.text!,
+            ? SelectableText.rich(TextSpan(
+                children: textSplit.map((text) {
+                  final index = textSplit.indexOf(text);
+                  return TextSpan(
+                    text: (index > 0 ? '\n' : '') + text,
+                    recognizer: TapGestureRecognizer()
+                      ..onTapDown = ((details) => model.onTextTapDown(text))
+                      ..onTapUp = (detail) => model.onTextTapUp(text)
+                      
+                  );
+                }).toList()
+              ),
               onSelectionChanged: (selection, cause) => model.onSelectionChanged(message.text!, selection, cause),
               style: TextStyle(
                   fontSize: 16

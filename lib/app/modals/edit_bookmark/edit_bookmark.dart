@@ -124,10 +124,13 @@ class _EditBookmarkModalState extends State<EditBookmarkModal> {
           child: Column(
             children: [
               _buildTitle(),
+
+              if (model.resource?.url != null)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 5.0),
                 child: Container(width: double.infinity, height: 2, color: HexColor.fromHex('444444'),),
               ),
+              if (model.resource?.url != null)
               _buildLinkInfo(),
              
               
@@ -167,7 +170,11 @@ class _EditBookmarkModalState extends State<EditBookmarkModal> {
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
             child: model.resource != null
-            ? FavIcon(resource: model.resource!, size: 27,)
+            ? model.resource!.chat != null
+              ? Icon(Symbols.forum_rounded, size: 28,)
+              : model.resource!.note != null 
+                ? Icon(Symbols.edit_document_rounded, size: 28,)
+                : FavIcon(resource: model.resource!, size: 27,)
             : Icon(Icons.folder_rounded, 
                 color: HexColor.fromHex(colorMap[model.space!.color ?? 'grey']!)
               ),

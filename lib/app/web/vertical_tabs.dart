@@ -1,20 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:page_transition/page_transition.dart';
+import 'package:stashmobile/app/providers/read_aloud.dart';
+import 'package:stashmobile/app/read_aloud/player_view.dart';
 import 'package:stashmobile/app/web/tab_edit_modal.dart';
 import 'package:stashmobile/app/web/tab_label.dart';
 import 'package:stashmobile/app/workspace/workspace_view_model.dart';
 import 'package:stashmobile/extensions/color.dart';
 import 'package:stashmobile/models/resource.dart';
 
-class VeritcalTabs extends StatelessWidget {
+class VertcalTabs extends StatelessWidget {
 
   final WorkspaceViewModel workspaceModel;
-  const VeritcalTabs({Key? key, required this.workspaceModel}) : super(key: key);
+  const VertcalTabs({Key? key, required this.workspaceModel}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     workspaceModel.tabPageController = PageController(initialPage: workspaceModel.workspace.activeTabIndex!);
-  
+
     
     return Column(
         children: [
@@ -32,15 +35,21 @@ class VeritcalTabs extends StatelessWidget {
                       isLastListItem: true,
                       model: workspaceModel, 
                       resource: tab.model.resource, 
+
                       onTap: () {
+
+                        if (tab.model.resource.url == null) return;
+                        
                         Navigator.push(context, 
                           PageTransition<dynamic>(
                             type: PageTransitionType.bottomToTop,
                             curve: Curves.easeInExpo,
-                            child: TabEditModal(
-                              tab: tab.model.resource,
-                              workspaceModel: workspaceModel,
-                            ),
+                            child: context.read(readAloudProvider).isPlaying
+                              ? PlayerView()
+                              : TabEditModal(
+                                tab: tab.model.resource,
+                                workspaceModel: workspaceModel,
+                              ),
                             fullscreenDialog: true,
                           )
                         );

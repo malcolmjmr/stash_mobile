@@ -19,7 +19,7 @@ class SectionHeader extends StatelessWidget {
       padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 10.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.baseline,
+        crossAxisAlignment: CrossAxisAlignment.center,
         textBaseline: TextBaseline.alphabetic,
         children: [
           Row(

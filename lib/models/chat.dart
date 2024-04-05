@@ -6,7 +6,7 @@ class Chat {
   List<Message> messages = [];
   String? parentId;
 
-  Chat({String? selectedText, this.parentId}){
+  Chat({String? selectedText, this.parentId, this.messages = const []}){
     created = DateTime.now().millisecondsSinceEpoch;
 
     if (selectedText != null && selectedText.isNotEmpty)  {
@@ -38,8 +38,11 @@ class Chat {
 class Message {
   late int created;
 
+  List<String> responses = [];
+
   List<MessageContent> content = [];
-  late String role;
+
+  String role = Role.user;
   String? get text {
     return content.firstWhereOrNull((c) => c.type == ContentType.text)?.text;
   }
@@ -71,21 +74,42 @@ class Message {
     created = DateTime.now().millisecondsSinceEpoch;
   }
 
+  Message.fromMultipleModels(_responses) {
+    created = DateTime.now().millisecondsSinceEpoch;
+    role = Role.assistant;
+    responses = responses;
+    content = [MessageContent(text: responses[0])];
+  }
+
   Message.fromJson(Map<String, dynamic> json) {
-    created = json['created'];
-    content = json['content'];
+    created = json['created'] ?? DateTime.now().millisecondsSinceEpoch;
+    content = json['content'] != null 
+      ? List<MessageContent>.from(json['content'].map((m) => MessageContent.fromJson(m))) 
+      : [];
+    role = json['role'];
   }
 
   Message.text({String? text, this.role = Role.user, bool isTextSelection = false}){
+    created = DateTime.now().millisecondsSinceEpoch;
     content = [MessageContent(text: text, isTextSelection: isTextSelection)];
   }
 
 
-  Map<String, dynamic> toJson({bool forRequest = false}) {
+  Map<String, dynamic> toJson({bool forRequest = false, bool basicSchema = true}) {
     Map<String, dynamic> json = {
-      'content': content.map((c) => c.toJson(forRequest: forRequest)).toList(),
+
+      'content': forRequest && basicSchema
+        ? content.map((c) => c.text ?? '').join('\n')
+        : content.map((c) => c.toJson(forRequest: forRequest)).toList(),
       'role': role,
     };
+
+    if (!forRequest) {
+      json = {
+        ...json,
+        'created': created,
+      };
+    }
     
     json.removeWhere((key, value) => value == null || value == [] || value == 0 || value == "" || value == false);
     return json;
@@ -114,7 +138,7 @@ class MessageContent {
   MessageContent.fromJson(Map<String, dynamic> json) {
     imageUrl = json['imageUrl'] != null ? ImageUrl(json['imageUrl']) : null;
     text = json['text'];
-    isTextSelection = json['isTextSelection'];
+    isTextSelection = json['isTextSelection'] == true;
     resourceId = json['resourceId'];
   }
 

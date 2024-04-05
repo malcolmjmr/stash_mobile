@@ -37,6 +37,8 @@ class WindowsViewModel extends ChangeNotifier {
   DataManager data;
   int activeWindowIndex = 0;
 
+ 
+
   WindowsViewModel({
     required this.data,
     required this.read,
@@ -132,5 +134,12 @@ class WindowsViewModel extends ChangeNotifier {
     //   activeWindow.model.openTabEditModal();
     // }
   }
+
+   bool isScrollable = false;
+
+   setIsScrollable(bool value) {
+    isScrollable = value;
+    notifyListeners();
+   }
 }
   

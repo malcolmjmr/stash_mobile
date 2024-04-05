@@ -16,7 +16,7 @@ class TabPreviewModal extends StatelessWidget {
         height: MediaQuery.of(context).size.height * .66,
         //width: MediaQuery.of(context).size.width * .9,
         child: InAppWebView(
-          initialUrlRequest: URLRequest(url: Uri.parse(resource.url!)),
+          initialUrlRequest: URLRequest(url: WebUri.uri( Uri.parse(resource.url!))),
         ),
       ),
     );

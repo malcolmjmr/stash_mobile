@@ -1,7 +1,9 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:stashmobile/app/home/background_search.dart';
 import 'package:stashmobile/app/home/home_view.dart';
 import 'package:stashmobile/app/providers/provider_observer.dart';
+import 'package:stashmobile/app/providers/speech_to_text.dart';
 import 'package:stashmobile/app/sign_in/email_password_sign_in_page.dart';
 import 'package:stashmobile/app/splash_screen.dart';
 import 'package:stashmobile/app/windows/windows_view.dart';
@@ -13,17 +15,16 @@ import 'package:stashmobile/app/authentication/auth_widget.dart';
 import 'package:stashmobile/app/authentication/firebase_providers.dart';
 
 /*
-
   Todo: 
-
   - search within space
-
+  - 
 */
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   final sharedPreferences = await SharedPreferences.getInstance();
+
   runApp(ProviderScope(
     observers: [Logger()],
     overrides: [
@@ -41,6 +42,8 @@ class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, ScopedReader watch) {
     final firebaseAuth = watch(firebaseAuthProvider);
+     watch(speechProvider).initialize();
+     print('building app');
     return MaterialApp(
       theme: ThemeData.dark(),
       debugShowCheckedModeBanner: false,
@@ -53,6 +56,7 @@ class MyApp extends ConsumerWidget {
             children: [
               HomeView(),
               WindowsView(),
+              BackgroundTab(),
             ],
           ),
         ),
