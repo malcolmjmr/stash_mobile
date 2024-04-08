@@ -207,27 +207,33 @@ class ResourceListItem extends StatelessWidget {
     final highlights = resource.highlights
       .where((h) {
         final text = h.text.toLowerCase();
-        return selectedTagNames.any((t) => text.contains(t.substring(0, min(t.length, 4)).toLowerCase()));
+        return selectedTagNames.every((t) => text.contains(t.substring(0, min(t.length, 4)).toLowerCase()));
       });
-    return Container(
-      width: MediaQuery.of(context).size.width,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: highlights.map((h) {
-            return GestureDetector(
-              onTap: () => model.openResource(context, resource, highlightId: h.id),
-              onDoubleTap: () => model.searchSelectedText(text: h.text),
-              child: Container(
-                child: Text(h.text,
-                  maxLines: 50,
-                  style: TextStyle(
-                    fontSize: 16
+    return Padding(
+      padding: const EdgeInsets.only(top: 8.0),
+      child: Container(
+        width: MediaQuery.of(context).size.width,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: highlights.map((h) {
+              return GestureDetector(
+                onTap: () => model.openResource(context, resource, highlightId: h.id),
+                onDoubleTap: () => model.searchSelectedText(text: h.text, openInNewTab: true),
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Container(
+                    child: Text(h.text,
+                      maxLines: 50,
+                      style: TextStyle(
+                        fontSize: 16
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            );
-          }).toList()
-      )
+              );
+            }).toList()
+        )
+      ),
     );
   }
 
@@ -250,35 +256,39 @@ class ResourceListItem extends StatelessWidget {
   Widget _buildTags(BuildContext context) {
 
     final selectedTagNames = model.selectedTags.map((t) => t.name).toList();
-    final tags = resource.tags.where((tag) => selectedTagNames.contains(tag.toLowerCase())).toList();
+    final tags = resource.tags.where((tag) => !selectedTagNames.contains(tag.toLowerCase())).toList();
     return tags.isEmpty 
       ? Container() 
-      : Container(
-        height: 30,
-        width: MediaQuery.of(context).size.width,
-        child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: tags.length + 1,
-            itemBuilder: (context, index) {
-              if (index == 0) {
-                return Padding(
-                  padding: const EdgeInsets.only(left: 40),
-                );
-              } else {
-                final tag = Tag(name: tags[index - 1]);
-                return Padding(
-                  padding: const EdgeInsets.only(top: 5, right: 8.0),
-                  child: TagChip(
-                    tag: tag, 
-                    onTap: () => model.searchSelectedTags(tag: tag),
-                    onDoubleTap: () => model.searchSelectedTags(tag: tag, isSemantic: true),
-                  ),
-
-                );
+      : Padding(
+        padding: const EdgeInsets.only(bottom: 3.0),
+        child: Container(
+          height: 35,
+          width: MediaQuery.of(context).size.width,
+          child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: tags.length + 1,
+              itemBuilder: (context, index) {
+                if (index == 0) {
+                  return Padding(
+                    padding: const EdgeInsets.only(left: 2),
+                  );
+                } else {
+                  final tag = Tag(name: tags[index - 1]);
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 5, right: 8.0),
+                    child: TagChip(
+                      tag: tag, 
+                      onTap: () => model.toggleTagSelection(tag),
+                      onDoubleTap: () => model.searchSelectedTags(tag: tag),
+                      onLongPress: () => model.searchSelectedTags(tag: tag, isSemantic: true),
+                    ),
+        
+                  );
+                }
+                
               }
-              
-            }
-          ),
+            ),
+        ),
       );
     
   }

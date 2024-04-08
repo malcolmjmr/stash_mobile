@@ -553,6 +553,8 @@ class WorkspaceViewModel extends ChangeNotifier {
         }
       }
 
+      
+
       print('finished iterating through resources');
 
       if (tempResources.isEmpty && selectedTags.isNotEmpty) {
@@ -564,7 +566,9 @@ class WorkspaceViewModel extends ChangeNotifier {
       visibleResources = tempResources;
       List<Tag> sortedTags = tempTags.values.where((t) => view == ResourceView.history ? t.valueCount == 2 : t.valueCount > 1).toList();
       
-      
+      if (selectedTags.isNotEmpty && sortedTags.isEmpty) {
+        sortedTags = selectedTags;
+      }
       sortedTags.sort(sortTags);
       
       
@@ -1042,6 +1046,7 @@ class WorkspaceViewModel extends ChangeNotifier {
   
   closeSelectedTabs() {
     setState(() {
+      if (selectedResources.isNotEmpty) selectedResources = [];
       tabs.removeWhere((t) => selectedResources.contains(t.model.resource.id));
       if (workspace.activeTabIndex == tabs.length) {
         workspace.activeTabIndex == tabs.length - 1;
@@ -1094,7 +1099,7 @@ class WorkspaceViewModel extends ChangeNotifier {
   }
 
 
-  searchSelectedText({String? text, bool openInNewTab = true}) {
+  searchSelectedText({String? text, bool openInNewTab = false}) {
 
     TabView currentTab = tabs[workspace.activeTabIndex!];
     currentTab.model.clearSelectedText();
@@ -1110,7 +1115,12 @@ class WorkspaceViewModel extends ChangeNotifier {
 
     String url = '';
     if (selectedText!.length  > 30 || selectedText!.split('.').length > 1) {
-     currentTab.model.getRelatedContent(searchText: selectedText);
+      if (openInNewTab) {
+        createNewTab(url: context.read(searchProvider).getExaSearchUrlforResource(prompt: selectedText));
+      } else {
+        currentTab.model.getRelatedContent(searchText: selectedText);
+      }
+     
     } else {
       url = 'https://www.google.com/search?q=' + Uri.encodeComponent(selectedText!);
       if (currentTab.model.viewType == TabViewType.web) {
@@ -1118,6 +1128,12 @@ class WorkspaceViewModel extends ChangeNotifier {
       } else {
         createNewTab(url: url);
       }
+    }
+    if (text != null) {
+      setState(() {
+        selectedText = null;
+      });
+      
     }
   }
 

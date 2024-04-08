@@ -42,8 +42,8 @@ class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, ScopedReader watch) {
     final firebaseAuth = watch(firebaseAuthProvider);
-     watch(speechProvider).initialize();
-     print('building app');
+    watch(speechProvider).initialize();
+    
     return MaterialApp(
       theme: ThemeData.dark(),
       debugShowCheckedModeBanner: false,

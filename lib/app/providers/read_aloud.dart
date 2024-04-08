@@ -34,7 +34,7 @@ class ReadAloudController extends ChangeNotifier {
       IosTextToSpeechAudioCategoryOptions.mixWithOthers
     ], IosTextToSpeechAudioMode.spokenAudio);
 
-    tts.setCompletionHandler(playNextSection);
+    //tts.setCompletionHandler(playNextSection);
   }
 
   double speechRate = 0.6;
@@ -88,7 +88,10 @@ class ReadAloudController extends ChangeNotifier {
     notifyListeners();
   }
 
-  play({TabViewModel? model}) async {
+  play({TabViewModel? model, bool stopPrevious = false}) async {
+    if (stopPrevious) {
+      await tts.stop();
+    }
     tabModel = model;
     if (!tabModel!.workspaceModel.isPlayingJourney){
       tabModel!.workspaceModel.setIsPlayingJourney(true);
@@ -104,7 +107,6 @@ class ReadAloudController extends ChangeNotifier {
   playNextSection() async {
 
     Article? article = tabModel?.resource.article;
-    print(article?.currentSection?.text);
 
     bool stillPlaying() {
       
@@ -138,9 +140,9 @@ class ReadAloudController extends ChangeNotifier {
         article.place += 1;
         final shouldNavigateToSection = tabModel!.workspaceModel.showWebView;
         if (shouldNavigateToSection) tabModel!.navigateToSection(article.place);
-        // Timer(Duration(milliseconds: 500), () {
-        //   playNextSection();
-        // });
+        Timer(Duration(milliseconds: 200), () {
+          playNextSection();
+        });
         
       } else {
 
@@ -149,15 +151,14 @@ class ReadAloudController extends ChangeNotifier {
           notifyListeners();
           tts.speak(textToRead);
           isPlaying = false;
-          // Timer(Duration(seconds: 2), () {
-          //   tabModel!.goForward();
-          // });
+          if (tabModel!.canGoForward) {
+            Timer(Duration(seconds: 2), () {
+            tabModel!.goForward();
+          });
+          }
         });
       }
-    }
-
-
-    
+    } 
   }
 
   getContentArticle() {}

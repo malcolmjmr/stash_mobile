@@ -210,7 +210,7 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
           foregroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
           expandedHeight: 0,
-          toolbarHeight: 52,
+          toolbarHeight: 50,
           forceMaterialTransparency: true,
           titleSpacing: 0,
         ),
@@ -295,7 +295,7 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
         SliverToBoxAdapter(
           
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10.0),
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: Center(
               child: Wrap(
                 runAlignment: WrapAlignment.spaceBetween,
@@ -637,17 +637,8 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
+    
       children: [
-        FooterIcon(
-            padding: EdgeInsets.symmetric(vertical: 5, horizontal: 20),
-            onTap: () => model.clearTabs(),
-            icon: Symbols.tab_close,
-            color: color, 
-            size: 30,
-          )
-   
-        ,
-        _buildResourceCounts(context, model),
         FooterIcon(
           padding: EdgeInsets.symmetric(vertical: 5, horizontal: 20),
           onTap: model.createNewTab,
@@ -655,6 +646,16 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
           color: color, 
           size: 30
         ),
+   
+        _buildResourceCounts(context, model),
+
+        FooterIcon(
+          padding: EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+          onTap: () => model.clearTabs(),
+          icon: Symbols.tab_close,
+          color: color, 
+          size: 30,
+        )
       ]
     );
   }
@@ -687,15 +688,12 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
           color: color,
           size: 25,
         ),
-
         FooterIcon(
-          
           onTap: model.createChat,
           icon: Symbols.forum_rounded, 
           color: color, 
           size: 25
         ),
-
         FooterIcon(
           onTap: model.createNewTab,
           icon: Symbols.add_box, 
@@ -739,6 +737,7 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
   }
 
   Widget _buildSelectionFooter() {
+    final color = HexColor.fromHex(model.workspaceHexColor);
     return Container(
       decoration: BoxDecoration(
         border: Border(top: BorderSide(color: HexColor.fromHex('222222')))
@@ -761,6 +760,7 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
                   padding: const EdgeInsets.only(left: 15, top: 5, bottom: 5, right: 10),
                   child: Text('Move',
                     style: TextStyle(
+                      color: color,
                       fontSize: 20
                     ),
                   ),
@@ -777,7 +777,8 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   child: Text('Save',
                     style: TextStyle(
-                      fontSize: 20
+                      fontSize: 20,
+                      color: color,
                     ),
                   ),
                 )
@@ -788,7 +789,8 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
                   padding: EdgeInsets.only(top: 5, bottom: 5, left: 10, right: 15),
                   child: Text('Close', 
                     style: TextStyle(
-                      fontSize: 20
+                      fontSize: 20,
+                      color: color,
                     ),
                   ),
                 )
@@ -948,7 +950,7 @@ class WorkspaceHeader extends StatelessWidget {
         padding: EdgeInsets.only(
           left: 12.0, 
           right: 12.0, 
-          top: model.workspace.showWebView ? 10 :  16, 
+          top: model.workspace.title != null ? 14 : 10, 
           bottom: 10
         ),
         child: model.selectedResources.isNotEmpty
@@ -1039,27 +1041,33 @@ class WorkspaceHeader extends StatelessWidget {
 
 
   Widget _buildSelectionHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text('${model.selectedResources.length} Selected', 
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w400,
-            color: Colors.white,
-          ),
-        ),
-        GestureDetector(
-          onTap: () => model.cancelTabSelection(),
-          child: Text('Cancel',
-          
+    return Container(
+      color: Colors.black,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text('${model.selectedResources.length} Tab${model.selectedResources.length > 1 ? 's': ''} Selected', 
             style: TextStyle(
-              fontSize: 14,
-              color: Colors.white.withOpacity(0.7)
+              fontSize: 24,
+              fontWeight: FontWeight.w400,
+              color: Colors.white,
             ),
           ),
-        )
-      ],
+          GestureDetector(
+            onTap: () => model.cancelTabSelection(),
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text('Cancel',
+              
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.amber//.withOpacity(0.7)
+                ),
+              ),
+            ),
+          )
+        ],
+      ),
     );
   }
 }

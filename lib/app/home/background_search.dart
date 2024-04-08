@@ -7,6 +7,7 @@ class BackgroundTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, ScopedReader watch) {
+    print('building background tab');
     final search = watch(searchProvider);
     return search.webView;
   }

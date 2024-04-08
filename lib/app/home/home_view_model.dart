@@ -34,8 +34,8 @@ class HomeViewModel with ChangeNotifier {
     load();
   }
 
+
   load() async {
-    _setLoading(true);
     await refreshData();
   }
 
@@ -77,7 +77,7 @@ class HomeViewModel with ChangeNotifier {
   }
 
 
-  bool isLoading = false;
+  bool isLoading = true;
   dynamic error;
 
   _setLoading(bool value){
