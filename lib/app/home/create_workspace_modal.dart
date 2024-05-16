@@ -56,7 +56,7 @@ class _CreateWorkspaceModalState extends State<CreateWorkspaceModal> {
     return Material(
       type: MaterialType.transparency,
       child: Container(
-        height: 500,
+        height: MediaQuery.of(context).size.height,
         width: double.infinity,
         decoration: BoxDecoration(
           color: HexColor.fromHex('222222'),
@@ -69,7 +69,8 @@ class _CreateWorkspaceModalState extends State<CreateWorkspaceModal> {
           mainAxisSize: MainAxisSize.max,
           children: [
             _buildHeader(),
-            _buildInputField(),
+            _buildTitleField(),
+            
             ColorSelector(
               workspace: workspace, 
               onColorSelected: (color) {
@@ -77,7 +78,9 @@ class _CreateWorkspaceModalState extends State<CreateWorkspaceModal> {
                   workspace.color = color;
                 });
               }
-            )
+            ),
+            _buildGoalField(),
+
           ])
       ),
     );
@@ -122,7 +125,7 @@ class _CreateWorkspaceModalState extends State<CreateWorkspaceModal> {
     );
   }
 
-  Widget _buildInputField() {
+  Widget _buildTitleField() {
 
     return Padding(
       padding: const EdgeInsets.all(8.0),
@@ -141,39 +144,50 @@ class _CreateWorkspaceModalState extends State<CreateWorkspaceModal> {
                   controller: textController,
                   autofocus: true,
                   decoration: InputDecoration(
-                    hintText: 'New Space',
+                    hintText: 'Enter space name',
                     border: InputBorder.none,
                     
                   ),
                   onChanged: (value) => setState(() {
-                    workspace.title = textController.text;
+                    workspace.goal = textController.text;
                   }),
                   onSubmitted: (value) => setState(() {
-                    workspace.title = textController.text;
+                    workspace.goal = textController.text;
                   }),
                 ),
               ),
-              if (textController.text.length > 0) 
-              GestureDetector(
-                onTap: () => setState(() {
-                  workspace.title = null;
-                  textController.clear();
-                }),
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(100),
-                    color: HexColor.fromHex('555555'),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(3.0),
-                    child: Icon(Icons.clear_outlined, 
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                  ),
-                ),
-              )
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGoalField() {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(5.0),
+          color: HexColor.fromHex('4444444')
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          child: TextField(
+            autofocus: true,
+            maxLines: 1000,
+            minLines: 4,
+            decoration: InputDecoration(
+              hintText: 'Why are you creating this space?',
+              border: InputBorder.none,
+              
+            ),
+            onChanged: (value) => setState(() {
+              workspace.title = textController.text;
+            }),
+            onSubmitted: (value) => setState(() {
+              workspace.title = textController.text;
+            }),
           ),
         ),
       ),

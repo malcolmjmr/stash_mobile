@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
+import 'package:stashmobile/app/common_widgets/fav_icon.dart';
 import 'package:stashmobile/app/common_widgets/list_item.dart';
 import 'package:stashmobile/app/common_widgets/section_list_item.dart';
 import 'package:stashmobile/app/home/delete_space_dialog.dart';
@@ -108,14 +109,32 @@ class WorkspaceListItem extends StatelessWidget {
             ),
           ],
         ),
-        child: ListItem(
-          icon: Icon(Icons.folder, 
-            color: HexColor.fromHex(colorMap[workspace.color ?? 'grey']!),
-            size: 30,
-          ),
-          title: workspace.title ?? 'Untitled',
-        )
+        child: workspace.title != null 
+          ? ListItem(
+            icon: Icon(Icons.folder, 
+              color: HexColor.fromHex(colorMap[workspace.color ?? 'grey']!),
+              size: 30,
+            ),
+            title: workspace.title ?? 'Untitled',
+          )
+          : _buildIcons(context),
       ),
+    );
+  }
+
+  _buildIcons(BuildContext context) {
+    return Container(
+      height: 45,
+      width: MediaQuery.of(context).size.width,
+      child: Stack(
+            children: workspace.tabs.map((tab) {
+              final index = workspace.tabs.indexOf(tab);
+              return Positioned(
+                left: index * 20,
+                child: FavIcon(resource: tab)
+              );
+            }).toList(),
+          )
     );
   }
 }

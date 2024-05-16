@@ -14,7 +14,7 @@ class LLM {
     String? systemPrompt, 
     List<Map>? messages, 
     String? model = 'open-mistral-7b', 
-    int? maxTokens = 500, 
+    int? maxTokens = 5000, 
     double? temp = 0.5
   }) async {
     const String apiUrl = 'https://api.mistral.ai/v1/chat/completions';

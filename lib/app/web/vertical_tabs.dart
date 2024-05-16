@@ -38,7 +38,7 @@ class VertcalTabs extends StatelessWidget {
 
                       onTap: () {
 
-                        if (tab.model.resource.url == null) return;
+                        //if (tab.model.resource.url == null) return; // Let user edit name or enter query
                         
                         Navigator.push(context, 
                           PageTransition<dynamic>(
@@ -59,16 +59,8 @@ class VertcalTabs extends StatelessWidget {
                     ),
                   );
                 }).toList(),
-                Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 10.0),
-                    child: OpenTabLabel(
-                      isFirstListItem: true,
-                      isLastListItem: true,
-                      model: workspaceModel, 
-                      resource: Resource(url: 'https://google.com', title: 'New Tab'), 
-                      onTap: () => null
-                    ),
-                  ),
+                if (!workspaceModel.tabs.any((tab) => tab.model.viewType == null))
+                _buildEndingNewTab(context)
               ],
               onPageChanged: (index) {
                 workspaceModel.onPageChanged(index);
@@ -79,6 +71,36 @@ class VertcalTabs extends StatelessWidget {
           //Icon(Icons.arrow_drop_down),
         ],
       );
+  }
+
+  Widget _buildEndingNewTab(BuildContext context) {
+
+    final newTabResource = Resource(title: 'New Tab');
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 10.0),
+      child: OpenTabLabel(
+        isFirstListItem: true,
+        isLastListItem: true,
+        model: workspaceModel, 
+        resource: newTabResource, 
+        onTap: () {
+
+          Navigator.push(context, 
+            PageTransition<dynamic>(
+              type: PageTransitionType.bottomToTop,
+              curve: Curves.easeInExpo,
+              child: context.read(readAloudProvider).isPlaying
+                ? PlayerView()
+                : TabEditModal(
+                  tab: newTabResource,
+                  workspaceModel: workspaceModel,
+                ),
+              fullscreenDialog: true,
+            )
+          );
+        }
+      ),
+    );
   }
 }
 

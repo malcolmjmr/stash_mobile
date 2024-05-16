@@ -45,140 +45,135 @@ class TabListItem extends StatelessWidget {
 
     List<SlidableAction> leftActions = [];
 
-    return Stack(
-      children: [
-
-        SectionListItemContainer(
-          isFirstListItem: isFirstListItem,
-          isLastListItem: isLastListItem,
-          isHighlighted: isLastActiveTab || isSelected,
-          onTap: onTap,
-          child: GestureDetector(
-            onLongPress: () {
-              if (model.workspace.showWebView) return;
-              HapticFeedback.mediumImpact();
-              showCupertinoModalBottomSheet(
-                context: context, 
-                builder: (context) => Material(
-                  type: MaterialType.transparency,
-                  child: Container(
-                    height: MediaQuery.of(context).size.height * .66,
-                    width: MediaQuery.of(context).size.width * .66,
-                    child: InAppWebView(
-                      initialUrlRequest: URLRequest(url: WebUri(resource.url!)),
-                    ),
-                  ),
+    return SectionListItemContainer(
+      isFirstListItem: isFirstListItem,
+      isLastListItem: isLastListItem,
+      isHighlighted: isLastActiveTab || isSelected,
+      onTap: onTap,
+      child: GestureDetector(
+        onLongPress: () {
+          if (model.workspace.showWebView) return;
+          HapticFeedback.mediumImpact();
+          showCupertinoModalBottomSheet(
+            context: context, 
+            builder: (context) => Material(
+              type: MaterialType.transparency,
+              child: Container(
+                height: MediaQuery.of(context).size.height * .66,
+                width: MediaQuery.of(context).size.width * .66,
+                child: InAppWebView(
+                  initialUrlRequest: URLRequest(url: WebUri(resource.url!)),
+                ),
+              ),
+            )
+          );
+        },
+        child: Slidable(
+          key: Key(resource.toString()),
+          startActionPane: ActionPane(
+            children: [
+              SlidableAction(
+                icon: Icons.move_to_inbox_outlined,
+                foregroundColor: Colors.white,
+                backgroundColor: Colors.orange,
+                onPressed: (context) => model.stashTab(resource),
+              ),
+              if (resource.isSaved)
+              SlidableAction(
+                icon: Icons.edit_outlined,
+                backgroundColor: Colors.green,
+                onPressed: (context) => showCupertinoModalBottomSheet(
+                  context: context, 
+                  builder: (context) {
+                    return EditBookmarkModal(resource: resource, workspaceViewModel: model,);
+                    //return MoveToFolderModal(resource: resource, onFolderSelected: (_) => null,);
+                  }
                 )
-              );
-            },
-            child: Slidable(
-              key: Key(resource.toString()),
-              startActionPane: ActionPane(
-                children: [
-                  SlidableAction(
-                    icon: Icons.move_to_inbox_outlined,
-                    foregroundColor: Colors.white,
-                    backgroundColor: Colors.orange,
-                    onPressed: (context) => model.stashTab(resource),
-                  ),
-                  if (resource.isSaved)
-                  SlidableAction(
-                    icon: Icons.edit_outlined,
-                    backgroundColor: Colors.green,
-                    onPressed: (context) => showCupertinoModalBottomSheet(
-                      context: context, 
-                      builder: (context) {
-                        return EditBookmarkModal(resource: resource, workspaceViewModel: model,);
-                        //return MoveToFolderModal(resource: resource, onFolderSelected: (_) => null,);
-                      }
-                    )
-                  )
-                  else 
-                  SlidableAction(
-                    icon: Icons.bookmark_add_outlined,
-                    backgroundColor: Colors.green,
-                    onPressed: (context) => model.saveTab(resource)
-                  ),
-                ],
-                motion: const ScrollMotion(),
-                dismissible: DismissiblePane(onDismissed: () => model.stashTab(resource)),
-                openThreshold: 0.5,
+              )
+              else 
+              SlidableAction(
+                icon: Icons.bookmark_add_outlined,
+                backgroundColor: Colors.green,
+                onPressed: (context) => model.saveTab(resource)
               ),
-              endActionPane: ActionPane(
-                children: [
-                  // SlidableAction(
-                  //   icon: Icons.ios_share,
-                  //   backgroundColor: Colors.blue,
-                  //   onPressed: (context) => showCupertinoModalBottomSheet(
-                  //     context: context, 
-                  //     builder: (context) {
-                  //       return Container();//ShareModal()
-                  //     }
-                  //   )
-                  // ),
-                  SlidableAction(
-                    icon: Icons.close,
-                    backgroundColor: Colors.redAccent,
-                    onPressed: (context) => model.removeTab(resource),
-                  )
-                ],
-                motion: const StretchMotion(),
-                // A pane can dismiss the Slidable.
-                dismissible: DismissiblePane(onDismissed: () => model.removeTab(resource)),
-                openThreshold: 0.25,
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    _buildIcon(isSelected),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+            ],
+            motion: const ScrollMotion(),
+            dismissible: DismissiblePane(onDismissed: () => model.stashTab(resource)),
+            openThreshold: 0.5,
+          ),
+          endActionPane: ActionPane(
+            children: [
+              // SlidableAction(
+              //   icon: Icons.ios_share,
+              //   backgroundColor: Colors.blue,
+              //   onPressed: (context) => showCupertinoModalBottomSheet(
+              //     context: context, 
+              //     builder: (context) {
+              //       return Container();//ShareModal()
+              //     }
+              //   )
+              // ),
+              SlidableAction(
+                icon: Icons.close,
+                backgroundColor: Colors.redAccent,
+                onPressed: (context) => model.removeTab(resource),
+              )
+            ],
+            motion: const StretchMotion(),
+            // A pane can dismiss the Slidable.
+            dismissible: DismissiblePane(onDismissed: () => model.removeTab(resource)),
+            openThreshold: 0.25,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                _buildIcon(isSelected),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(resource.title ?? '', 
+                        maxLines: isLastActiveTab ? 2 : 1,
+                        style: TextStyle(
+                          //color: isLastActiveTab ? Colors.amber : Colors.white,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                          fontSize: 16,  
+                          overflow: TextOverflow.ellipsis),
+                        ),
+                      if (resource.url != null && isLastActiveTab)
+                      Row(
                         children: [
-                          Text(resource.title ?? '', 
+                          Text(Uri.parse(resource.url ?? '').host.replaceAll('www.', '') ?? '', 
                             maxLines: 1,
                             style: TextStyle(
                               //color: isLastActiveTab ? Colors.amber : Colors.white,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w300,
                               letterSpacing: 0.5,
-                              fontSize: 16,  
+                              fontSize: 14,  
                               overflow: TextOverflow.ellipsis),
-                            ),
-                          Row(
-                            children: [
-                              Text(Uri.parse(resource.url ?? '').host.replaceAll('www.', '') ?? '', 
-                                maxLines: 1,
-                                style: TextStyle(
-                                  //color: isLastActiveTab ? Colors.amber : Colors.white,
-                                  fontWeight: FontWeight.w300,
-                                  letterSpacing: 0.5,
-                                  fontSize: 14,  
-                                  overflow: TextOverflow.ellipsis),
-                              ),
-                            ],
                           ),
+                          
                         ],
                       ),
-                      ),
-                    
-                  ],
+                    ],
+                  ),
                 ),
-              ),
+                if (resource.isSaved)
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Icon(Symbols.star_rounded,
+                    fill: 1,
+                  ),
+                )
+                
+              ],
             ),
           ),
         ),
-        if (resource.isSaved == true) 
-        Positioned(
-          child: Icon(Icons.star_rounded, 
-            size: 28, 
-            color: HexColor.fromHex(colorMap[model.workspace.color ?? 'grey']!)
-          ),
-          bottom: 5,
-          left: 25
-        ),
-      ],
+      ),
     );
   }
 
@@ -192,13 +187,19 @@ class TabListItem extends StatelessWidget {
           height: 35,
           width: 35,
           child: isSelected 
-            ? Icon(Symbols.select_check_box_rounded, size: 35, fill: 1)
-            : resource.favIconUrl != null 
-              ? Image.network(resource.favIconUrl ?? '',
-                //loadingBuilder: (context, child, loadingProgress) => Icon(Icons.language, size: 30,),
-                errorBuilder: (context, child, loadingProgress) => Icon(Icons.public, size: 35,),
-              )
-              : Icon(Icons.public, size: 35,)
+            ? Icon(Symbols.check_box_rounded, size: 35, fill: 1)
+            : resource.url != null  
+              ? resource.favIconUrl != null 
+                ? Image.network(resource.favIconUrl ?? '',
+                  //loadingBuilder: (context, child, loadingProgress) => Icon(Icons.language, size: 30,),
+                  errorBuilder: (context, child, loadingProgress) => Icon(Icons.public, size: 35, color: Colors.grey[700],),
+                )
+                : Icon(Icons.public, size: 35, color: Colors.grey[700])
+              : resource.note != null 
+               ? Icon(Symbols.edit_document_rounded, fill: 1,)
+               : resource.chat != null 
+                ? Icon(Symbols.forum_rounded, fill: 1)
+                : Icon(Symbols.tab, size: 30, color: Colors.grey[700])
           ),
       ),
     );

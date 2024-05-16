@@ -20,34 +20,42 @@ class Note {
   List<Comment> comments = [];
   List<String> keywords = [];
   List<String> metaTags = [];
-  late int created;
+  String? prompt;
+  String? promptResourceId; 
+  String? highlightId;
+  
+  
 
-  Note({ this.subject }) {
+  Note({ this.subject, this.text, this.promptResourceId, this.highlightId }) {
     id = Uuid().v4().split('-').last;
-    created = DateTime.now().millisecondsSinceEpoch;
   }
 
   Note.fromJson(Map<String, dynamic> json) {
     id = json['id'];
-    created = json['created'];
     subject = json['subject'] ?? '';
     text = json['text'] ?? '';
     objectives = json['objectives'] != null ? List<Objective>.from(json['objectives'].map((o) => Objective.fromJson(o))) : [];
     comments = json['comments'] != null ? List<Comment>.from(json['comments'].map((c) => Comment.fromJson(c))) : [];
-    keywords = json['keywords'] ?? [];
-    metaTags = json['metaTags'] ?? [];
+    keywords = json['keywords'] != null ? List<String>.from(json['keywords']) : [];
+    metaTags = json['metaTags'] != null ? List<String>.from(json['metaTags']) : [];
+    prompt = json['prompt'];
+    promptResourceId = json['promptResourceId'];
+    highlightId = json['highlightId'];
+
   }
 
   Map<String, dynamic> toJson() {
     Map<String, dynamic> json = {
       'id': id,
-      'created': created,
       'subject': subject,
       'text': text,
       'objectives': objectives.map((o) => o.toJson()),
       'comments': comments.map((c) => c.toJson()),
       'keywords': keywords,
       'metaTags': metaTags,
+      'prompt': prompt,
+      'promptResourceId': promptResourceId,
+      'highlightId': highlightId,
     };
     json.removeWhere((key, value) => value == null || value == [] || value == 0 || value == "");
     return json;

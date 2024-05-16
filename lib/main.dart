@@ -14,17 +14,13 @@ import 'package:stashmobile/services/shared_preferences.dart';
 import 'package:stashmobile/app/authentication/auth_widget.dart';
 import 'package:stashmobile/app/authentication/firebase_providers.dart';
 
-/*
-  Todo: 
-  - search within space
-  - 
-*/
+
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   final sharedPreferences = await SharedPreferences.getInstance();
-
+ 
   runApp(ProviderScope(
     observers: [Logger()],
     overrides: [
@@ -43,11 +39,10 @@ class MyApp extends ConsumerWidget {
   Widget build(BuildContext context, ScopedReader watch) {
     final firebaseAuth = watch(firebaseAuthProvider);
     watch(speechProvider).initialize();
-    
-    return MaterialApp(
-      theme: ThemeData.dark(),
+    return  MaterialApp(
+      theme: ThemeData.dark(), 
       debugShowCheckedModeBanner: false,
-      home: SafeArea(
+      home: SafeArea( 
         child: AuthWidget(
           spalshScreenBuilder: (_) => SplashScreen(),
           nonSignedInBuilder: (_) => EmailPasswordSignInPage.withFirebaseAuth(firebaseAuth),

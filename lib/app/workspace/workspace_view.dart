@@ -12,6 +12,7 @@ import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -113,10 +114,10 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
             backgroundColor: Colors.black,
             body: Container(
 
-              decoration: BoxDecoration(
-                color: Colors.black,
-                border: Border.symmetric(vertical: BorderSide(color: HexColor.fromHex('222222'), width: .5))
-              ),
+              // decoration: BoxDecoration(
+              //   color: Colors.black,
+              //   border: Border.symmetric(vertical: BorderSide(color: HexColor.fromHex('222222'), width: .5))
+              // ),
               child: IndexedStack(
                 index: model.workspace.showWebView ? 1 : 0,
                 children: [
@@ -131,41 +132,47 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
   }
 
   Widget _buildWebview() {
-    return Scaffold(
-      body: Stack(
-        children: [
-          Column(
-            //mainAxisAlignment: model.showToolbar ? MainAxisAlignment.spaceEvenly : MainAxisAlignment.end,
-            children: [
-              KeyboardVisibilityBuilder(
-                builder: (context, isVisible) => isVisible 
-                  ? Container(color: Colors.black,)
-                  : WorkspaceHeader(model: model)
-              ),
-
-              Expanded(
-                
-                child: Container(
-                  //height: MediaQuery.of(context).size.height - (model.showToolbar ?  160 : 0),
-                  child: IndexedStack(
-                    index: model.workspace.activeTabIndex,
-                    children: model.tabs
-                  )
-                ),
-              ),
-
-              KeyboardVisibilityBuilder(
-                builder: (context, isVisible) {
-                  return isVisible ? Container(color: Colors.black,) : TabBottomBar(model: model);
-                }
-              ),
+    return Stack(
+      children: [
+        Column(
+          //mainAxisAlignment: model.showToolbar ? MainAxisAlignment.spaceEvenly : MainAxisAlignment.end,
+          children: [
+            KeyboardVisibilityBuilder(
+              builder: (context, isVisible) => isVisible 
+                ? Container(color: Colors.black,)
+                : WorkspaceHeader(model: model)
+            ),
+    
+            Expanded(
               
-            ],
-          ),
-          if (model.showFindInPage)
-          FindInPage(model: model),
-        ],
-      ),
+              child: Container(
+                //height: MediaQuery.of(context).size.height - (model.showToolbar ?  160 : 0),
+                child: IndexedStack(
+                  index: model.workspace.activeTabIndex,
+                  children: model.tabs
+                )
+              ),
+            ),
+    
+            KeyboardVisibilityBuilder(
+              builder: (context, isVisible) {
+                return isVisible ? Container(color: Colors.black,) : TabBottomBar(model: model);
+              }
+            ),
+            
+          ],
+        ),
+        //  Positioned(
+        //     bottom: 0,
+        //    child: KeyboardVisibilityBuilder(
+        //         builder: (context, isVisible) {
+        //           return isVisible ? SizedBox.shrink() : TabBottomBar(model: model);
+        //         }
+        //       ),
+        //  ),
+        if (model.showFindInPage)
+        FindInPage(model: model),
+      ],
     );
   }
 
@@ -219,7 +226,7 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
         SliverAppBar(
           titleSpacing: 0,
           title: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 15.0),
+            padding: const EdgeInsets.symmetric(horizontal: 3.0),
             child: SearchField(
               showPlaceholder: true,
               onTap: () {
@@ -250,7 +257,7 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
         if (model.tabs.isNotEmpty && model.workspace.title != null)
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 15),
+            padding: const EdgeInsets.symmetric(horizontal: 3),
             child: SectionHeader(
               title: 'Tabs',
               actions: [
@@ -272,8 +279,8 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
             final tab = model.tabs[index];
             return Padding(
               padding: EdgeInsets.only(
-                left: 15.0, 
-                right: 15, 
+                left: 3.0, 
+                right: 3, 
               ),
               child: TabListItem(
                 key: Key(tab.model.resource.id!),
@@ -318,6 +325,7 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
           ),
         ),
 
+        SliverPadding(padding: EdgeInsets.only(top: 15)),
         
         if (model.visibleResources.isNotEmpty || model.selectedTags.isNotEmpty)
          SliverAppBar(
@@ -346,12 +354,14 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
           foregroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
           expandedHeight: 0,
-          toolbarHeight: 60,
+          toolbarHeight: 50,
           forceMaterialTransparency: true,
           titleSpacing: 0,
         ),
+        
+        SliverPadding(padding: EdgeInsets.only(top: 8)),
 
-        if (model.visibleTags.isNotEmpty && model.view != ResourceView.folders && model.view != ResourceView.queue)
+        if (model.visibleTags.isNotEmpty && model.resourceView == ResourceView.favorites)
         SliverToBoxAdapter(
           child: _buildTags(),
         ),
@@ -363,16 +373,17 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
             final resource = model.visibleResources[index];
             return Padding(
               padding: EdgeInsets.only(
-                left: 15.0, 
-                right: 15, 
+                left: 3, 
+                right: 3, 
               ),
               child: ResourceListItem(
                 isFirstListItem: index == 0,
                 isLastListItem: index == model.visibleResources.length - 1,
                 resource: resource,
+                
                 model: model,
                 onTap: () => model.openResource(context, resource),
-                showHighlights: model.resourceView == ResourceView.highlights,
+                showHighlights: model.selectedTags.isNotEmpty,
                 showImages: model.resourceView == ResourceView.images,
                 
               ),
@@ -392,8 +403,8 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
             final folder = model.folders[index];
             return Padding(
               padding: EdgeInsets.only(
-                left: 15.0, 
-                right: 15, 
+                left: 3.0, 
+                right: 3.0, 
               ),
               child: WorkspaceListItem(
                 isFirstListItem: index == 0,
@@ -437,6 +448,18 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
         icon: Symbols.folder_rounded,
         text: 'Folders', 
         view: ResourceView.folders,
+      ),
+      if (model.hasChat)
+      _buildListOption(
+        icon: Symbols.forum_rounded,
+        text: 'Chats', 
+        view: ResourceView.chats,
+      ),
+      if (model.hasNote)
+      _buildListOption(
+        icon: Symbols.edit_document,
+        text: 'Notes', 
+        view: ResourceView.notes,
       ),
       if (model.hasQueue)
       _buildListOption(
@@ -687,13 +710,9 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
           icon: Symbols.tab,
           color: color,
           size: 25,
+          fill: 1,
         ),
-        FooterIcon(
-          onTap: model.createChat,
-          icon: Symbols.forum_rounded, 
-          color: color, 
-          size: 25
-        ),
+
         FooterIcon(
           onTap: model.createNewTab,
           icon: Symbols.add_box, 
@@ -701,18 +720,14 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
           fill: 1,
           size: 36
         ),
-        FooterIcon(
-          onTap: model.createNote,
-          icon: Symbols.edit_document, 
-          color: color, 
-          size: 25
-        ),
+
         FooterIcon(
           padding: EdgeInsets.only(top: 5, bottom: 5, right: 20, left: 10),
           onTap: () => context.read(windowsProvider).openWorkspace(null),
           icon: Symbols.new_window, 
           color: color, 
-          size: 25
+          size: 25,
+          fill: 1
         ),
       ]
     );

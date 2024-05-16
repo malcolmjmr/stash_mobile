@@ -86,7 +86,6 @@ class WindowsViewModel extends ChangeNotifier {
         : 0;
       final wv = WorkspaceView(
         model: WorkspaceViewModel(
-
           params: WorkspaceViewParams(
             workspaceId: workspace?.id,
             isIncognito: isIncognito,

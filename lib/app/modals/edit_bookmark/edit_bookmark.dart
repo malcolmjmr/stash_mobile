@@ -183,6 +183,7 @@ class _EditBookmarkModalState extends State<EditBookmarkModal> {
             child: model.canEditTitle
             ? TextField(
                 controller: model.titleController,
+                onChanged: (value) => model.updateTitle(),
                 onSubmitted: (value) => model.updateTitle(),
                 maxLines: null,
                 keyboardType: TextInputType.text,

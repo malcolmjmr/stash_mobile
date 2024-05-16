@@ -62,6 +62,14 @@ class Article {
       },
     ).toList();
   }
+
+  @override
+  String toString() {
+    // TODO: implement toString
+    return sections.map((s) => s.text).join('\n');
+  }
+
+  
 }
 
 class ArticleSection {

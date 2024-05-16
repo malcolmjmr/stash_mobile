@@ -23,7 +23,7 @@ class TextSelectionMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = HexColor.fromHex('222222'); //HexColor.fromHex(workspaceModel.workspaceHexColor);
     return Container(
-      height: 50,
+      height: 40,
       width: MediaQuery.of(context).size.width,
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 8),
@@ -95,14 +95,14 @@ class TextSelectionOption extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 3),
         child: GestureDetector(
           onTap: onTap,
           child: Container(
             //padding: EdgeInsets.symmetric(horizontal: 5),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
-              color: color ?? HexColor.fromHex('222222'),
+              //color: color ?? HexColor.fromHex('222222'),
             ),
             child: Center(
               heightFactor: 1,

@@ -53,12 +53,6 @@ class ResourceListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
-    /*
-
-      try placing title on top and bottom
-
-
-    */
 
     List<SlidableAction> leftActions = [];
 
@@ -120,6 +114,12 @@ class ResourceListItem extends StatelessWidget {
             child: Column(
               children: [
                 _buildTitle(context),
+                if (resource.images.isNotEmpty && showImages)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: _buildImages(context),
+                ),
+                if (resource.highlights.isNotEmpty && showHighlights)
                 _buildHighlights(context),
                 _buildTags(context),
               ],
@@ -136,12 +136,12 @@ class ResourceListItem extends StatelessWidget {
       //mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          height: 38,
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (resource.favIconUrl != null && resource.favIconUrl!.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.only(right: 5.0),
+                padding: const EdgeInsets.only(top: 5.0, right: 5.0),
                 child: Container(
                   height: 35,
                   width: 35,
@@ -158,7 +158,7 @@ class ResourceListItem extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(resource.title ?? '', 
-                      maxLines: 1,
+                      maxLines: 2,
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -186,16 +186,7 @@ class ResourceListItem extends StatelessWidget {
             ],
           ),
         ),
-        if (resource.images.isNotEmpty && showImages)
-        Padding(
-          padding: const EdgeInsets.only(top: 8.0),
-          child: _buildImages(context),
-        ),
-        if (resource.highlights.isNotEmpty && showHighlights)
-        Padding(
-          padding: const EdgeInsets.only(top: 8.0),
-          child: _buildHighlights(context),
-        ),
+
       ],
         ),
     );

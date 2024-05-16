@@ -43,7 +43,9 @@ class Workspace {
   List<String> parents = [];
   List<String> children = [];
 
-  Workspace({this.title, this.color, this.isIncognito}) {
+  String? goal;
+
+  Workspace({this.title, this.color, this.isIncognito, this.goal}) {
     id = Uuid().v4().split('-').last;
     created = DateTime.now().millisecondsSinceEpoch;
     updated = created;
@@ -91,6 +93,7 @@ class Workspace {
     showWebView = json['showWebView'] ?? false;
     parents = json['parents'] != null ? List<String>.from(json['parents']) : [];
     children = json['children'] != null ? List<String>.from(json['children']) : [];
+    goal = json['goal'];
   }
 
   Map<String, dynamic> toJson() {
@@ -123,6 +126,7 @@ class Workspace {
       'showWebView': showWebView,
       'children': children,
       'parents': parents,
+      'goal': goal,
     };
     json.removeWhere((key, value) => value == null);
     return json;

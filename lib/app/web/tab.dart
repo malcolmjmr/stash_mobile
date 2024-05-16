@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:stashmobile/app/chat/chat_view.dart';
 import 'package:stashmobile/app/note/note_view.dart';
+import 'package:stashmobile/app/tab/new_tab.dart';
 import 'package:stashmobile/app/web/tab_journey.dart';
 
 import 'package:stashmobile/app/web/tab_model.dart';
@@ -23,13 +24,11 @@ class TabView extends StatefulWidget {
     required this.model,
     this.windowId,
     this.lazyLoad = true,
-    this.incognito = false,
   }) : super(key: UniqueKey());
 
   final bool lazyLoad;
   final TabViewModel model;
   final int? windowId;
-  final bool incognito;
 
   //final Function(TabViewModel model, InAppWebViewController controller, Uri? uri) onTabUpdated;
 
@@ -87,7 +86,7 @@ class _TabViewState extends State<TabView> {
     } else if (widget.model.viewType == TabViewType.chat) {
       return ChatView(tabModel: widget.model,);
     } else {
-      return Container();
+      return NewTab(tabModel: widget.model,);
     }
   }
 
@@ -128,7 +127,7 @@ class _TabViewState extends State<TabView> {
       initialSettings: InAppWebViewSettings(
          disableHorizontalScroll: true,
           useShouldOverrideUrlLoading: true,
-          incognito: widget.incognito,
+          incognito: widget.model.isIncognito,
           // javaScriptEnabled: true,
           applicationNameForUserAgent: 'Stash Browser',
           userAgent: 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36',

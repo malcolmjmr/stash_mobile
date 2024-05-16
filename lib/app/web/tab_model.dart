@@ -44,35 +44,49 @@ class TabViewModel {
 
   bool canGoForward = false;
 
-  final TabViewType viewType;
+  TabViewType? viewType;
 
   String id = UniqueKey().toString();
 
-  TabViewModel({required this.workspaceModel, Resource? initialResource, this.viewType = TabViewType.web}) {
+  TabViewModel({
+    required this.workspaceModel, 
+    Resource? initialResource, 
+    this.viewType, 
+    this.isIncognito = false 
+  }) {
+
     if (initialResource != null) {
       resource = initialResource;
-      if (initialResource.isQueued == true) {
-   
-        workspaceQueue = workspaceModel.allResources
-          .where((r) => r.isQueued == true 
-            && !r.isSaved 
-            && (r.created ?? 0) < (resource.created ?? 0)
-          ).toList();
+      if (resource.url != null && resource.url!.isNotEmpty) {
+        if (viewType == null) viewType = TabViewType.web;
+        if (initialResource.isQueued == true) {
+          
+          queue = workspaceModel.allResources
+            .where((r) => r.isQueued == true 
+              && !r.isSaved 
+              && (r.created ?? 0) < (resource.created ?? 0)
+            ).toList();
 
-        if (queue.isNotEmpty) canGoForward = true;
+          if (queue.isNotEmpty) canGoForward = true;
+        }
+
+        if (resource.highlights.isNotEmpty) {
+          canGoForward = true;
+          //getRelatedContent();
+        }
+
+        if (viewType == TabViewType.chat) {
+
+        }
+      } else if (resource.note != null) {
+        viewType = TabViewType.note;
+
+      } else if (resource.chat != null) {
+        viewType = TabViewType.chat;
       }
-
-      if (resource.highlights.isNotEmpty) {
-        canGoForward = true;
-        //getRelatedContent();
-      }
-
-      if (viewType == TabViewType.chat) {
-
-      }
-      
+    
     } else {
-      resource = Resource(title: 'New Tab', url: 'https://www.google.com/');
+      resource = Resource(title: 'New Tab');
     }
   }
 
@@ -86,11 +100,22 @@ class TabViewModel {
         canGoForward = true;
         //getRelatedContent();
     }
+    if (resource.url != null && viewType == null) {
+      viewType = TabViewType.web;
+    }
 
   }
 
   dispose() {
     
+  }
+
+  bool isIncognito = false;
+
+  setViewType(TabViewType value) {
+    setState(() {
+      viewType = value;
+    });
   }
 
   bool loaded = false;
@@ -394,7 +419,7 @@ class TabViewModel {
     if (url == resource.url || resource.isSearch != true || prevenNewTabCreation) {
       return NavigationActionPolicy.ALLOW;
     } else {
-      workspaceModel.createNewTab(url: url);
+      workspaceModel.createNewTab(url: url, viewType: TabViewType.web);
       return NavigationActionPolicy.CANCEL;
     } 
   }
@@ -639,6 +664,8 @@ class TabViewModel {
         'color': colorMap[workspaceModel.workspace.color ?? 'grey'],
       }),
     );
+
+    clearSelectedText();
   }
 
   onImageSelected(args) async {

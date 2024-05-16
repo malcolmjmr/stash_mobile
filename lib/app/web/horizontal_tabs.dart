@@ -51,7 +51,7 @@ class HorizontalTabs extends StatelessWidget {
                     extentRatio: 0.5,
                     openThreshold: .1,
                     dragDismissible: true,
-                    dismissible: DismissiblePane(onDismissed: () => workspaceModel.saveResource(tab.model.resource)),
+                    dismissible: DismissiblePane(onDismissed: () => workspaceModel.saveTab(tab.model.resource)),
                     children: [
                       SlidableAction(
                         icon: tab.model.resource.contexts.length == 0 ? Icons.bookmark_add : Icons.bookmark_remove ,

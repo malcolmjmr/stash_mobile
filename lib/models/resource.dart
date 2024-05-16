@@ -37,9 +37,10 @@ class Resource {
   int? deleted;
   String? bookmarkId;
   String? parentId;
+  bool? isOnDesktop;
   bool? isQueued;
   bool? isFavorite;
-  bool get isSaved => contexts.isNotEmpty && (isQueued != true || tags.isNotEmpty || highlights.isNotEmpty || rating > 0);
+  bool get isSaved => (contexts.isNotEmpty && isQueued != true) || tags.isNotEmpty || highlights.isNotEmpty || rating > 0;
   Uint8List? image;
   bool? isSearch;
   bool? isSelected;
@@ -56,6 +57,8 @@ class Resource {
   bool annotationsLoaded = false;
   bool isSuggestion = false;
 
+
+  String? selectedHighlight;
 
   Resource({ this.url, this.title, this.favIconUrl, this.note, this.chat, this.parentId}) {
     id = Uuid().v4().split('-').last;
@@ -85,9 +88,10 @@ class Resource {
     highlights = json['highlights'] != null ? List<Highlight>.from(json['highlights'].map((h) => Highlight.fromJson(h))) : [];//List<Highlight>.from()
     scrollPosition = json['scrollPos'];
     rating = json['rating'] != null ? json['rating'] : 0;
-    note = json['note'];
+    note = json['note'] != null ? Note.fromJson(json['note']) : null;
     notes = json['notes'] != null ? List<Note>.from(json['notes'].map((n) => Note.fromJson(n))) : [];
     chat = json['chat'] != null ? Chat.fromJson(json['chat']) : null;
+    isOnDesktop = json['isOnDesktop'] == true;
   }
 
   Map<String, dynamic> toJson() {
@@ -112,11 +116,12 @@ class Resource {
       'highlights': highlights.map((h) => h.toJson()),
       'scrollPos': scrollPosition,
       'rating': rating,
-      'note': note,
+      'note': note?.toJson(),
       'notes': notes.map((n) => n.toJson()),
       'summary': summary,
       'text': text,
-      'chat': chat?.toJson()
+      'chat': chat?.toJson(),
+      'isOnDesktop': isOnDesktop
     };
     json.removeWhere((key, value) => value == null || value == [] || value == 0);
     return json;
@@ -138,6 +143,12 @@ class Highlight {
   int likes = 0;
   int dislikes = 0;
   int laughs = 0;
+  int style = 0;
+
+  bool reviewed = false;
+  bool transcribed = false;
+  
+  String? summary;
 
   Map<String, dynamic>? target;
 
@@ -173,7 +184,10 @@ class Highlight {
     likes = json['likes'] ?? 0;
     dislikes = json['dislikes'] ?? 0;
     laughs = json['laughs'] ?? 0;
-
+    style = json['style'] ?? 0;
+    summary = json['summary'];
+    reviewed = json['reviewed'] == true;
+    transcribed = json['transcribed'] == true;
   }
 
   Map<String,dynamic> toJson() {
@@ -184,8 +198,13 @@ class Highlight {
       'likes': likes,
       'dislikes': dislikes,
       'laughs': laughs,
+      'style': style,
+      'summary': summary,
+      'reviewed': reviewed,
+      'transcribed': transcribed,
+
     };
-    json.removeWhere((key, value) => value == null || value == 0 || value == '');
+    json.removeWhere((key, value) => value == null || value == 0 || value == '' || value == false);
     return json;
   }
 

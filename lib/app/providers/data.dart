@@ -68,11 +68,6 @@ class DataManager extends ChangeNotifier {
     final aMonthAgo = DateTime.now().millisecondsSinceEpoch - (1000 * 60 * 60 * 24 * 30);
     final recentResources = await db.getResourcesByTime(user, aMonthAgo);
     for (final resource in recentResources) {
-      if (resource.chat != null || resource.url == null) {
-        print('found chat');
-        deleteResource(resource, permanent: true);
-        continue;
-      }
       if (_resources[resource.id] == null) {
         _resources[resource.id!] = resource;
         for (final tag in resource.tags) {

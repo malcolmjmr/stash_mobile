@@ -72,9 +72,10 @@ class _TabEditModalState extends State<TabEditModal> {
                 color: Colors.black,
                 child: Column(
                   children: [
-                    _buildUrlField(),
                     if (model.visibleDomains.isNotEmpty)
                     _buildDomainOptions(),
+                    _buildUrlField(),
+
                   ],
                 ),
               ),

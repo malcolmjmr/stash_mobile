@@ -33,6 +33,7 @@ class TabEditModel {
   }
 
   getInputFromUrl() { 
+    if (tab.url == null) return;
     for (final domain in defaultDomains) {
       final searchQuery = domain.getSearchQuery(tab.url!);
       if (searchQuery != null ) {
@@ -41,7 +42,7 @@ class TabEditModel {
         return;
       }
     }
-    return input = tab.url!;
+    input = tab.url!;
   }
 
   bool isLoaded = false;

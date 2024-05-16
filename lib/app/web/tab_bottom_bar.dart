@@ -1,9 +1,12 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:page_transition/page_transition.dart';
+import 'package:stashmobile/app/common_widgets/tag.dart';
 import 'package:stashmobile/app/providers/read_aloud.dart';
 import 'package:stashmobile/app/web/horizontal_tabs.dart';
 import 'package:stashmobile/app/web/tab_actions.dart';
@@ -16,6 +19,7 @@ import 'package:stashmobile/constants/color_map.dart';
 import 'package:stashmobile/extensions/color.dart';
 import 'package:stashmobile/models/resource.dart';
 import 'package:stashmobile/models/tab_commands.dart';
+import 'package:stashmobile/models/tag.dart';
 
 class TabBottomBar extends StatelessWidget {
   const TabBottomBar({Key? key, required this.model}) : super(key: key);
@@ -26,10 +30,11 @@ class TabBottomBar extends StatelessWidget {
   Widget build(BuildContext context) {
 
     final showTopBar = (model.selectedHighlight != null || model.notificationIsVisible || model.selectedText != null);
+
     return GestureDetector(
-      onTapDown: (detail) {
-        context.read(windowsProvider).setIsScrollable(true);
-      },
+      // onTapDown: (detail) {
+      //   context.read(windowsProvider).setIsScrollable(true);
+      // },
       child: AnimatedSize(
         alignment: showTopBar ? Alignment.bottomCenter : Alignment.topCenter,
         duration: Duration(milliseconds: 300),
@@ -37,10 +42,10 @@ class TabBottomBar extends StatelessWidget {
         clipBehavior: Clip.none,
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.black
+            color: HexColor.fromHex('111111')
           ),
           width: MediaQuery.of(context).size.width,
-          height: showTopBar
+          height: showTopBar && model.selectedHighlight == null
             ? 60
             : model.showToolbar 
               ? 110 
@@ -86,10 +91,7 @@ class TabBottomBar extends StatelessWidget {
 
     */
 
-    final highlight = model.selectedHighlight != null 
-      ? model.currentTab.model.resource
-        .highlights.firstWhereOrNull((h) => h.id == model.selectedHighlight)
-      : null;
+    
 
 
 
@@ -104,8 +106,14 @@ class TabBottomBar extends StatelessWidget {
       return _buildCreateOptions();
     } else if (model.showQuickActions) {
       return _buildQuickActions(context);
-    } else if (highlight != null) {
-      return _buildHighlightActions(highlight);
+    } else if (model.selectedHighlight != null) {
+      return Column(
+        children: [
+
+          _buildHighlightActions(),
+          _buildHighlightTags(),
+        ],
+      );
     } else {
       return VertcalTabs(workspaceModel: model);
     }
@@ -166,13 +174,17 @@ class TabBottomBar extends StatelessWidget {
   ];
 
     return Container(
+      decoration: BoxDecoration(
+        //color: HexColor.fromHex('333333')
+      ),
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: quickActions.map((a) {
           return _buildActionButton(
             title: a.name, 
             icon: a.icon, 
-            onTap: a.onTap
+            onTap: a.onTap,
+            invert: true,
           );
         }).toList(),
       ),
@@ -292,8 +304,55 @@ class TabBottomBar extends StatelessWidget {
     );
   }
 
-  Widget _buildHighlightActions(Highlight highlight) {
+  Widget _buildHighlightTags() {
+    
+    return Container(
+      height: 40,
+      //color: HexColor.fromHex('333333'),
+      child: model.highlightKeywords.isEmpty && model.relatedKeywords.isEmpty
+        ? Center(
+          child: Text('Select text to tag', 
+            style: TextStyle(
+              color: Colors.white24,
+            ),
+          )
+        )
+        : ListView(
+          scrollDirection: Axis.horizontal,
+        children: [
+          ...model.highlightKeywords.map((tagName) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: TagChip(
+                  tag: Tag(name: tagName),
+                  fontColor: Colors.black,
+                  backgroundColor: HexColor.fromHex(model.workspaceHexColor),
+                  onTap: () => model.updateSelectedHighlightTags(tagName: tagName),
+                ),
+              ),
+            );
+          }),
+          // ...model.relatedKeywords.map((tagName) {
+          //   return Center(
+          //     child: Padding(
+          //       padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          //       child: TagChip(
+          //         tag: Tag(name: tagName),
+          //         onTap: () => model.updateSelectedHighlightTags(tagName: tagName),
+          //       ),
+          //     ),
+          //   );
+          // })
+        ],
+      ),
+    );
+  }
 
+
+
+  Widget _buildHighlightActions() {
+    Highlight highlight = model.selectedHighlight!;
     return Container(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -387,10 +446,12 @@ class TabBottomBar extends StatelessWidget {
     required IconData icon, 
     required Function() onTap,
     Function()? onLongPress,
-    String? workspaceColor,
     bool? useTitle,
     bool isFilled = true,
+    bool invert = false,
   }) {
+
+    final workspaceColor = HexColor.fromHex(colorMap[model.workspace.color ?? 'grey']!);
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: GestureDetector(
@@ -418,19 +479,19 @@ class TabBottomBar extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
-            color: HexColor.fromHex(colorMap[model.workspace.color ?? 'grey']!)
+            color: invert ? HexColor.fromHex(colorMap[model.workspace.color ?? 'grey']!) : null
           ),
           child: Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                Icon(icon, size: 25, color: Colors.black, fill: isFilled ? 1 : 0,),
+                Icon(icon, size: 25, color: invert ? Colors.black : workspaceColor, fill: isFilled ? 1 : 0,),
                 if (useTitle == true)
                 Text(title,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.black
+                    color: workspaceColor
                   ),
                 ),
                 

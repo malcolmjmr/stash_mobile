@@ -3,16 +3,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
-import 'package:stashmobile/app/common_widgets/play_button.dart';
 
 import 'package:stashmobile/app/common_widgets/section_list_item.dart';
 import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark.dart';
 import 'package:stashmobile/app/modals/move_tabs/move_tabs_modal.dart';
 import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark_model.dart';
+import 'package:stashmobile/app/providers/read_aloud.dart';
+import 'package:stashmobile/app/read_aloud/play_button.dart';
 import 'package:stashmobile/app/web/tab.dart';
 import 'package:stashmobile/app/web/tab_menu.dart';
 import 'package:stashmobile/app/web/vertical_tabs_modal.dart';
@@ -43,9 +45,11 @@ class OpenTabLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
-    final isIncognito = model.tabs.firstWhereOrNull((t) => t.model.resource.id == resource.id)?.incognito == true;
+    final isIncognito = model.tabs.firstWhereOrNull((t) => t.model.resource.id == resource.id)?.model.isIncognito == true;
 
     List<SlidableAction> leftActions = [];
+
+  
 
 
     return SectionListItemContainer(
@@ -79,16 +83,16 @@ class OpenTabLabel extends StatelessWidget {
                 foregroundColor: Colors.black,
                 backgroundColor: HexColor.fromHex(model.workspaceHexColor),
                 onPressed: (context) => showCupertinoModalBottomSheet(
-                      context: context, 
-                      builder: (context) {
-                        return MoveToSpaceModal(
-                          resource: model.currentTab.model.resource,
-                          workspaceViewModel: model,
-                          onSpaceSelected: (folder) => model.removeTab(model.currentTab.model.resource)
-                        );
-                        //return MoveToFolderModa(resource: resource, onFolderSelected: (_) => null,);
-                      }
-                    )
+                  context: context, 
+                  builder: (context) {
+                    return MoveToSpaceModal(
+                      resource: model.currentTab.model.resource,
+                      workspaceViewModel: model,
+                      onSpaceSelected: (folder) => model.removeTab(model.currentTab.model.resource)
+                    );
+                    //return MoveToFolderModa(resource: resource, onFolderSelected: (_) => null,);
+                  }
+                )
               ),
               // if (resource.isSaved)
               // SlidableAction(
@@ -216,87 +220,135 @@ class OpenTabLabel extends StatelessWidget {
             openThreshold: 0.25,
             extentRatio: 0.40,
           ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: Container(
-                    height: 25,
-                    width: 25,
-                    child: model.currentTab.model.viewType == TabViewType.web 
-                      ? resource.favIconUrl != null 
-                        ? Image.network(resource.favIconUrl ?? '',
-                          //loadingBuilder: (context, child, loadingProgress) => Icon(Icons.language, size: 30,),
-                          errorBuilder: (context, child, loadingProgress) => Icon(Icons.public, size: 25,),
-                        )
-                        : Icon(Icons.public, size: 25,)
-                      : model.currentTab.model.viewType == TabViewType.chat
-                        ? Icon(Symbols.forum_rounded)
-                        : Icon(Symbols.edit_document_rounded)
-                    ),
-                ),
-                Expanded(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * ( isIncognito ? .65 : .75)),
-                        child: Text(resource.title != null && resource.title!.isNotEmpty
-                          ? resource.title!
-                          : model.currentTab.model.viewType == TabViewType.web 
-                            ? resource.url!
-                            : model.currentTab.model.viewType == TabViewType.chat
-                              ? 'New Chat'
-                              : 'New Note'
-                          , 
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w500,
-                            letterSpacing: 0.5,
-                            fontSize: 16,  
-                            overflow: TextOverflow.ellipsis
+          child: model.tabs.firstWhere((t) => t.model.resource == resource).model.viewType == null
+            ? _buildNewTabInputField()
+            : Opacity(
+            opacity: model.currentTab.model.isIncognito ? .5 : 1,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 5.0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  if (model.readAloud.tabModel == model.currentTab.model)
+                  PlayButton(
+                    onTap: () => model.readAloud.isPlaying 
+                      ? model.readAloud.pause() 
+                      : model.readAloud.play(),
+                    padding: EdgeInsets.only(left: 8.0),
+                  )
+                  else if (resource.url == null || (resource.favIconUrl != null && resource.favIconUrl!.isNotEmpty))
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8.0),
+                    child: Container(
+                      height: 25,
+                      width: 25,
+                      child: model.currentTab.model.viewType == TabViewType.web 
+                        ? resource.favIconUrl != null 
+                          ? Image.network(resource.favIconUrl ?? '',
+                            //loadingBuilder: (context, child, loadingProgress) => Icon(Icons.language, size: 30,),
+                            errorBuilder: (context, child, loadingProgress) => Icon(Icons.public, size: 25,),
+                          )
+                          : Icon(Icons.public, size: 25,)
+                        : model.currentTab.model.viewType == TabViewType.chat
+                          ? Icon(Symbols.forum_rounded)
+                          : Icon(Symbols.edit_document_rounded, fill: 1,)
+                      ),
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 8.0),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * ( isIncognito ? .65 : .74)),
+                            child: Text(resource.title != null && resource.title!.isNotEmpty
+                              ? resource.title!
+                              : model.currentTab.model.viewType == TabViewType.web 
+                                ? resource.url!
+                                : model.currentTab.model.viewType == TabViewType.chat
+                                  ? 'New Chat'
+                                  : 'New Note'
+                              , 
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w500,
+                                letterSpacing: 0.5,
+                                fontSize: 16,  
+                                overflow: TextOverflow.ellipsis
+                              ),
+                            ),
                           ),
+                      
+                          if (model.currentTab.model.isIncognito && !(model.workspace.isIncognito == true)) 
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 5),
+                            child: Icon(Icons.visibility_off),
+                          ),
+                          // if (resource.isSaved == true) 
+                          // Padding(
+                          //   padding: const EdgeInsets.symmetric(horizontal: 5),
+                          //   child: Icon(Icons.star_rounded, color: HexColor.fromHex(colorMap[model.workspace.color ?? 'grey']!)),
+                          // ),
+                        ],
+                      ),
+                    ),
+                  ),
+            
+                  GestureDetector(
+                    onTap: () => model.closeTab(resource),
+                    child: Padding(
+                      padding: const EdgeInsets.all(1.0),
+                      child: Container(
+                        // decoration: BoxDecoration(
+                        //   borderRadius: BorderRadius.circular(100),
+                        //   color: HexColor.fromHex('333333')
+                        // ),
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 3.0, bottom: 3.0, left: 8.0, right: 8.0),
+                          child: Icon(Icons.close_rounded),
                         ),
                       ),
+                    ),
+                  )
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
-                      if (model.isPlayingJourney)
-                      if (isIncognito && !(model.workspace.isIncognito == true)) 
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 5),
-                        child: Icon(Icons.visibility_off),
-                      ),
-                      // if (resource.isSaved == true) 
-                      // Padding(
-                      //   padding: const EdgeInsets.symmetric(horizontal: 5),
-                      //   child: Icon(Icons.star_rounded, color: HexColor.fromHex(colorMap[model.workspace.color ?? 'grey']!)),
-                      // ),
-                    ],
+  Widget _buildNewTabInputField() {
+    return Container(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10.0),
+        child: Opacity(
+          opacity: .6,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(3.0),
+                child: Text('Enter search, website or goal',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-
-                GestureDetector(
-                  onTap: () => model.closeTab(resource),
-                  child: Padding(
-                    padding: const EdgeInsets.all(1.0),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(100),
-                        color: HexColor.fromHex('333333')
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(2.0),
-                        child: Icon(Icons.close),
-                      ),
-                    ),
-                  ),
-                )
-              ],
-            ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(3.0),
+                child: Icon(Symbols.mic,
+                  fill: 1,
+                
+                ),
+              )
+            ],
           ),
         ),
       ),

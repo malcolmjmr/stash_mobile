@@ -12,9 +12,11 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:stashmobile/app/home/home_view_model.dart';
 import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark.dart';
 import 'package:stashmobile/app/modals/text_selection/copy_modal.dart';
 import 'package:stashmobile/app/providers/data.dart';
+import 'package:stashmobile/app/providers/read_aloud.dart';
 import 'package:stashmobile/app/providers/search.dart';
 
 
@@ -26,6 +28,7 @@ import 'package:stashmobile/app/web/tab_model.dart';
 import 'package:stashmobile/app/web/tab_summary_modal.dart';
 import 'package:stashmobile/app/windows/windows_view_model.dart';
 import 'package:stashmobile/app/workspace/workspace_view_params.dart';
+import 'package:stashmobile/main.dart';
 
 import 'package:stashmobile/models/chat.dart';
 import 'package:stashmobile/models/domain.dart';
@@ -62,6 +65,8 @@ class WorkspaceViewModel extends ChangeNotifier {
   bool hasDomains = false;
   bool hasTags = false;
   bool hasImages = false;
+  bool hasNote = false;
+  bool hasChat = false;
 
   ResourceView? resourceView = ResourceView.history;
   //List<Resource> folders = [];
@@ -84,6 +89,8 @@ class WorkspaceViewModel extends ChangeNotifier {
   bool showWebView = false;
   bool showHorizontalTabs = false;
 
+  late ReadAloudController readAloud;
+
 
   ScrollController scrollController = ScrollController();
 
@@ -96,8 +103,12 @@ class WorkspaceViewModel extends ChangeNotifier {
   }) {
     if (dataManager != null) {
       data = dataManager;
-      setWorkspace();
+      //setWorkspace();
     }
+
+    
+
+    //readAloud = 
   }
 
   bool workspaceLoaded = false;
@@ -109,6 +120,7 @@ class WorkspaceViewModel extends ChangeNotifier {
     setState = setStateFunction;
     scrollController.addListener(scrollListener);
     data = context.read(dataProvider);
+    readAloud = context.read(readAloudProvider);
  
     await loadWorkspace();
 
@@ -173,13 +185,11 @@ class WorkspaceViewModel extends ChangeNotifier {
   }
   loadWorkspace() async {
     if (workspaceLoaded) return;
+    
     await setWorkspace();
 
     //context.read(workspaceProvider).state = workspace.id;
     if (params?.parentId != null) parentWorkspace = await data.getWorkspace(params!.parentId!);
-
-
-    
     
     allResources =  await data.getWorkspaceResources(workspace.id);
     await fixData();
@@ -205,8 +215,6 @@ class WorkspaceViewModel extends ChangeNotifier {
     keyboardIsVisible = keyboardVisibility.isVisible;
     keyboardSubscription = keyboardVisibility.onChange.listen((bool visible) {
       keyboardIsVisible = visible;
-      print('keyboard visibility updated' );
-      print(visible);
       if (visible && showToolbar) {
         setShowToolbar(false);
       }
@@ -219,17 +227,19 @@ class WorkspaceViewModel extends ChangeNotifier {
     // check workspace params for new tab
     if (params?.resourceToOpen != null) {
 
-      final index = workspace.tabs.indexWhere((t) => t.url == params!.resourceToOpen!.url);
+      final index = workspace.tabs
+        .indexWhere((t) => (t.url != null && t.url == params!.resourceToOpen!.url) || t.id == params!.resourceToOpen!.id);
 
       if (index > -1) {
         workspace.activeTabIndex = index;
       } else {
+        print('adding new resource to workspace');
         workspace.tabs.add(params!.resourceToOpen!);
         workspace.activeTabIndex = workspace.tabs.length - 1;
       }
       workspace.showWebView = true;
     } else if (workspace.title == null) {
-      workspace.tabs = [Resource(url: 'https://www.google.com/', title: 'New Tab')];
+      workspace.tabs = [Resource(title: 'New Tab')];
       workspace.showWebView = true;
     }
 
@@ -265,11 +275,10 @@ class WorkspaceViewModel extends ChangeNotifier {
       return TabView(
         model: TabViewModel(
           workspaceModel: this,
-          initialResource: tab,
-          viewType: view,
+          initialResource: tab.title != 'New Tab' ? tab : null,
+          isIncognito: workspace.isIncognito ?? false,
         ), 
         lazyLoad: isOpenedTab ? false : lazyLoad,
-        incognito: workspace.isIncognito ?? false,
         
       );
     }).toList();
@@ -290,8 +299,8 @@ class WorkspaceViewModel extends ChangeNotifier {
     List<Resource> resourcesToUpdate = [];
     subWorkspaces = [];
     for (final resource in allResources)  {
-      if (resource.url == null && resource.chat == null && resource.note == null) {
-        if (ids.contains(resource.id)) {
+      if (resource.url == null) {
+        if (resource.chat == null && resource.note == null && ids.contains(resource.id)) {
           resourcesToRemove.add(resource);
         }
       } else {
@@ -319,7 +328,6 @@ class WorkspaceViewModel extends ChangeNotifier {
       }
 
       allResources.removeWhere((r) => resourcesToRemove.contains(r.id));
-      
 
     }
 
@@ -380,13 +388,11 @@ class WorkspaceViewModel extends ChangeNotifier {
 
     allResources.sort(sortResources);
     
-    print(allResources.length);
 
-    
     for (final resource in allResources) {
       if (resource.url == null) continue;
 
-      if (resource.isQueued != true && !hasSavedResources) {
+      if (resource.isSaved && !hasSavedResources) {
         hasSavedResources = true;
       }
 
@@ -394,12 +400,20 @@ class WorkspaceViewModel extends ChangeNotifier {
         hasHighlights = true;
       }
 
-      if (resource.rating > 0 && !hasFavorites) {
+      if ((resource.rating > 0 || resource.highlights.any((h) => h.likes > 0 || h.favorites > 0)) && !hasFavorites) {
         hasFavorites = true;
       }
 
       if (resource.isQueued == true && !hasQueue) {
         hasQueue = true;
+      }
+
+      if (resource.note != null && !hasNote) {
+        hasNote = true;
+      }
+
+      if (resource.chat != null && !hasChat) {
+        hasChat = true;
       }
 
       final uri = Uri.parse(resource.url!);
@@ -520,7 +534,7 @@ class WorkspaceViewModel extends ChangeNotifier {
           matchesFilter = false;
         }
 
-        if (resourceView == null && resource.isQueued == true) {
+        if ((resourceView == null || resourceView == ResourceView.history) && !resource.isSaved && resource.isQueued == true) {
           matchesFilter = false;
         }
 
@@ -528,6 +542,14 @@ class WorkspaceViewModel extends ChangeNotifier {
           if (resource.rating < 1 && resource.highlights.length < 3) {
             matchesFilter = false;
           }
+        }
+
+        if (resourceView == ResourceView.chats && resource.chat != null) {
+          matchesFilter = false;
+        }
+
+        if (resourceView == ResourceView.notes && resource.note != null) {
+          matchesFilter = false;
         }
 
         if (resourceView == ResourceView.images && resource.images.isEmpty) {
@@ -581,7 +603,6 @@ class WorkspaceViewModel extends ChangeNotifier {
   TabView get currentTab => tabs[workspace.activeTabIndex!];
 
   openTab(Resource resource) {
-    print(resource);
     final index = tabs.indexWhere((tab) => tab.model.resource.id == resource.id);
     if (index > -1) {
       workspace.activeTabIndex = index;
@@ -599,8 +620,9 @@ class WorkspaceViewModel extends ChangeNotifier {
         model: TabViewModel(
           workspaceModel: this,
           initialResource: resource,
+          isIncognito: workspace.isIncognito ?? false,
         ),
-        incognito: workspace.isIncognito ?? false,
+        
         lazyLoad: false));
       workspace.activeTabIndex = workspace.tabs.length;
     }
@@ -618,7 +640,8 @@ class WorkspaceViewModel extends ChangeNotifier {
   }
 
   openResource(BuildContext context, Resource resource, {String? highlightId}) {
-    if (highlightId != null) selectedHighlight = highlightId;
+    if (highlightId != null) setSelectedHighlight(highlightId);
+    
 
     // check that resource isn't already in tabs
     setState(() {
@@ -631,10 +654,10 @@ class WorkspaceViewModel extends ChangeNotifier {
         tabs.add(
           TabView(
             lazyLoad: false,
-            incognito: workspace.isIncognito ?? false,
             model: TabViewModel(
               workspaceModel: this,
               initialResource: resource,
+              isIncognito: workspace.isIncognito ?? false,
             ),
           )
         );
@@ -651,6 +674,8 @@ class WorkspaceViewModel extends ChangeNotifier {
  
     
     tabPageController?.jumpToPage(workspace.activeTabIndex!);
+
+    context.read(showHomeProvider).state = false;
   }
 
   List<String> selectedResources = [];
@@ -786,9 +811,10 @@ class WorkspaceViewModel extends ChangeNotifier {
 
   addTabFromNewWindow(Resource parent, int windowId) {
     TabView tab = TabView(
-      incognito: tabs.firstWhere((t) => t.model.resource.id == parent.id).incognito,
       windowId: windowId,
       model: TabViewModel(
+        viewType: TabViewType.web,
+        isIncognito: tabs.firstWhere((t) => t.model.resource.id == parent.id).model.isIncognito,
         workspaceModel: this,
       ),
       lazyLoad: false,
@@ -803,6 +829,7 @@ class WorkspaceViewModel extends ChangeNotifier {
       }
       
       if (!showWebView) workspace.showWebView = true;
+      if (!showToolbar) showToolbar = true;
     });
 
     tabPageController?.jumpToPage(workspace.activeTabIndex!);
@@ -812,10 +839,16 @@ class WorkspaceViewModel extends ChangeNotifier {
   }
 
   updateTabFromUrlField(Resource resource, String url) async {
-    print('updating tab');
-    print(url);
+
     TabView tab = tabs.firstWhere((t) => t.model.resource.id == resource.id);
-    await tab.model.controller.loadUrl(urlRequest: URLRequest(url: WebUri(url)));
+    if (tab.model.loaded) {
+      await tab.model.controller.loadUrl(urlRequest: URLRequest(url: WebUri(url)));
+    } else {
+      tab.model.resource.title = url;
+      tab.model.resource.url = url;
+      await tab.model.setViewType(TabViewType.web);
+    }
+    
 
   }
 
@@ -828,19 +861,21 @@ class WorkspaceViewModel extends ChangeNotifier {
     workspace.activeTabIndex = index;
     if (tabs.length == index) {
       tabs.add(TabView(
-        model: TabViewModel(workspaceModel: this),
+        model: TabViewModel(
+          workspaceModel: this,
+          isIncognito: workspace.isIncognito ?? false,
+        ),
         lazyLoad: false,
-        incognito: workspace.isIncognito ?? false,
         )
       );
       newTabCreated = true;
     }
 
     
-    final tabModel = tabs[index].model;
-    if (!tabModel.loaded && tabModel.resource.url != null) {
+    final tab = tabs[index];
+    if (tab.lazyLoad && !tab.model.loaded && tab.model.resource.url != null) {
       Timer(Duration(milliseconds: newTabCreated ? 300 : 0), () {
-        tabModel.controller.loadUrl(urlRequest: URLRequest(url: WebUri(tabModel.resource.url!)));
+        tab.model.controller.loadUrl(urlRequest: URLRequest(url: WebUri(tab.model.resource.url!)));
       });
     }
   
@@ -910,27 +945,7 @@ class WorkspaceViewModel extends ChangeNotifier {
 
   saveTab(Resource resource) async {
     HapticFeedback.mediumImpact();
-
-    // if (resource.imageUrl == null) {
-    //   final tab = tabs.firstWhereOrNull((tab) => tab.model.resource.id == resource.id);
-    //   if (tab != null) {
-    //     await tab.model.getImageUrl();
-    //   }
-    // }
-    
-
-    setState(() {
-      if (resource.contexts.isEmpty) {
-        resource.contexts.add(workspace.id);
-      }
-      allResources.add(resource);
-      data.saveResource(resource);
-    });
-
-    if (resource.images.isNotEmpty && !hasImages) hasImages = true;
-
-    updateVisibleResources();
-
+    saveResource(resource);
   }
 
   saveSpace(Workspace workspaceInfo) {
@@ -961,14 +976,16 @@ class WorkspaceViewModel extends ChangeNotifier {
     String? url, 
     bool lazyload = false, 
     bool? incognito, 
-    TabViewType viewType = TabViewType.web
+    TabViewType? viewType,
   }) {
+
+    
     
     TabView tab = TabView(
-      incognito: incognito ?? workspace.isIncognito ?? false,
       model: TabViewModel(
         workspaceModel: this,
-        viewType: viewType,
+        viewType: url != null ? TabViewType.web : viewType,
+        isIncognito: incognito ?? workspace.isIncognito ?? false,
         initialResource: resource != null 
           ? resource
           : url != null 
@@ -987,11 +1004,15 @@ class WorkspaceViewModel extends ChangeNotifier {
       }
       
       if (!showWebView) workspace.showWebView = true;
+
+      // if (resource == null && url == null) {
+      //   showToolbar = false;
+      // }
     });
 
-    if (resource == null && url == null) {
-      openTabEditModal();
-    }
+    // if (resource == null && url == null) {
+    //   openTabEditModal();
+    // }
 
     tabPageController?.jumpToPage(workspace.activeTabIndex!);
   
@@ -1022,7 +1043,16 @@ class WorkspaceViewModel extends ChangeNotifier {
         context.read(windowsProvider).closeWorkspace(workspace);
       }
       if (createNewTab) {
-        tabs.add(TabView(model: TabViewModel(workspaceModel: this), lazyLoad: false, incognito: workspace.isIncognito ?? false,));
+        tabs.add(
+          TabView(
+            model: TabViewModel(
+                workspaceModel: this,
+                isIncognito: workspace.isIncognito ?? false,
+              ), 
+              lazyLoad: false, 
+              
+            )
+          );
         workspace.showWebView = true;
       }
 
@@ -1064,12 +1094,21 @@ class WorkspaceViewModel extends ChangeNotifier {
 
     if (!resource.contexts.contains(workspace.id)) {
       resource.contexts.add(workspace.id);
+      if (resource.tags.isEmpty && resource.isQueued != true) {
+        resource = extractTagsFromSelectedText(resource: resource);
+      }
+    }
+
+    if (resource.article != null) {
+      resource.text = resource.article.toString();
     }
    
     data.saveResource(resource);
     updateVisibleResources();
 
   }
+
+
 
 
   toggleTabView() {
@@ -1166,11 +1205,16 @@ class WorkspaceViewModel extends ChangeNotifier {
       data.saveResource(resource);
       currentTab.model.controller.clearFocus();
       showTextSelectionMenu = false;
-      showNotification(NotificationParams(
-        title: 'Added ${selectedTags.map((t) => '"'+t+'"').join('and ')} to tags',
-        action: editBookmarkAction,
-        actionLabel: 'Edit'
-      ));
+      if (selectedHighlight == null) {
+        showNotification(NotificationParams(
+          title: 'Added ${selectedTags.map((t) => '"'+t+'"').join('and ')} to tags',
+          action: editBookmarkAction,
+          actionLabel: 'Edit'
+        ));
+      } else {
+        updateSelectedHighlightTags();
+      }
+      
 
       // if (tags.firstWhereOrNull((t) => t.name == tag) == null) {
       //   tags.add(Tag(lastViewed: resource.lastVisited ?? 0, name: tag));
@@ -1213,9 +1257,10 @@ class WorkspaceViewModel extends ChangeNotifier {
     updateVisibleResources();
   }
 
-  extractTagsFromSelectedText({String? textToUse}) {
+  extractTagsFromSelectedText({String? textToUse, Resource? resource}) {
 
-    Resource resource = currentTab.model.resource;
+    if (resource == null) resource = currentTab.model.resource;
+
     const punctuation = ['.',',',';','!','?','"','(',')',':'];
     String text = (textToUse ?? selectedText!).toLowerCase();
 
@@ -1236,6 +1281,8 @@ class WorkspaceViewModel extends ChangeNotifier {
         }
       }
     }
+
+    return resource;
   }
 
   searchSelectedTags({Tag? tag, bool isSemantic = false}) {
@@ -1476,7 +1523,10 @@ class WorkspaceViewModel extends ChangeNotifier {
   }
 
   saveTabsScrollPositionOnExit() async {
+
     final tab = tabs[workspace.activeTabIndex!];
+    if (!tab.model.loaded) return;
+
     Resource resource = tab.model.resource;
     
     //updateWorkspaceTabs();
@@ -1549,13 +1599,95 @@ class WorkspaceViewModel extends ChangeNotifier {
     }); 
   }
 
-  String? selectedHighlight;
-  setSelectedHighlight(String? value) {
+  Highlight? selectedHighlight;
+  List<String> highlightKeywords = []; 
+  List<String> relatedKeywords = [];
+  setSelectedHighlight(String? highlightId) {
+    // Todo 
+
+    highlightKeywords = []; 
+    relatedKeywords = [];
+    selectedHighlight = currentTab.model.resource
+        .highlights.firstWhereOrNull((h) => h.id == highlightId);
+    final terms = selectedHighlight?.text.toLowerCase().split(' ') ?? [];
+
+    for (final tag in currentTab.model.resource.tags) {
+      final textIncludesTag = terms.any((term) => term.contains(tag.substring(0, min(tag.length, 5))));
+      if (textIncludesTag) {
+        highlightKeywords.add(tag);
+      }
+    }
+
+    //getRelatedKeywords();
 
     setState(() {
-      selectedHighlight = value;
+      selectedHighlight;
+      highlightKeywords;
+      relatedKeywords;
     });
   
+  }
+
+  getRelatedKeywords() {
+      
+      Map<String,Tag> tempTags = {}; 
+
+      for (final resource in allResources) {
+
+        final tagFound =  highlightKeywords.any((k) => resource.tags.any((t) => t.contains(k.substring(0, min(k.length, 5)))));
+        if (tagFound) {
+          for (final tagName in resource.tags) {
+            Tag? tag = tempTags[tagName];
+            if (tag == null) {
+              tag = Tag(
+                name: tagName, 
+                lastViewed: resource.lastVisited ?? resource.updated ?? resource.created ?? 0,
+                isSelected: selectedTags.firstWhereOrNull((selectedTag) => selectedTag.name == tagName) != null
+              );
+            }
+            tag.valueCount += 1;
+            tempTags[tagName] = tag;
+          }
+        }
+      }
+
+
+      List<Tag> sortedTags = tempTags.values.where((t) => t.valueCount > 1).toList();
+      
+      if (selectedTags.isNotEmpty && sortedTags.isEmpty) {
+        sortedTags = selectedTags;
+      }
+      sortedTags.sort(sortTags);
+      
+      relatedKeywords = sortedTags
+        .sublist(0, min(20, sortedTags.length))
+        .map((t) => t.name)
+        .toList();
+  }
+
+  updateSelectedHighlightTags({String? tagName}) {
+
+    if (tagName != null) {
+       Resource resource = currentTab.model.resource;
+      final tagIndex = resource.tags.indexWhere((t) => t == tagName);
+      if (tagIndex > -1) {
+        resource.tags.removeAt(tagIndex);
+        highlightKeywords.remove(tagName);
+      } else {
+        resource.tags.add(tagName);
+        highlightKeywords.add(tagName);
+      }
+      saveResource(resource);
+
+      setState(() {
+        highlightKeywords;
+      });
+    } else if (selectedHighlight != null) {
+      setSelectedHighlight(selectedHighlight!.id);
+    }
+   
+
+    
   }
 
   bool canGoBack = false;
@@ -1767,6 +1899,8 @@ class WorkspaceViewModel extends ChangeNotifier {
       isPlayingJourney = value;
     });
   }
+
+  
 }
 
 class InputData {
@@ -1800,5 +1934,7 @@ enum ResourceView {
   images,
   folders,
   tagged,
+  notes,
+  chats
 
 }

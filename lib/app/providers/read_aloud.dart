@@ -92,7 +92,10 @@ class ReadAloudController extends ChangeNotifier {
     if (stopPrevious) {
       await tts.stop();
     }
-    tabModel = model;
+    if (model != null) {
+      tabModel = model;
+    }
+
     if (!tabModel!.workspaceModel.isPlayingJourney){
       tabModel!.workspaceModel.setIsPlayingJourney(true);
       tabModel!.setShowJourney(false);
@@ -154,6 +157,9 @@ class ReadAloudController extends ChangeNotifier {
           if (tabModel!.canGoForward) {
             Timer(Duration(seconds: 2), () {
             tabModel!.goForward();
+            Timer(Duration(seconds: 3), () {
+              playNextSection();
+            });
           });
           }
         });

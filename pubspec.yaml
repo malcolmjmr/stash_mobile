@@ -72,6 +72,8 @@ dependencies:
   scrollable_positioned_list: ^0.3.8
   speech_to_text: ^6.6.0
   permission_handler: ^11.3.0
+  keyboard_dismisser: ^3.0.0
+  flutter_quill: ^8.6.4
 
 dev_dependencies:
   flutter_test:
