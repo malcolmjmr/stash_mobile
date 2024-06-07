@@ -89,6 +89,8 @@ class ReadAloudController extends ChangeNotifier {
   }
 
   play({TabViewModel? model, bool stopPrevious = false}) async {
+    if (model?.id == tabModel?.id) return;
+
     if (stopPrevious) {
       await tts.stop();
     }
@@ -108,6 +110,7 @@ class ReadAloudController extends ChangeNotifier {
   String textToRead = '';
 
   playNextSection() async {
+
 
     Article? article = tabModel?.resource.article;
 
@@ -157,9 +160,7 @@ class ReadAloudController extends ChangeNotifier {
           if (tabModel!.canGoForward) {
             Timer(Duration(seconds: 2), () {
             tabModel!.goForward();
-            Timer(Duration(seconds: 3), () {
-              playNextSection();
-            });
+            
           });
           }
         });

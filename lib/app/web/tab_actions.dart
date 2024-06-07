@@ -36,7 +36,7 @@ class TabActions extends StatelessWidget {
               name: 'Open Space',
               onTap: model.onOpenSpaceTapped,
               onLongPress: () => context.read(showHomeProvider).state = true,
-              iconFillFunction: (_) => 0 // show open spaces modal
+              iconFillFunction: (_) => 1 // show open spaces modal
 
             ), 
             color: model.workspaceColor,

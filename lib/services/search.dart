@@ -43,8 +43,18 @@ class SearchServices {
   bool webViewIsLoading = false;
   bool webViewIsLoaded = false;
 
-  searchExa(String text) {
+  Function(List<Resource>)? exaResultsCallback;
 
+  searchExa(String text, {Function(List<Resource>)? callback}) {
+    exaResultsCallback = callback;
+    webViewController
+        .loadUrl(
+          urlRequest: URLRequest(
+            url: WebUri(getExaSearchUrlforResource(prompt: text))
+          )
+        );
+    
+    
   }
 
   searchBrave(String query) async {
@@ -96,15 +106,18 @@ class SearchServices {
   WorkspaceViewModel? activeWorkspace; 
  
   onExaSearchResults(args) {
-    if (activeWorkspace == null) return;
-
-    List<Resource> resources = args[0].map<Resource>((json) {
+     List<Resource> resources = args[0].map<Resource>((json) {
       Resource resource = Resource.fromDatabase(Resource().id!, json);
       return resource;
     }).toList();
 
+    if (activeWorkspace != null) {
+      activeWorkspace!.currentTab.model.addResourcesToQueue(resources);
+    } else if (exaResultsCallback != null) {
+      exaResultsCallback!.call(resources);
+    }
 
-    activeWorkspace!.currentTab.model.addResourcesToQueue(resources);
+   
     
   }
 

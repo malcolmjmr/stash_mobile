@@ -49,9 +49,9 @@ class MyApp extends ConsumerWidget {
           signedInBuilder: (_) => IndexedStack(
             index: watch(showHomeProvider).state ? 0 : 1,
             children: [
-              HomeView(),
-              WindowsView(),
-              BackgroundTab(),
+              const HomeView(),
+              const WindowsView(),
+              const BackgroundTab(),
             ],
           ),
         ),

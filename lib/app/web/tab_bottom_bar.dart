@@ -9,6 +9,7 @@ import 'package:page_transition/page_transition.dart';
 import 'package:stashmobile/app/common_widgets/tag.dart';
 import 'package:stashmobile/app/providers/read_aloud.dart';
 import 'package:stashmobile/app/web/horizontal_tabs.dart';
+import 'package:stashmobile/app/web/omnibox_bottom_bar.dart';
 import 'package:stashmobile/app/web/tab_actions.dart';
 import 'package:stashmobile/app/web/tab_actions_model.dart';
 import 'package:stashmobile/app/modals/text_selection/text_selection_modal.dart';
@@ -42,7 +43,7 @@ class TabBottomBar extends StatelessWidget {
         clipBehavior: Clip.none,
         child: Container(
           decoration: BoxDecoration(
-            color: HexColor.fromHex('111111')
+            color: Colors.black
           ),
           width: MediaQuery.of(context).size.width,
           height: showTopBar && model.selectedHighlight == null
@@ -55,7 +56,12 @@ class TabBottomBar extends StatelessWidget {
               Expanded(
                 child: _buildTopSection(context)
               ),
-              if (!showTopBar)
+              if (model.showOmnibox)
+              Container(
+                height: 50,
+                child: OmniboxBottomBar(workspaceModel: model,),
+              )
+              else if (!showTopBar)
               Container(
                 height: 50,
                 child: TabActions(model: TabActionsModel(workspaceModel: model),)
@@ -99,6 +105,8 @@ class TabBottomBar extends StatelessWidget {
       return _buildEditModeMenu();
     } else if (model.notificationIsVisible) {
       return _buildNotification();
+    } else if (model.showOmnibox) {
+      return _buildOmniboxInput();
     } else if (model.showTextSelectionMenu) {
       //Might want this to take up the full bottom bar
       return TextSelectionMenu(workspaceModel: model);
@@ -118,10 +126,6 @@ class TabBottomBar extends StatelessWidget {
       return VertcalTabs(workspaceModel: model);
     }
   }
-
-
-
-  
 
   Widget _buildQuickActions(BuildContext context) {
 
@@ -187,6 +191,39 @@ class TabBottomBar extends StatelessWidget {
             invert: true,
           );
         }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildOmniboxInput() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 5),
+      child: Container(
+        decoration: BoxDecoration(
+          color: HexColor.fromHex('333333'),
+          borderRadius: BorderRadius.circular(12)
+        ),
+        child: Padding(
+          padding: const EdgeInsets.only(left: 12.0, top: 17),
+          child: TextField(
+            controller: model.omniboxController,
+            autofocus: true,
+            onChanged: model.onOmniboxInputChanged,
+            onSubmitted: model.onOmniboxInputSubmitted,
+            decoration: InputDecoration(
+              border: InputBorder.none,
+              hintText: 'Enter search, site or need',
+              hintStyle: TextStyle(
+                decoration: TextDecoration.none,
+                fontSize: 18,
+              )
+            ),
+            style: TextStyle(
+              decoration: TextDecoration.none,
+              fontSize: 18,
+            )
+          ),
+        ),
       ),
     );
   }

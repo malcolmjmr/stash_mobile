@@ -49,7 +49,7 @@ class Resource {
   int? scrollPosition;
   int rating = 0;
   List<Note> notes = [];
-  List<String> queue = [];
+  List<Resource> queue = [];
   Note? note;
   Chat? chat;
   Article? article;

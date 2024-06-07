@@ -79,6 +79,7 @@ class WorkspaceViewModel extends ChangeNotifier {
   List<Domain> domains = [];
   List<TabView> tabs = [];
   List<TabView> selectedTabs = [];
+  late Key key;
 
   String view = Views.tabs;
   PageController? tabPageController;
@@ -106,13 +107,17 @@ class WorkspaceViewModel extends ChangeNotifier {
       //setWorkspace();
     }
 
-    
+    key = UniqueKey();
 
+
+    if (params?.workspace != null) {
+      workspace = params!.workspace!;
+      workspaceIsSet = true;
+    }
     //readAloud = 
   }
 
   bool workspaceLoaded = false;
-
 
   init(BuildContext buildContext, Function(Function()) setStateFunction) async {
     
@@ -124,12 +129,14 @@ class WorkspaceViewModel extends ChangeNotifier {
  
     await loadWorkspace();
 
-    
+    isLoading = false;
   }
 
   @override
   dispose() {
-    keyboardSubscription.cancel();
+    // if (!isLoading) {
+    //   keyboardSubscription.cancel();
+    // }
     scrollController.removeListener(scrollListener);
     scrollController.dispose();
     super.dispose();
@@ -168,6 +175,7 @@ class WorkspaceViewModel extends ChangeNotifier {
   setWorkspace() async {
     //addKeyboardListener();
     if (workspaceIsSet) return;
+
     if (params?.workspaceId == Workspace.all().id) {
       workspace = Workspace.all();
       isNewSpace = false;
@@ -182,6 +190,7 @@ class WorkspaceViewModel extends ChangeNotifier {
       workspace.showWebView = true;
     }
     workspaceIsSet = true;
+
   }
   loadWorkspace() async {
     if (workspaceLoaded) return;
@@ -680,6 +689,19 @@ class WorkspaceViewModel extends ChangeNotifier {
 
   List<String> selectedResources = [];
 
+  toggleSelectAllTabs() {
+    HapticFeedback.mediumImpact();
+    setState(() {
+      if (selectedResources.length == tabs.length) {
+        selectedResources = [];
+      } else {
+        selectedResources = tabs.map((t) => t.model.resource.id!).toList();
+        
+      }
+      
+    });
+  }
+
   toggleResourceSelection(Resource resource) {
     setState(() {
       final index = selectedResources.indexWhere((id) => id == resource.id);
@@ -693,12 +715,14 @@ class WorkspaceViewModel extends ChangeNotifier {
   }
 
   cancelTabSelection() { 
+    HapticFeedback.mediumImpact();
     setState(() {
       selectedResources = [];
     });
   }
 
   removeSelectedTabs() {
+    HapticFeedback.mediumImpact();
     setState(() {
       tabs.removeWhere((t) => selectedResources.contains(t.model.resource.id));
       workspace.activeTabIndex = 0;
@@ -869,6 +893,7 @@ class WorkspaceViewModel extends ChangeNotifier {
         )
       );
       newTabCreated = true;
+      showOmnibox = true;
     }
 
     
@@ -883,6 +908,7 @@ class WorkspaceViewModel extends ChangeNotifier {
     setState(() {
       workspace.activeTabIndex = index;
       tabs;
+      showOmnibox;
     });
 
   }
@@ -1076,15 +1102,59 @@ class WorkspaceViewModel extends ChangeNotifier {
   
   closeSelectedTabs() {
     setState(() {
-      if (selectedResources.isNotEmpty) selectedResources = [];
       tabs.removeWhere((t) => selectedResources.contains(t.model.resource.id));
       if (workspace.activeTabIndex == tabs.length) {
         workspace.activeTabIndex == tabs.length - 1;
       }
       tabPageController?.jumpToPage(workspace.activeTabIndex!);
+      selectedResources = [];
       updateWorkspaceTabs();
     });
   }
+
+  mergeSelectedTabs() {
+    final selectedTabs = tabs.where((t) => selectedResources.contains(t.model.resource.id)).toList();
+    final mainTab = selectedTabs.removeAt(0);
+
+    mainTab.model.addResourcesToQueue(selectedTabs.map((t) => t.model.resource).toList());
+  
+    setState(() {
+      tabs.removeWhere((t) => selectedTabs.any((st) => st.model.id == t.model.id));
+      final index = tabs.indexWhere((t) => t.model.id == mainTab.model.id);
+      if (index > -1) {
+        workspace.activeTabIndex = index;
+        tabPageController?.jumpToPage(workspace.activeTabIndex!);
+        tabs = tabs;
+        selectedResources = [];
+        updateWorkspaceTabs();
+
+      }
+    });
+
+  }
+
+  stashSelectedTabs() {
+    
+    for (String resourceId in selectedResources) {
+      final tab = tabs.firstWhere((t) => t.model.resource.id == resourceId);
+      Resource resource = tab.model.resource;
+      resource.isQueued = true;
+      saveResource(resource);
+    }
+
+    tabs.removeWhere((t) => selectedResources.contains(t.model.resource.id));
+
+    setState(() {
+      tabs = tabs;
+      selectedResources = [];
+      updateVisibleResources();
+      updateWorkspaceTabs();
+
+    });
+
+  }
+
+
 
   saveResource(Resource resource) {
     
@@ -1900,6 +1970,59 @@ class WorkspaceViewModel extends ChangeNotifier {
     });
   }
 
+  bool showOmnibox = false;
+  setShowOmnibox(bool value) { 
+    final viewType = currentTab.model.viewType;
+    if (viewType != null && viewType != TabViewType.web ) {
+      if (!value) {
+        setState(() {
+          showOmnibox = value;
+        });
+      }
+      return;
+    }
+
+    setState(() {
+      
+      showOmnibox = value;
+      if (showOmnibox) {
+        if (viewType == null) {
+          omniboxController.text = '';
+        } else if (viewType == TabViewType.web) {
+          omniboxController.text = currentTab.model.resource.url ?? '';
+        }
+      }
+      
+    });
+  }
+
+  TextEditingController omniboxController = TextEditingController();
+  onOmniboxInputChanged(String value) {
+    
+  }
+
+  onOmniboxInputSubmitted(String value) {
+    showOmnibox = false;
+    updateTabFromUrlField(currentTab.model.resource, getUrlFromInput());
+
+  }
+
+  addSpecialSymbolToOmniboxInput(String value) {
+    omniboxController.text += value;
+  }
+
+  getUrlFromInput() {
+    final input = omniboxController.text;
+    String url = input;
+
+    if (input.contains('.')) {
+      final missingProtocol = !input.contains('http://') && !input.contains('https://');
+      if (missingProtocol) url = 'https://www.' + input;
+    } else {
+      url = 'https://www.google.com/search?q=' + Uri.encodeComponent(input);
+    }
+    return url;
+  }
   
 }
 

@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:intl/intl.dart';
@@ -32,11 +33,13 @@ import '../common_widgets/section_header.dart';
 import 'home_view_model.dart';
 
 class HomeView extends ConsumerWidget {
+  const HomeView({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context, ScopedReader watch) {
     final model = watch(homeViewProvider);
     final windows = watch(windowsProvider);
-    print('building home');
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: model.isLoading 
@@ -73,8 +76,8 @@ class HomeView extends ConsumerWidget {
                     final workspaceModel = windows.workspaces[index].model;
                     if (workspaceModel.workspaceIsSet) {
                        final workspace = workspaceModel.workspace;
-                      return WorkspaceListItem(
-                        key: Key(workspace.id),
+                       return WorkspaceListItem(
+                        key: Key(workspace.id + workspace.updated.toString()),
                         isFirstListItem: index == 0,
                         isLastListItem: index == windows.workspaces.length - 2,
                         workspace: workspace,
@@ -241,6 +244,30 @@ class HomeView extends ConsumerWidget {
                 SliverToBoxAdapter(
                   child: _buildHighlights(context, model),
                 ),
+
+                if (model.journeys.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: SectionHeader(
+                    title: 'Explore',
+                    actions: [
+                      
+                    ],
+                    trailing: GestureDetector(
+                      onTap: () => model.getJourneys(override: true),
+                      child: Padding(
+                        padding: const EdgeInsets.all(3.0),
+                        child: Icon(Symbols.refresh, 
+                          size: 23, 
+                          weight: 500,
+                        ),
+                      ),
+                    ),
+                  )
+                ),
+                if (model.journeys.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: _buildJourneys(context, model),
+                ),
                 
                 SliverToBoxAdapter(child: SizedBox(height: 100),)
               ]
@@ -286,6 +313,113 @@ class HomeView extends ConsumerWidget {
     );
   }
 
+  Widget _buildJourneys(BuildContext context, HomeViewModel model) {
+    return Container(
+      //padding: EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        //borderRadius: BorderRadius.circular(8),
+        //color: HexColor.fromHex('222222')
+      ),
+      child: Container(
+          padding: EdgeInsets.symmetric(vertical: 10),
+          width: MediaQuery.of(context).size.width,
+          height: 300,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: model.journeys.length,
+            itemBuilder: (context, index) {
+              final journey = model.journeys[index];
+              return _buildJourneyCard(context, model, journey);
+            },
+          )
+        ),
+    );
+  }
+
+  Widget _buildJourneyCard(BuildContext context, HomeViewModel model, HomeJourney journey,) {
+    final _random = new Random();
+    return GestureDetector(
+      onTap: () => model.openJourney(context, journey),
+      onLongPress: () => model.openJourney(context, journey, searchHighlight: true),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Container(
+        
+          width: MediaQuery.of(context).size.width * .6,
+          decoration: BoxDecoration(
+            color: HexColor.fromHex(colorMap.values.toList()[_random.nextInt(colorMap.length - 1)]),
+            borderRadius: BorderRadius.circular(8)
+          ),
+          child: Stack(
+            children: [
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+                child: Text(journey.title,
+                  style: TextStyle(
+                    fontSize: 25,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 0,
+                right: 0,
+                child: GestureDetector(
+                  onTap: ()  {
+                    final resource = model.data.resources
+                        .firstWhere((r) => r.id == journey.resourceId);
+                    model.expandHighlight(context, 
+                      resource: resource, 
+                      highlightId: journey.highlightId
+                    );
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      //color: HexColor.fromHex('666666'),
+                      borderRadius: BorderRadius.circular(100),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: Icon(Symbols.expand_content_rounded,
+                        color: Colors.black,
+                        size: 25,
+                        fill: 1,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: 10,
+                right: 10,
+                child: GestureDetector(
+                  onTap: () => model.openJourney(context, journey, play: true),
+                  onLongPress: () => model.openJourney(context, journey, play: true, searchHighlight: true),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: HexColor.fromHex('666666'),
+                      borderRadius: BorderRadius.circular(100),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: Icon(Symbols.play_arrow,
+                        color: Colors.black,
+                        size: 25,
+                        fill: 1,
+                      ),
+                    ),
+                  ),
+                ),
+
+              )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildHighlights(BuildContext context, HomeViewModel model) {
     return Container(
       //padding: EdgeInsets.symmetric(horizontal: 10),
@@ -302,7 +436,7 @@ class HomeView extends ConsumerWidget {
             itemCount: model.highlightedResources.length,
             itemBuilder: (context, index) {
               final resource = model.highlightedResources[index];
-              return Center(child: ResourceWithHighlights(resource: resource, key: Key(resource.id!),));
+              return Center(child: ResourceWithHighlights(resource: resource, key: Key(resource.id!)));
             },
           )
         ),
@@ -321,25 +455,42 @@ class Header extends StatelessWidget {
   
   @override
   Widget build(BuildContext context) {
+
+    final dot = Expanded(
+      child: Container(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(1.0),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(100)
+              ),
+              height: 3,
+              width: 3,
+            ),
+          ),
+        ),
+      ),
+    );
+
+
     return  Container(
       width: MediaQuery.of(context).size.width,
       child: Column(
         children: [
           Padding(
-            padding: EdgeInsets.symmetric(vertical: 10),
+            padding: EdgeInsets.symmetric(vertical: 10, horizontal: 5),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Material(
                   type: MaterialType.transparency,
-                  child: Hero(
-                    tag: 'Stash',
-                    child: Text('Stash', 
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 50,
-                      ),
+                  child: Text('Stash', 
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 50,
                     ),
                   ),
                 ),
@@ -349,6 +500,31 @@ class Header extends StatelessWidget {
                 //     fontSize: 20
                 //   ),
                 // )
+                
+                GestureDetector(
+                  onTap: () => Navigator.of(context).pushNamed(AppRoutes.profile),
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 0.0, right: 5),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.white, width: 2),
+                        borderRadius: BorderRadius.circular(100)
+                      ),
+                      height: 25,
+                      width: 25,
+                      child: Padding(
+                        padding: const EdgeInsets.all(1.0),
+                        child: Row(
+                          children: [
+                            dot,
+                            dot, 
+                            dot,
+                          ],
+                        )
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -379,10 +555,12 @@ class ResourceWithHighlights extends StatefulWidget {
     // required this.highlightId,
     this.isSelected = false, 
     this.isExpanded = false,
+    this.highlightId,
   }) : super(key: key);
 
   final bool isSelected;
   final bool isExpanded;
+  final String? highlightId;
   
 
   @override
@@ -403,6 +581,7 @@ class _ResourceWithHighlightsState extends State<ResourceWithHighlights> {
     super.initState();
     homeViewModel = context.read(homeViewProvider);
     highlightIndex = widget.resource.highlights.indexWhere((h) {
+      if (widget.highlightId != null) return h.id == widget.highlightId;
       if (homeViewModel.visibleHighlightType == HighlightType.favorite && h.favorites > 0) {
         return true;
       } else if (homeViewModel.visibleHighlightType == HighlightType.like && h.likes > 0) {

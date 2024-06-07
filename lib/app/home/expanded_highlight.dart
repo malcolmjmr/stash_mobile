@@ -28,7 +28,7 @@ class ExpandedHighlight extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 30),
                     child: Container(
       
-                      child: ResourceWithHighlights(resource: resource, isExpanded: true,)
+                      child: ResourceWithHighlights(resource: resource, isExpanded: true, highlightId: highlightId,)
                     ),
                   )
                 ),

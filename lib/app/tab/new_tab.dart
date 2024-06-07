@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:stashmobile/app/common_widgets/domain_icon.dart';
 import 'package:stashmobile/app/tab/new_tab_model.dart';
@@ -32,96 +33,99 @@ class _NewTabState extends State<NewTab> {
     return Stack(
       children: [
         _buildBackground(),
-        Container(
-          //color: Colors.black,
-          child: CustomScrollView(
-            slivers: [
-              
-              // app bar
-              // SliverToBoxAdapter(
-              //   child: _buildTextField(),
-              // ),
-        
-
-        
-        
-              SliverPadding(padding: EdgeInsets.only(top: 15)),
-              SliverToBoxAdapter(
-                child:_buildCreateOptions() ,
-              ),
-              
-              SliverToBoxAdapter(
-                child: _buildFavoritesSectionTitle()
-              ),
-
-              SliverGrid.count(
-                crossAxisCount: 5,
-              
-                children: model.favoriteDomains.map((domain) {
-                    return Padding(
-                      padding: const EdgeInsets.all(10.0),
-                      child: Container(
-                        decoration: BoxDecoration(
-                        color: HexColor.fromHex('888888'),
-                          borderRadius: BorderRadius.circular(8)
-                          // border: Border(
-                          //   top: BorderSide(color: HexColor.fromHex('333333')),
-                          //   bottom: BorderSide(color: HexColor.fromHex('333333'))
-                          // )
-                        ),
-                        child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8),
-                            child: DomainIcon(
-                              domain: domain, 
-                              size: 35,
-                              onTap: () => model.onDomainTapped(context, domain), 
-                            //onLongPress: () => model.deleteDomain(domain),)),
-                            )
+        GestureDetector(
+          onTap: () => model.tabModel.workspaceModel.setShowOmnibox(false),
+          child: Container(
+            //color: Colors.black,
+            child: CustomScrollView(
+              slivers: [
+                
+                // app bar
+                // SliverToBoxAdapter(
+                //   child: _buildTextField(),
+                // ),
+          
+          
+          
+          
+                SliverPadding(padding: EdgeInsets.only(top: 15)),
+                SliverToBoxAdapter(
+                  child:_buildCreateOptions() ,
+                ),
+                
+                SliverToBoxAdapter(
+                  child: _buildFavoritesSectionTitle()
+                ),
+          
+                SliverGrid.count(
+                  crossAxisCount: 5,
+                
+                  children: model.favoriteDomains.map((domain) {
+                      return Padding(
+                        padding: const EdgeInsets.all(10.0),
+                        child: Container(
+                          decoration: BoxDecoration(
+                          color: HexColor.fromHex('888888'),
+                            borderRadius: BorderRadius.circular(8)
+                            // border: Border(
+                            //   top: BorderSide(color: HexColor.fromHex('333333')),
+                            //   bottom: BorderSide(color: HexColor.fromHex('333333'))
+                            // )
                           ),
-                      ),
-                    );
-                  }).toList(),
-              ),
-              // app bar
-              // SliverToBoxAdapter(
-              //   child: _buildSectionOptions(),
-              // ),
-              // if (model.searchText.isNotEmpty)
-              // SliverList.builder(
-              //   itemCount: model.searchResults.length,
-              //   itemBuilder: (context, index) {
-              //     final resource = model.searchResults[index];
-              //     return ResourceListItem(
-              //       model: model.tabModel.workspaceModel, 
-              //       resource: resource, 
-              //       onTap: () => null,
-              //     );
-              //   }
-              // )
-              // else if (model.subSection == NewTabSection.history)
-              // SliverList.builder(
-              //   itemCount: model.searchResults.length,
-              //   itemBuilder: (context, index) {
-              //     final resource = model.searchResults[index];
-              //     return ResourceListItem(
-              //       model: model.tabModel.workspaceModel, 
-              //       resource: resource, 
-              //       onTap: () => null,
-              //     );
-              //   }
-              // )
-              // else if (model.subSection == NewTabSection.news)
-              // SliverList.builder(
-              //   itemCount: model.newsItems.length,
-              //   itemBuilder: (context, index) {
-              //     final newsItem = model.newsItems[index];
-              //     return NewsCard(resource: newsItem);
-              //   }
-              // )
-             
-              
-              
-            ],
+                          child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8),
+                              child: DomainIcon(
+                                domain: domain, 
+                                size: 35,
+                                onTap: () => model.onDomainTapped(context, domain), 
+                              //onLongPress: () => model.deleteDomain(domain),)),
+                              )
+                            ),
+                        ),
+                      );
+                    }).toList(),
+                ),
+                // app bar
+                // SliverToBoxAdapter(
+                //   child: _buildSectionOptions(),
+                // ),
+                // if (model.searchText.isNotEmpty)
+                // SliverList.builder(
+                //   itemCount: model.searchResults.length,
+                //   itemBuilder: (context, index) {
+                //     final resource = model.searchResults[index];
+                //     return ResourceListItem(
+                //       model: model.tabModel.workspaceModel, 
+                //       resource: resource, 
+                //       onTap: () => null,
+                //     );
+                //   }
+                // )
+                // else if (model.subSection == NewTabSection.history)
+                // SliverList.builder(
+                //   itemCount: model.searchResults.length,
+                //   itemBuilder: (context, index) {
+                //     final resource = model.searchResults[index];
+                //     return ResourceListItem(
+                //       model: model.tabModel.workspaceModel, 
+                //       resource: resource, 
+                //       onTap: () => null,
+                //     );
+                //   }
+                // )
+                // else if (model.subSection == NewTabSection.news)
+                // SliverList.builder(
+                //   itemCount: model.newsItems.length,
+                //   itemBuilder: (context, index) {
+                //     final newsItem = model.newsItems[index];
+                //     return NewsCard(resource: newsItem);
+                //   }
+                // )
+               
+                
+                
+              ],
+            ),
           ),
         ),
       ],

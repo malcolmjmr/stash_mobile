@@ -39,21 +39,22 @@ class VertcalTabs extends StatelessWidget {
                       onTap: () {
 
                         //if (tab.model.resource.url == null) return; // Let user edit name or enter query
-                        
+                      final readAloud = context.read(readAloudProvider);
+                       if (readAloud.tabModel?.id == workspaceModel.currentTab.model.id && readAloud.isPlaying) {
                         Navigator.push(context, 
                           PageTransition<dynamic>(
                             type: PageTransitionType.bottomToTop,
                             curve: Curves.easeInExpo,
-                            child: context.read(readAloudProvider).isPlaying
-                              ? PlayerView()
-                              : TabEditModal(
-                                tab: tab.model.resource,
-                                workspaceModel: workspaceModel,
-                              ),
+                            child:PlayerView(),
+                              
                             fullscreenDialog: true,
                           )
                         );
+                      } else {
                         
+                        workspaceModel.setShowOmnibox(true);
+                      }
+                                    
                         
                       }
                     ),
@@ -84,20 +85,21 @@ class VertcalTabs extends StatelessWidget {
         model: workspaceModel, 
         resource: newTabResource, 
         onTap: () {
-
-          Navigator.push(context, 
-            PageTransition<dynamic>(
-              type: PageTransitionType.bottomToTop,
-              curve: Curves.easeInExpo,
-              child: context.read(readAloudProvider).isPlaying
-                ? PlayerView()
-                : TabEditModal(
-                  tab: newTabResource,
-                  workspaceModel: workspaceModel,
-                ),
-              fullscreenDialog: true,
-            )
-          );
+          
+          if (context.read(readAloudProvider).isPlaying) {
+            Navigator.push(context, 
+              PageTransition<dynamic>(
+                type: PageTransitionType.bottomToTop,
+                curve: Curves.easeInExpo,
+                child:PlayerView(),
+                  
+                fullscreenDialog: true,
+              )
+            );
+          } else {
+            workspaceModel.setShowOmnibox(true);
+          }
+          
         }
       ),
     );

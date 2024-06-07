@@ -371,7 +371,7 @@ class ResourceListItem extends StatelessWidget {
               if (resource.url != null)
               Row(
                 children: [
-                  Text(Uri.parse(resource.url!).host.replaceAll('www.', '') ?? '', 
+                  Text(Uri.parse(resource.url ?? '').host.replaceAll('www.', '') ?? '', 
                     maxLines: 1,
                     style: TextStyle(
                       color: Colors.white,
@@ -392,7 +392,7 @@ class ResourceListItem extends StatelessWidget {
   Widget _buildDescription() {
     return resource.summary != null 
       ? Container(
-        child: Text(resource.summary!,
+        child: Text(resource.summary ?? '',
           style: TextStyle(
 
           ),

@@ -2,11 +2,13 @@
 
 import 'dart:convert';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:recase/recase.dart';
 import 'package:stashmobile/app/providers/read_aloud.dart';
 import 'package:stashmobile/app/providers/search.dart';
 import 'package:stashmobile/app/web/js.dart';
@@ -59,7 +61,15 @@ class TabViewModel {
       resource = initialResource;
       if (resource.url != null && resource.url!.isNotEmpty) {
         if (viewType == null) viewType = TabViewType.web;
-        if (initialResource.isQueued == true) {
+
+        if (initialResource.queue.isNotEmpty) {
+          for (final resource in initialResource.queue) {
+            resources[resource.url!] = resource;
+          }
+          queue = initialResource.queue;
+          canGoForward = true;
+        }
+        else if (initialResource.isQueued == true) {
           
           queue = workspaceModel.allResources
             .where((r) => r.isQueued == true 
@@ -137,6 +147,7 @@ class TabViewModel {
 
   bool isNotAWebsite(Resource? content) =>
       content == null || content.url == null;
+
  
 
   WebHistory history = WebHistory();
@@ -317,7 +328,8 @@ class TabViewModel {
   }
 
   onWebsiteProgressChanged(BuildContext context, InAppWebViewController controller, int progress) {
-    
+    print('progress changed');
+    print(resource.title ?? '');
   }
 
   onWebsiteLoadStop(BuildContext context, InAppWebViewController controller, Uri? uri) async {
@@ -425,6 +437,9 @@ class TabViewModel {
   }
 
   Future<bool?> onCreateWindow(BuildContext context, InAppWebViewController controller, CreateWindowAction createWindowAction) async {
+    
+    // Todo: open preview
+    
     workspaceModel.addTabFromNewWindow(resource, createWindowAction.windowId);
     return true;
     //  return showCupertinoModalBottomSheet(
@@ -456,6 +471,7 @@ class TabViewModel {
           + JS.clickListener
           + JS.inputListener
           + JS.imageSelectionListener
+          //+ JS.contextMenuListener
           
     );
   }
@@ -520,6 +536,10 @@ class TabViewModel {
       handlerName: 'onDocumentContent',
       callback: onDocumentContent,
     );
+    // controller.addJavaScriptHandler(
+    //   handlerName: 'contextMenu',
+    //   callback: onContextMenuOpened,
+    // );
 
 
     
@@ -710,12 +730,20 @@ class TabViewModel {
 
   onDocumentContent(args) async {
     resource.article = Article.fromWebView(args[0]);
+
+    print('got document content');
+    print(resource.title);
     final readAloud = context.read(readAloudProvider);
     
-    if (readAloud.isPlaying && readAloud.tabModel == this) {
-      readAloud.stop();
-      readAloud.play(model: this);
+    if (readAloud.isPlaying) {
+      if (readAloud.tabModel == this) {
+        readAloud.stop();
+        readAloud.play(model: this);
+      } else if (readAloud.tabModel == null) {
+        readAloud.play(model: this);
+      }
     }
+    
   }
 
   String messageText = '';
@@ -770,6 +798,7 @@ class TabViewModel {
         ...resourcesToAdd,  
         ...queue.where((r) => r.isQueued != true)
       ];
+      if (!canGoForward) canGoForward = true;
     });
 
     // if (!showTabJourney) {
@@ -818,6 +847,59 @@ class TabViewModel {
   }
 
   List<Prompt> suggestedPrompts = [];
+
+  bool isInFullScreen = false;
+  onEnterFullScreen(_) async {
+    //controller.pause()
+    final isActiveWorkspace = workspaceModel.workspace.id == context.read(windowsProvider).activeWindow.model.workspace.id;
+    final isActiveTab = this.id == workspaceModel.currentTab.model.id;
+    if (!isInFullScreen &&  isActiveWorkspace && isActiveTab) {
+      isInFullScreen = true;
+      print('enter full screen');
+    }
+
+  }
+
+  onExitFullScreen(_) async {
+   
+    //workspaceModel.workspace
+    final isActiveWorkspace = workspaceModel.workspace.id == context.read(windowsProvider).activeWindow.model.workspace.id;
+    final isActiveTab = this.id == workspaceModel.currentTab.model.id;
+    if (isInFullScreen &&  isActiveWorkspace && isActiveTab) {
+      print('exit full screen');
+      isInFullScreen = false;
+    }
+  }
+
+  onContextMenuOpened(args) async {
+    //print('context menu opened');
+  }
+
+  onCreateContextMenu(InAppWebViewHitTestResult? hitTestResult) {
+    //print('creating context menu');
+  }
+
+  onHideContextMenu() {
+    //print('hiding context menu');
+  }
+
+  onContextMenuItemClicked(ContextMenuItem? menuItem) async {
+
+    final isLookUp = menuItem?.title.contains('define') ?? false;
+    if (isLookUp) {
+      final selectedText = await controller.getSelectedText();
+      if (selectedText != null && selectedText.isNotEmpty) addVocab(selectedText);
+    }
+
+  }
+
+  addVocab(String term) {
+    // save locally 
+    // update lookup time
+
+
+  }
+
 
 
 }

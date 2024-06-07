@@ -272,6 +272,13 @@ class JS {
     """;
   }
 
+  static String contextMenuListener = """
+    document.addEventListener('contextmenu', (e) => {
+      
+      window.flutter_inappwebview.callHandler("contextMenu");
+    });
+  """;
+
   static String touchEndListener = """ 
 
   // Listens for swipe of hyperlink to add link to tree
@@ -396,6 +403,9 @@ class JS {
         window.flutter_inappwebview.callHandler("onTextSelection", textSelection);
       }
     } else if (href != null) {
+
+      console.log('link touch end');
+      
       if (swipeSize > 100) {
         if (href.startsWith('/')) {
           href = 'https://' + window.location.hostname + href;

@@ -1,15 +1,19 @@
 
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:page_transition/page_transition.dart';
+import 'package:sembast/sembast.dart';
 import 'package:stashmobile/app/home/create_workspace_modal.dart';
 import 'package:stashmobile/app/home/expanded_highlight.dart';
 import 'package:stashmobile/app/providers/data.dart';
+import 'package:stashmobile/app/providers/read_aloud.dart';
 import 'package:stashmobile/app/providers/search.dart';
 import 'package:stashmobile/app/providers/workspace.dart';
 import 'package:stashmobile/app/search/search_view_model.dart';
@@ -61,8 +65,9 @@ class HomeViewModel with ChangeNotifier {
     topDomains.shuffle();
     tags = data.tags.where((t) => t.valueCount > 1).toList();
     loadHighlightedResources();
-
     _setLoading(false);
+    //reflect();
+    getJourneys();
   }
 
   loadHighlightedResources() {
@@ -267,7 +272,7 @@ class HomeViewModel with ChangeNotifier {
     );
   }
 
-  createJourneyFromHighlight(BuildContext context, {required Resource resource, required String highlightId}) {
+  createJourneyFromHighlight(BuildContext context, {required Resource resource, required String highlightId, bool popContext = true}) {
     final text = resource.highlights.firstWhere((h) => h.id == highlightId).text;
     Resource newResource = Resource(
       title: text,
@@ -289,7 +294,10 @@ class HomeViewModel with ChangeNotifier {
         ? resource.contexts.first 
         : null
     );
-    Navigator.pop(context);
+    if (popContext) {
+      Navigator.pop(context);
+    }
+    
 
   }
 
@@ -340,7 +348,191 @@ class HomeViewModel with ChangeNotifier {
   createChatFromHighlight(BuildContext context, {required Resource resource, required String highlightId}) {
 
   }
+
+  reflect() async {
+    final allHighlightedResources = data.resources.where((r) => r.highlights.isNotEmpty).toList();
+    allHighlightedResources.sort((a, b) => (b.created ?? b.updated ?? 0).compareTo(a.created ?? a.updated ?? 0));
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final aDay = 1000 * 60 * 60 * 24;
+    final aDayAgo = now - aDay;
+    final aWeekAgo = now - (7 * aDay);
+    final aMonthAgo = now - (30 * aDay);
+
+    List<Resource> resourcesCreatedToday = [];
+    List<Resource> resourcesCreatedThisWeek = [];
+    List<Resource> resourcesCreatedThisMonth = [];
+    for (final resource in allHighlightedResources) {
+      final created = (resource.created ?? 0);
+      if (created < aMonthAgo) continue;
+      else if (created < aWeekAgo) {
+        resourcesCreatedThisMonth.add(resource);
+      } else if (created < aDayAgo) {
+        resourcesCreatedThisWeek.add(resource);
+      } else {
+        resourcesCreatedToday.add(resource);
+      }
+    }
+
+    String prompt = """
+      I've read the following web articles and made the below highlights. 
+      Summarize the general themes of the highlights. Summarize the favorite highlights. 
+      Suggest some related topics to explore. The output should be in the form of a JSON object like so: 
+      
+      {
+        "generalSummary": "summary of highlights",
+        "favoritesSummary": summary of favorite highlights",
+        "suggestedTopics": ["topic 1",...]
+      }
+
+      """;
+    print(resourcesCreatedToday.length);
+    print(resourcesCreatedThisMonth.length);
+    //print(allHighlightedResources.length);
+    final highlightsJson = jsonEncode(resourcesCreatedThisMonth.map((resource) {
+      return {
+        'title': resource.title,
+        'url': resource.url,
+        'highlights': resource.highlights.map((highlight) {
+          return {
+            'isLiked': highlight.likes > 0,
+            'isFavorite': highlight.favorites > 0,
+            'text': highlight.text,
+          };
+        }).toList()
+      };
+    }).toList());
+
+    prompt += "\nArticles and highlights:\n${highlightsJson}\nOutput: ";
+
+
+    
+    final response = await LLM().mistralChatCompletion(prompt: prompt);
+    print('got response from mistral');
+    print(response);
+  }
+
+  List<HomeJourney> journeys = [];
+  bool journeysInitiated = false;
+  getJourneys({bool override = false}) async  {
+    if (journeysInitiated && !override) return;
+    journeys = [];
+    HapticFeedback.mediumImpact();
+    journeysInitiated = true;
+    final allHighlightedResources = data.resources.where((r) => r.highlights.isNotEmpty).toList();
+    allHighlightedResources.shuffle();
+    final resources = allHighlightedResources.sublist(0, 10);
+
+    List<Highlight> highlights = resources
+      .map((r) => r.highlights.firstWhereOrNull((h) => h.likes > 0) ?? r.highlights.first
+      ).toList();
+
+    
+
+    String prompt = """
+      I've highlighted the following text from web articles. For each highlight a title, summary, and list of related topics formated in JSON.
+      
+      """;
+    
+    final highlightsJson = jsonEncode(highlights.map((highlight) {
+      return {
+        'isLiked': highlight.likes > 0,
+        'isFavorite': highlight.favorites > 0,
+        'text': highlight.text,
+      };
+    }).toList());
+
+    prompt += "\nHighlights:\n${highlightsJson}\nOutput: ";
+
+
+    print('getting journeys');
+    print(prompt);
+    final String response = await LLM().mistralChatCompletion(prompt: prompt);
+    print('got response from mistral');
+    print(response);
+
+    final journeyData = jsonDecode(response.trim());
+    for (int i = 0; i < highlights.length; i++) {
+      final highlight = highlights[i];
+      final resource = resources[i];
+      Map<String, dynamic> metadata = journeyData[i];
+      metadata['resourceId'] = resource.id;
+      metadata['contexts'] = resource.contexts;
+      metadata['highlightId'] = highlight.id;
+      metadata['text'] = highlight.text;
+
+      journeys.add(HomeJourney.fromJson(metadata));
+    }
+
+    notifyListeners();
+
+  }
+
+  openJourney(BuildContext context, HomeJourney journey, {bool play = false, bool searchHighlight = false}) {
+
+    HapticFeedback.mediumImpact();
+    final resource = data.resources.firstWhere((r) => r.id == journey.resourceId);
+    final prompt = ''' Here's a great perspective on "${searchHighlight ? resource.highlights.firstWhere((h) => h.id == journey.highlightId).text : journey.title}"''';
+    Resource newResource = Resource(
+      title: journey.title,
+    );
+    final search = context.read(searchProvider);
+    //newResource.contexts = resource.contexts;
+
+    search.searchExa(prompt, callback: (resources) {
+      final firstResource = resources.removeAt(0);
+      newResource.url = firstResource.url;
+      newResource.queue = resources;
+      context.read(readAloudProvider).isPlaying = true;
+      openResource(context, newResource, 
+        workspaceId: resource.contexts.isNotEmpty 
+          ? resource.contexts.first 
+          : null
+      );
+    });
+
+
+    
+  }
+
   
+}
+
+class HomeJourney {
+
+  late String title;
+  late String text;
+  late String summary;
+  late String highlightId;
+  late String resourceId;
+  late List<String> contexts;
+
+  HomeJourney.fromJson(json) {
+    title = json['title'];
+    text = json['text'];
+    highlightId = json['highlightId'];
+    resourceId = json['resourceId'];
+    contexts = json['contexts'];
+    summary = json['summary'];
+  }
+
+  toJson() {
+    return {
+      'title': title,
+      'text': text,
+      'summary': summary,
+      'resourceId': resourceId,
+      'contexts': contexts,
+      'highlightId': highlightId,
+    };
+  }
+
+  @override
+  String toString() {
+    // TODO: implement toString
+    return jsonEncode(toJson());
+  }
+
+
 }
 
 enum HighlightType {

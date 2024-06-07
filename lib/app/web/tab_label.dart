@@ -67,7 +67,9 @@ class OpenTabLabel extends StatelessWidget {
         child: Slidable(
           key: Key(resource.toString()),
           closeOnScroll: true,
-          startActionPane: ActionPane(
+          startActionPane: model.currentTab.model.viewType == null
+            ? null
+            : ActionPane(
             children: [
               if (model.workspace.title != null && !resource.isSaved)
               SlidableAction(
@@ -164,7 +166,9 @@ class OpenTabLabel extends StatelessWidget {
             openThreshold: 0.3,
             extentRatio: .4,
           ),
-          endActionPane: ActionPane(
+          endActionPane: model.currentTab.model.viewType == null
+            ? null
+            : ActionPane(
            children: [
             //   SlidableAction(
             //     icon: Icons.more_horiz,
@@ -334,7 +338,7 @@ class OpenTabLabel extends StatelessWidget {
             children: [
               Padding(
                 padding: const EdgeInsets.all(3.0),
-                child: Text('Enter search, website or goal',
+                child: Text('Enter search, website or need',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,

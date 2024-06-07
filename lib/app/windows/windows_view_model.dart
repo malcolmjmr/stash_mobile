@@ -45,6 +45,7 @@ class WindowsViewModel extends ChangeNotifier {
   }) {
     workspaces = [ 
       WorkspaceView(
+        
         model: WorkspaceViewModel(dataManager: data)
       )
     ];
@@ -87,12 +88,13 @@ class WindowsViewModel extends ChangeNotifier {
       final wv = WorkspaceView(
         model: WorkspaceViewModel(
           params: WorkspaceViewParams(
-            workspaceId: workspace?.id,
+            workspace: workspace,
             isIncognito: isIncognito,
             resourceToOpen: resource
           )
         ),
       );
+      //workspaces.insert(index, wv);
       workspaces = [
         ...workspaces.sublist(0, index),
         wv,

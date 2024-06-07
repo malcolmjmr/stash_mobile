@@ -35,6 +35,7 @@ import 'package:stashmobile/app/home/home_view_model.dart';
 import 'package:stashmobile/app/home/workspace_listitem.dart';
 import 'package:stashmobile/app/modals/edit_bookmark/edit_bookmark.dart' hide SectionHeader;
 import 'package:stashmobile/app/modals/move_tabs/move_tabs_modal.dart';
+import 'package:stashmobile/app/providers/read_aloud.dart';
 import 'package:stashmobile/app/providers/workspace.dart';
 import 'package:stashmobile/app/search/search_view_model.dart';
 import 'package:stashmobile/app/web/find_in_page.dart';
@@ -66,7 +67,7 @@ class WorkspaceView extends StatefulWidget {
 
   //final WorkspaceViewParams? params;
   final bool  showWebView;
-  WorkspaceView({Key? key, required this.model, this.showWebView = false, }) : super(key: UniqueKey());
+  WorkspaceView({Key? key, required this.model, this.showWebView = false, }) : super(key: model.key);
   final WorkspaceViewModel model; 
 
   @override
@@ -107,6 +108,9 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    if (!model.isLoading) {
+       print('building workspace: ' + (model.workspace.title ?? ''));
+    }
     
     return SafeArea(
       child: !model.isLoading
@@ -156,7 +160,8 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
     
             KeyboardVisibilityBuilder(
               builder: (context, isVisible) {
-                return isVisible ? Container(color: Colors.black,) : TabBottomBar(model: model);
+                if (model.showOmnibox && !isVisible) model.showOmnibox = false;
+                return isVisible && !model.showOmnibox ? Container(color: Colors.black,) : TabBottomBar(model: model);
               }
             ),
             
@@ -667,7 +672,7 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
           onTap: model.createNewTab,
           icon: Symbols.add_box, 
           color: color, 
-          size: 30
+          size: 30,
         ),
    
         _buildResourceCounts(context, model),
@@ -755,12 +760,37 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
     final color = HexColor.fromHex(model.workspaceHexColor);
     return Container(
       decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: HexColor.fromHex('222222')))
+        border: Border(top: BorderSide(color: Colors.black)),
+        color: HexColor.fromHex('333333')
       ),
       child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+              if (model.selectedResources.length > 1)
+              GestureDetector(
+                onTap: () => model.mergeSelectedTabs(),
+                child: Padding(
+                  padding: EdgeInsets.only(top: 5, bottom: 5, left: 15, right: 10),
+                  child: RotatedBox(
+                    quarterTurns: 1,
+                    child: Icon(Symbols.merge_rounded,
+                      size: 30,
+                      fill: 1,
+                    ),
+                  )
+                )
+              ),
+              GestureDetector(
+                onTap: () => model.stashSelectedTabs(),
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 15, top: 5, bottom: 5, right: 15),
+                  child: Icon(Symbols.move_to_inbox_rounded,
+                    size: 30,
+                    fill: 1,
+                  ),
+                )
+              ),
               GestureDetector(
                 onTap: () => showCupertinoModalBottomSheet(
                   context: context, 
@@ -772,15 +802,15 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
                   }
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.only(left: 15, top: 5, bottom: 5, right: 10),
-                  child: Text('Move',
-                    style: TextStyle(
-                      color: color,
-                      fontSize: 20
-                    ),
+                  padding: const EdgeInsets.only(left: 15, top: 5, bottom: 5, right: 15),
+                  child: Icon(Symbols.drive_file_move_rounded,
+                    size: 30,
+                     fill: 1,
                   ),
                 )
               ),
+              
+
               GestureDetector(
                 onTap: () => showCupertinoModalBottomSheet(
                   context: context, 
@@ -789,25 +819,22 @@ class _WorkspaceViewState extends State<WorkspaceView> with AutomaticKeepAliveCl
                   }
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  child: Text('Save',
-                    style: TextStyle(
-                      fontSize: 20,
-                      color: color,
-                    ),
+                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
+                  child: Icon(Symbols.star_outline_rounded,
+                    size: 30,
+                    fill: 1,
                   ),
                 )
               ),
               GestureDetector(
                 onTap: () => model.closeSelectedTabs(),
                 child: Padding(
-                  padding: EdgeInsets.only(top: 5, bottom: 5, left: 10, right: 15),
-                  child: Text('Close', 
-                    style: TextStyle(
-                      fontSize: 20,
-                      color: color,
-                    ),
-                  ),
+                  padding: EdgeInsets.only(top: 5, bottom: 5, left: 15, right: 15),
+                  child: Icon(Symbols.tab_close_rounded,
+                    size: 30,
+                    fill: 1,
+                    
+                  )
                 )
               ),
           ],
@@ -956,7 +983,10 @@ class WorkspaceHeader extends StatelessWidget {
         ? 0
         : null,
       decoration: BoxDecoration(
-        color: Colors.black,
+        color: model.selectedResources.isNotEmpty
+          ? HexColor.fromHex('333333')
+          : Colors.black,
+        border: model.showCollapsedHeader ? Border(bottom: BorderSide(color: HexColor.fromHex('111111'), width: 2)) : null
         // border: !model.workspace.showWebView && model.workspace.title == null 
         //   ? Border(bottom: BorderSide(color: HexColor.fromHex(model.workspaceHexColor), width: 1))
         //   : null,
@@ -1057,10 +1087,26 @@ class WorkspaceHeader extends StatelessWidget {
 
   Widget _buildSelectionHeader() {
     return Container(
-      color: Colors.black,
+      decoration: BoxDecoration(
+        
+       
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          GestureDetector(
+            onTap: () => model.toggleSelectAllTabs(),
+            child: Padding(
+              padding: const EdgeInsets.only(right: 8.0, left: 3),
+              child: Icon(model.selectedResources.length != model.tabs.length 
+                ? Symbols.library_add_check_rounded
+                : Symbols.indeterminate_check_box_rounded,
+                color: Colors.white,
+                size: 28,
+                 fill: 1,
+              )
+            ),
+          ),
           Text('${model.selectedResources.length} Tab${model.selectedResources.length > 1 ? 's': ''} Selected', 
             style: TextStyle(
               fontSize: 24,

@@ -75,28 +75,32 @@ class _TabViewState extends State<TabView> {
   }
 
   Widget _buildTabView() {
+
+    Widget view;
     final resource = widget.model.resource;
     if (widget.model.viewType == TabViewType.web) {
-      return _buildWebView();
+      view = _buildWebView();
     } else if (widget.model.viewType == TabViewType.note) {
-      return NoteView(
+      view = NoteView(
         resource: resource, 
         workspaceModel: widget.model.workspaceModel
       );
     } else if (widget.model.viewType == TabViewType.chat) {
-      return ChatView(tabModel: widget.model,);
+      view = ChatView(tabModel: widget.model,);
     } else {
-      return NewTab(tabModel: widget.model,);
+      view = NewTab(tabModel: widget.model,);
     }
+    return view;
   }
 
 
   Widget _buildWebView() {
+    print('building web view');
     return InAppWebView(
-
+      key: Key(widget.model.id),
       windowId: widget.windowId,
       initialUrlRequest: widget.lazyLoad || widget.windowId != null ? null : URLRequest(url: WebUri(widget.model.resource.url!)),
-  
+      
       pullToRefreshController: PullToRefreshController(
         onRefresh: () => widget.model.controller.reload()
       ),
@@ -118,13 +122,19 @@ class _TabViewState extends State<TabView> {
       onCloseWindow: (controller) => widget.model.onCloseWindow(context, controller),
       onCreateWindow:(controller, createWindowAction) => widget.model.onCreateWindow(context, controller, createWindowAction),
       shouldOverrideUrlLoading: (controller, navigationAction) => widget.model.checkNavigation(context, navigationAction),
-      // contextMenu: ContextMenu(
-      //   menuItems: [
-      //     ContextMenuItem(title: 'Add Vocab', iosId: 'add-vocab', ),
-      //   ],
-      //   //options: ContextMenuOptions(hideDefaultSystemContextMenuItems: true)
-      // ),
+      contextMenu: ContextMenu(
+        // menuItems: [
+        //   ContextMenuItem(title: 'Add Vocab', id: 'add-vocab'),
+        // ],
+        onCreateContextMenu: (hitTest) => widget.model.onCreateContextMenu(hitTest),
+        onHideContextMenu: () => widget.model.onHideContextMenu(),
+        onContextMenuActionItemClicked: (menuItem) => widget.model.onContextMenuItemClicked(menuItem),
+        //options: ContextMenuOptions(hideDefaultSystemContextMenuItems: true)
+      ),
+      onEnterFullscreen: (controller) => widget.model.onEnterFullScreen(controller),
+      onExitFullscreen: (controller) => widget.model.onExitFullScreen(controller),
       initialSettings: InAppWebViewSettings(
+    
          disableHorizontalScroll: true,
           useShouldOverrideUrlLoading: true,
           incognito: widget.model.isIncognito,
@@ -134,7 +144,7 @@ class _TabViewState extends State<TabView> {
           // javaScriptCanOpenWindowsAutomatically: true,
           //disableContextMenu: true
           allowsBackForwardNavigationGestures: true,
-          disableLongPressContextMenuOnLinks: true,
+          disableLongPressContextMenuOnLinks: false,
           allowsLinkPreview: false,
           disallowOverScroll: true,
           safeBrowsingEnabled: false,
